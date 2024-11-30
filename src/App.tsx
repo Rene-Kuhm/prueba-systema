@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Login from './pages/Login';
@@ -14,7 +14,7 @@ const TestSignup = lazy(() => import('./pages/TestSignup'));
  */
 function App() {
   return (
-    <Suspense fallback={<div className="text-center py-8">Loading...</div>}>
+    <Suspense fallback={<div className="py-8 text-center">Loading...</div>}>
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Login />} />
@@ -43,7 +43,7 @@ function App() {
         <Route
           path="*"
           element={
-            <div className="text-center py-8">
+            <div className="py-8 text-center">
               <h1 className="text-2xl font-bold text-red-500">404 - Page Not Found</h1>
               <p>The page you are looking for does not exist.</p>
             </div>
