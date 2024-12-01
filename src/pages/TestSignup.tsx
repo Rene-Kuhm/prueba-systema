@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { account, databases } from '@/lib/appwrite';
+import { ID } from 'appwrite';
 
 export default function TestSignup() {
   const [result, setResult] = useState<string>('');
@@ -13,32 +14,29 @@ export default function TestSignup() {
       const testPassword = 'test123456';
 
       // Test user registration
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: testEmail,
-        password: testPassword,
-      });
+      const user = await account.create(
+        ID.unique(),
+        testEmail,
+        testPassword,
+        testEmail.split('@')[0]
+      );
 
-      if (signUpError) {
-        throw new Error(`SignUp Error: ${signUpError.message}`);
-      }
-
-      if (!authData?.user) {
+      if (!user) {
         throw new Error('User registration failed. No user returned.');
       }
 
       // Test profile creation
-      const { error: profileError } = await supabase.from('profiles').insert([
+      await databases.createDocument(
+        'YOUR_DATABASE_ID',
+        'profiles',
+        ID.unique(),
         {
-          id: authData.user.id,
+          user_id: user.$id,
           full_name: 'Test User',
           role: 'technician',
           approved: false,
-        },
-      ]);
-
-      if (profileError) {
-        throw new Error(`Profile Error: ${profileError.message}`);
-      }
+        }
+      );
 
       setResult(`✅ Success! User registered with email: ${testEmail}`);
     } catch (error) {
@@ -51,13 +49,13 @@ export default function TestSignup() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow">
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow">
         <h2 className="text-2xl font-bold text-center text-gray-800">Test Signup</h2>
         <button
           onClick={handleTestSignup}
           disabled={loading}
-          className="w-full py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          className="w-full px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50"
         >
           {loading ? 'Testing...' : 'Test Signup'}
         </button>
