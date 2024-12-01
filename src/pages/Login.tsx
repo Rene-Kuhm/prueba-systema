@@ -32,13 +32,13 @@ export default function Login() {
 
   return (
     <AuthLayout title="COSPEC">
-      <form onSubmit={handleSubmit} className="space-y-6 relative">
+      <form onSubmit={handleSubmit} className="relative space-y-6">
         {error && (
           <div
-            className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 animate-shake"
+            className="p-3 border rounded-lg bg-red-500/10 border-red-500/20 animate-shake"
             aria-live="polite"
           >
-            <p className="text-red-400 text-sm">{error}</p>
+            <p className="text-sm text-red-400">{error}</p>
           </div>
         )}
 
@@ -50,11 +50,9 @@ export default function Login() {
             type="email"
             id="email"
             value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-            }}
+            onChange={(e) => setEmail(e.target.value)}
             required
-            className="mt-1 block w-full rounded-md bg-white/10 border border-white/20 text-white placeholder-blue-200/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="block w-full mt-1 text-white border rounded-md bg-white/10 border-white/20 placeholder-blue-200/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="tu@email.com"
           />
         </div>
@@ -67,11 +65,9 @@ export default function Login() {
             type="password"
             id="password"
             value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-            }}
+            onChange={(e) => setPassword(e.target.value)}
             required
-            className="mt-1 block w-full rounded-md bg-white/10 border border-white/20 text-white placeholder-blue-200/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="block w-full mt-1 text-white border rounded-md bg-white/10 border-white/20 placeholder-blue-200/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="Tu contraseña"
           />
         </div>
@@ -121,7 +117,7 @@ export default function Login() {
         <div className="text-center">
           <Link
             to="/signup"
-            className="text-blue-400 hover:text-blue-300 transition-colors text-sm font-medium hover:underline"
+            className="text-sm font-medium text-blue-400 transition-colors hover:text-blue-300 hover:underline"
           >
             ¿No tienes una cuenta? Regístrate aquí
           </Link>

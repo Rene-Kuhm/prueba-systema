@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthLayout } from '@/components/AuthLayout';
-import { supabase } from '@/lib/supabase';
+import { account } from '@/lib/appwrite';
 
 export default function Signup() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -12,7 +13,7 @@ export default function Signup() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const signUp = async (email: string, password: string, fullName: string, role: string) => {
+  async function signUp(email: string, password: string, fullName: string, role: 'admin' | 'technician') {
     try {
       // Primero, verifica que todos los campos requeridos estén presentes
       if (!email || !password || !fullName || !role) {
@@ -24,49 +25,21 @@ export default function Signup() {
         throw new Error('La contraseña debe tener al menos 6 caracteres');
       }
 
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-          data: {
-            full_name: fullName,
-            role: role
-          }
-        }
-      });
+      const { $id } = await account.create(email, password, fullName);
 
-      if (error) {
-        console.error('Error de registro:', error);
-        throw error;
-      }
+      // Actualizar las preferencias del usuario con el rol
+      await account.updatePreferences({
+        'prefs.role': role,
+      }, $id);
 
-      if (data.user) {
-        // Crear el perfil después del registro exitoso
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            {
-              id: data.user.id,
-              full_name: fullName,
-              email: email,
-              role: role,
-              approved: false
-            }
-          ]);
-
-        if (profileError) {
-          console.error('Error al crear perfil:', profileError);
-          throw profileError;
-        }
-      }
-
-      return data;
+      setSuccess(true);
     } catch (error) {
       console.error('Error en el proceso de registro:', error);
-      throw error;
+      setError(error instanceof Error ? error.message : 'Error en el registro');
+    } finally {
+      setIsSubmitting(false);
     }
-  };
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -75,11 +48,9 @@ export default function Signup() {
 
     try {
       await signUp(email, password, fullName, role);
-      setSuccess(true);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Error en el registro');
-    } finally {
-      setIsSubmitting(false);
+      navigate(`/`);
+    } catch {
+      // Error is handled in the signUp function
     }
   }
 
@@ -108,7 +79,7 @@ export default function Signup() {
     <AuthLayout title="Registro">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label htmlFor="email" className="block font-medium text-gray-700">
+          <label htmlFor="email" className="block font-medium text-gray-300">
             Correo Electrónico
           </label>
           <input
@@ -120,7 +91,7 @@ export default function Signup() {
           />
         </div>
         <div>
-          <label htmlFor="password" className="block font-medium text-gray-700">
+          <label htmlFor="password" className="block font-medium text-gray-300">
             Contraseña
           </label>
           <input
@@ -132,7 +103,7 @@ export default function Signup() {
           />
         </div>
         <div>
-          <label htmlFor="fullName" className="block font-medium text-gray-700">
+          <label htmlFor="fullName" className="block font-medium text-gray-300">
             Nombre Completo
           </label>
           <input
@@ -144,7 +115,7 @@ export default function Signup() {
           />
         </div>
         <div>
-          <label htmlFor="role" className="block font-medium text-gray-700">
+          <label htmlFor="role" className="block font-medium text-gray-300">
             Rol
           </label>
           <select
