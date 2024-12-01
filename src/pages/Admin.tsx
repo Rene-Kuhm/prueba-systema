@@ -23,6 +23,9 @@ interface Claim {
   reason: string;
   technician?: string;
   status: 'pending' | 'assigned';
+  resolution?: string;
+  receivedBy?: string;
+  receivedAt?: string;
 }
 
 export default function Admin() {
@@ -39,7 +42,11 @@ export default function Admin() {
     reason: '',
     technician: '',
     status: 'pending',
+    resolution: '',
+    receivedBy: userProfile?.displayName || '',
+    receivedAt: new Date().toLocaleString(),
   });
+  const technicians = ['René', 'Roman', 'Oscar', 'Dalmiro'];
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -114,6 +121,9 @@ export default function Admin() {
           reason: claimData.reason,
           technician: claimData.technician,
           status: claimData.status,
+          resolution: claimData.resolution,
+          receivedBy: claimData.receivedBy,
+          receivedAt: claimData.receivedAt,
         });
       });
 
@@ -148,6 +158,9 @@ export default function Admin() {
         reason: '',
         technician: '',
         status: 'pending',
+        resolution: '',
+        receivedBy: userProfile?.displayName || '',
+        receivedAt: new Date().toLocaleString(),
       });
       fetchClaims(); // Actualizar la lista de reclamos después de agregar uno nuevo
     } catch (err) {
@@ -165,6 +178,9 @@ export default function Admin() {
         Motivo: claim.reason,
         Técnico: claim.technician || 'No asignado',
         Estado: claim.status === 'pending' ? 'Pendiente' : 'Asignado',
+        Resolución: claim.resolution || 'No resuelto',
+        'Recibido por': claim.receivedBy || 'N/A',
+        'Recibido en': claim.receivedAt || 'N/A',
       }));
 
       const worksheet = XLSX.utils.json_to_sheet(data);
@@ -193,41 +209,41 @@ export default function Admin() {
   if (error) return <div>Error: {error}</div>;
 
   return (
-    <main className='min-h-screen bg-gray-100 dark:bg-gray-900'>
-      <div className='px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8'>
-        <div className='flex items-center justify-between mb-8'>
+    <main className="min-h-screen bg-gray-100 dark:bg-gray-900">
+      <div className="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className='text-3xl font-bold text-gray-900 dark:text-white'>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               Panel de Administración
             </h1>
-            <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Bienvenido, {userProfile?.displayName || 'Administrador'}
             </p>
           </div>
           <button
             onClick={handleSignOut}
-            aria-label='Cerrar sesión'
-            className='px-4 py-2 text-white transition-colors bg-red-600 rounded-lg hover:bg-red-700'
+            aria-label="Cerrar sesión"
+            className="px-4 py-2 text-white transition-colors bg-red-600 rounded-lg hover:bg-red-700"
           >
             Cerrar Sesión
           </button>
         </div>
 
         {/* Lista de usuarios pendientes */}
-        <div className='p-6 mb-8 bg-white rounded-lg shadow-sm dark:bg-gray-800'>
-          <h2 className='text-xl font-semibold text-gray-900 dark:text-white'>Usuarios Pendientes</h2>
+        <div className="p-6 mb-8 bg-white rounded-lg shadow-sm dark:bg-gray-800">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Usuarios Pendientes</h2>
           {pendingUsers.length === 0 ? (
             <p>No hay usuarios pendientes de aprobación.</p>
           ) : (
-            <ul className='mt-4 space-y-4'>
+            <ul className="mt-4 space-y-4">
               {pendingUsers.map((user) => (
-                <li key={user.id} className='flex justify-between p-4 bg-gray-100 rounded-md dark:bg-gray-700'>
+                <li key={user.id} className="flex justify-between p-4 bg-gray-100 rounded-md dark:bg-gray-700">
                   <span>
                     {user.fullName} ({user.email})
                   </span>
                   <button
                     onClick={() => approveUser(user.id)}
-                    className='px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700'
+                    className="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700"
                   >
                     Aprobar
                   </button>
@@ -238,81 +254,87 @@ export default function Admin() {
         </div>
 
         {/* Formulario para cargar nuevos reclamos */}
-        <div className='p-6 mb-8 bg-white rounded-lg shadow-sm dark:bg-gray-800'>
-          <h2 className='text-xl font-semibold text-gray-900 dark:text-white'>Cargar Nuevo Reclamo</h2>
+        <div className="p-6 mb-8 bg-white rounded-lg shadow-sm dark:bg-gray-800">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Cargar Nuevo Reclamo</h2>
           <form
             onSubmit={(e) => {
               e.preventDefault();
               addNewClaim();
             }}
-            className='space-y-4'
+            className="space-y-4"
           >
             <div>
-              <label htmlFor='phone' className='block mb-2 text-sm font-medium text-gray-900 dark:text-white'>
+              <label htmlFor="phone" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                 Teléfono
               </label>
               <input
-                type='text'
-                id='phone'
+                type="text"
+                id="phone"
                 value={newClaim.phone}
                 onChange={(e) => setNewClaim({ ...newClaim, phone: e.target.value })}
-                className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500'
+                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 required
               />
             </div>
             <div>
-              <label htmlFor='name' className='block mb-2 text-sm font-medium text-gray-900 dark:text-white'>
+              <label htmlFor="name" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                 Nombre
               </label>
               <input
-                type='text'
-                id='name'
+                type="text"
+                id="name"
                 value={newClaim.name}
                 onChange={(e) => setNewClaim({ ...newClaim, name: e.target.value })}
-                className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500'
+                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 required
               />
             </div>
             <div>
-              <label htmlFor='address' className='block mb-2 text-sm font-medium text-gray-900 dark:text-white'>
+              <label htmlFor="address" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                 Dirección
               </label>
               <input
-                type='text'
-                id='address'
+                type="text"
+                id="address"
                 value={newClaim.address}
                 onChange={(e) => setNewClaim({ ...newClaim, address: e.target.value })}
-                className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500'
+                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 required
               />
             </div>
             <div>
-              <label htmlFor='reason' className='block mb-2 text-sm font-medium text-gray-900 dark:text-white'>
+              <label htmlFor="reason" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                 Motivo
               </label>
               <textarea
-                id='reason'
+                id="reason"
                 value={newClaim.reason}
                 onChange={(e) => setNewClaim({ ...newClaim, reason: e.target.value })}
-                className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500'
+                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 required
               ></textarea>
             </div>
             <div>
-              <label htmlFor='technician' className='block mb-2 text-sm font-medium text-gray-900 dark:text-white'>
+              <label htmlFor="technician" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                 Técnico Asignado
               </label>
-              <input
-                type='text'
-                id='technician'
+              <select
+                id="technician"
                 value={newClaim.technician}
                 onChange={(e) => setNewClaim({ ...newClaim, technician: e.target.value })}
-                className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500'
-              />
+                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              >
+                <option value="">Seleccionar técnico</option>
+                {technicians.map((technician) => (
+                  <option key={technician} value={technician}>
+                    {technician}
+                  </option>
+                ))}
+              </select>
             </div>
             <button
-              type='submit'
-              className='text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800'
+              type="submit"
+              className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             >
               Guardar Reclamo
             </button>
@@ -320,17 +342,17 @@ export default function Admin() {
         </div>
 
         {/* Lista de reclamos */}
-        <div className='p-6 mb-8 bg-white rounded-lg shadow-sm dark:bg-gray-800'>
-          <h2 className='text-xl font-semibold text-gray-900 dark:text-white'>Reclamos</h2>
+        <div className="p-6 mb-8 bg-white rounded-lg shadow-sm dark:bg-gray-800">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Reclamos</h2>
           <button
             onClick={exportClaimsToExcel}
-            className='px-4 py-2 mb-4 text-white bg-blue-600 rounded-md hover:bg-blue-700'
+            className="px-4 py-2 mb-4 text-white bg-blue-600 rounded-md hover:bg-blue-700"
           >
             Exportar Reclamos a Excel
           </button>
-          <ul className='mt-4 space-y-4'>
-            {claims.map((claim) => (
-              <li key={claim.id} className='p-4 bg-gray-100 rounded-md dark:bg-gray-700'>
+          <ul className="mt-4 space-y-4">
+          {claims.map((claim) => (
+              <li key={claim.id} className="p-4 bg-gray-100 rounded-md dark:bg-gray-700">
                 <div>
                   <strong>Teléfono:</strong> {claim.phone}
                 </div>
@@ -349,6 +371,17 @@ export default function Admin() {
                 <div>
                   <strong>Estado:</strong> {claim.status === 'pending' ? 'Pendiente' : 'Asignado'}
                 </div>
+                {claim.status === 'assigned' && (
+                  <div>
+                    <strong>Resolución:</strong> {claim.resolution || 'No resuelto'}
+                  </div>
+                )}
+                <div>
+                  <strong>Recibido por:</strong> {claim.receivedBy || 'N/A'}
+                </div>
+                <div>
+                  <strong>Recibido en:</strong> {claim.receivedAt || 'N/A'}
+                </div>
               </li>
             ))}
           </ul>
@@ -356,4 +389,4 @@ export default function Admin() {
       </div>
     </main>
   );
-}       
+}
