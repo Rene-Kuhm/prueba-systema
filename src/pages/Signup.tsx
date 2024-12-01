@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AuthLayout } from '@/components/AuthLayout'
 import { auth, db } from '@/lib/firebase'
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
-import { doc, setDoc } from 'firebase/firestore'
+import { doc, setDoc, getDoc } from 'firebase/firestore'
 
 export default function Signup() {
   const navigate = useNavigate()
@@ -154,3 +154,54 @@ export default function Signup() {
     </AuthLayout>
   )
 }
+
+function ProtectedComponent() {
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkUserRole = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUserRole(userData.role);
+          
+          if (userData.role !== 'admin' && userData.role !== 'technician') {
+            navigate('/acceso-denegado');
+          }
+        } else {
+          navigate('/acceso-denegado');
+        }
+      } else {
+        navigate('/login');
+      }
+    };
+
+    checkUserRole();
+  }, [navigate]);
+
+  if (!userRole) {
+    return <div>Cargando...</div>;
+  }
+
+  return (
+    <div>
+      <h1>Bienvenido, {userRole}</h1>
+    </div>
+  );
+}
+
+function AccesoDenegado() {
+  return (
+    <div>
+      <h1>Acceso Denegado</h1>
+      <p>No tienes los permisos necesarios para acceder a esta página.</p>
+      <p>Si crees que esto es un error, por favor contacta al administrador.</p>
+      <Link to="/">Volver a la página principal</Link>
+    </div>
+  );
+}
+
+export { ProtectedComponent, AccesoDenegado }
