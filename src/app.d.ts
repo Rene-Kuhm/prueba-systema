@@ -1,5 +1,5 @@
-// Import required types from Supabase
-import type { SupabaseClient, Session } from '@supabase/supabase-js';
+// Import required types from Appwrite
+import type { Client, Account, Models } from 'appwrite';
 
 declare global {
   /**
@@ -10,15 +10,16 @@ declare global {
      * Locals interface: Defines properties available in `locals`.
      */
     interface Locals {
-      supabase: SupabaseClient; // Instance of SupabaseClient
-      getSession(): Promise<Session | null>; // Function to fetch the current session
+      appwrite: Client; // Instance of Appwrite Client
+      account: Account; // Instance of Appwrite Account
+      getSession(): Promise<Models.Session | null>; // Function to fetch the current session
     }
 
     /**
      * PageData interface: Defines the shape of data available on a page.
      */
     interface PageData {
-      session: Session | null; // The current session, if available
+      session: Models.Session | null; // The current session, if available
     }
 
     /**
