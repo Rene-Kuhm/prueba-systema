@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { auth, db } from '@/lib/firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, collection, query, where, getDocs, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, updateDoc, addDoc } from 'firebase/firestore';
 import * as XLSX from 'xlsx';
 import type { User } from '@/lib/types/firebase';
 
@@ -32,6 +32,14 @@ export default function Admin() {
   const [claims, setClaims] = useState<Claim[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [newClaim, setNewClaim] = useState<Omit<Claim, 'id'>>({
+    phone: '',
+    name: '',
+    address: '',
+    reason: '',
+    technician: '',
+    status: 'pending',
+  });
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -129,6 +137,25 @@ export default function Admin() {
     }
   }
 
+  async function addNewClaim() {
+    try {
+      const claimsRef = collection(db, 'claims');
+      await addDoc(claimsRef, { ...newClaim, status: 'pending' });
+      setNewClaim({
+        phone: '',
+        name: '',
+        address: '',
+        reason: '',
+        technician: '',
+        status: 'pending',
+      });
+      fetchClaims(); // Actualizar la lista de reclamos después de agregar uno nuevo
+    } catch (err) {
+      console.error('Error adding new claim:', err);
+      alert('Error al agregar un nuevo reclamo.');
+    }
+  }
+
   async function exportClaimsToExcel() {
     try {
       const data = claims.map((claim) => ({
@@ -210,6 +237,88 @@ export default function Admin() {
           )}
         </div>
 
+        {/* Formulario para cargar nuevos reclamos */}
+        <div className='p-6 mb-8 bg-white rounded-lg shadow-sm dark:bg-gray-800'>
+          <h2 className='text-xl font-semibold text-gray-900 dark:text-white'>Cargar Nuevo Reclamo</h2>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              addNewClaim();
+            }}
+            className='space-y-4'
+          >
+            <div>
+              <label htmlFor='phone' className='block mb-2 text-sm font-medium text-gray-900 dark:text-white'>
+                Teléfono
+              </label>
+              <input
+                type='text'
+                id='phone'
+                value={newClaim.phone}
+                onChange={(e) => setNewClaim({ ...newClaim, phone: e.target.value })}
+                className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500'
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor='name' className='block mb-2 text-sm font-medium text-gray-900 dark:text-white'>
+                Nombre
+              </label>
+              <input
+                type='text'
+                id='name'
+                value={newClaim.name}
+                onChange={(e) => setNewClaim({ ...newClaim, name: e.target.value })}
+                className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500'
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor='address' className='block mb-2 text-sm font-medium text-gray-900 dark:text-white'>
+                Dirección
+              </label>
+              <input
+                type='text'
+                id='address'
+                value={newClaim.address}
+                onChange={(e) => setNewClaim({ ...newClaim, address: e.target.value })}
+                className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500'
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor='reason' className='block mb-2 text-sm font-medium text-gray-900 dark:text-white'>
+                Motivo
+              </label>
+              <textarea
+                id='reason'
+                value={newClaim.reason}
+                onChange={(e) => setNewClaim({ ...newClaim, reason: e.target.value })}
+                className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500'
+                required
+              ></textarea>
+            </div>
+            <div>
+              <label htmlFor='technician' className='block mb-2 text-sm font-medium text-gray-900 dark:text-white'>
+                Técnico Asignado
+              </label>
+              <input
+                type='text'
+                id='technician'
+                value={newClaim.technician}
+                onChange={(e) => setNewClaim({ ...newClaim, technician: e.target.value })}
+                className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500'
+              />
+            </div>
+            <button
+              type='submit'
+              className='text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800'
+            >
+              Guardar Reclamo
+            </button>
+          </form>
+        </div>
+
         {/* Lista de reclamos */}
         <div className='p-6 mb-8 bg-white rounded-lg shadow-sm dark:bg-gray-800'>
           <h2 className='text-xl font-semibold text-gray-900 dark:text-white'>Reclamos</h2>
@@ -235,6 +344,9 @@ export default function Admin() {
                   <strong>Motivo:</strong> {claim.reason}
                 </div>
                 <div>
+                  <strong>Técnico Asignado:</strong> {claim.technician || 'No asignado'}
+                </div>
+                <div>
                   <strong>Estado:</strong> {claim.status === 'pending' ? 'Pendiente' : 'Asignado'}
                 </div>
               </li>
@@ -244,4 +356,4 @@ export default function Admin() {
       </div>
     </main>
   );
-}
+}       
