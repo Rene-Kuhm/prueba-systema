@@ -1,5 +1,6 @@
-// Import required types from Appwrite
-import type { Client, Account, Models } from 'appwrite';
+import { FirebaseApp } from 'firebase/app';
+import { Auth, User } from 'firebase/auth';
+import { Firestore } from 'firebase/firestore';
 
 declare global {
   /**
@@ -10,16 +11,17 @@ declare global {
      * Locals interface: Defines properties available in `locals`.
      */
     interface Locals {
-      appwrite: Client; // Instance of Appwrite Client
-      account: Account; // Instance of Appwrite Account
-      getSession(): Promise<Models.Session | null>; // Function to fetch the current session
+      firebase: FirebaseApp; // Instance of Firebase App
+      auth: Auth; // Instance of Firebase Auth
+      db: Firestore; // Instance of Firestore
+      getUser(): Promise<User | null>; // Function to fetch the current user
     }
 
     /**
      * PageData interface: Defines the shape of data available on a page.
      */
     interface PageData {
-      session: Models.Session | null; // The current session, if available
+      user: User | null; // The current user, if available
     }
 
     /**

@@ -36,7 +36,7 @@ export default function Technician() {
               Panel de Técnico
             </h1>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Bienvenido, {userProfile.name || 'Usuario'}
+              Bienvenido, {(userProfile as any).name || 'Usuario'}
             </p>
           </div>
           <button
