@@ -4,7 +4,7 @@ import { formatDate } from '@/utils/date';
 import { Models } from 'appwrite';
 
 const DATABASE_ID = '674c4eaa0026c50f8deb';
-const COLLECTION_ID = '674c4f000002d497ded6,674c4ee700025a4dd2bf,674c4edd0006eb3e3db2,674c4ed20011d704acad,674c4ec00007e405daa2';
+const COLLECTION_ID = '674c7786000a15e1fcb3,674c774b001c7ea2b044,674c77040028860b19f3,674c76310000f62ca7d6,674c752e002ef1ba9f56';
 
 interface AppwriteUser extends Models.Document {
   $id: string;
