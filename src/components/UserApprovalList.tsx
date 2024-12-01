@@ -3,6 +3,8 @@ import {  databases, Query } from '@/lib/appwrite';
 import { formatDate } from '@/utils/date';
 import { Models } from 'appwrite';
 
+const DATABASE_ID = '674c4eaa0026c50f8deb';
+const COLLECTION_ID = '674c4f000002d497ded6,674c4ee700025a4dd2bf,674c4edd0006eb3e3db2,674c4ed20011d704acad,674c4ec00007e405daa2';
 
 interface AppwriteUser extends Models.Document {
   $id: string;
@@ -35,13 +37,14 @@ export function UserApprovalList() {
     fetchPendingUsers();
   }, []);
 
+
   async function fetchPendingUsers() {
     setLoading(true);
     setError(null);
     try {
       const response = await databases.listDocuments<AppwriteUser>(
-        'YOUR_DATABASE_ID',
-        'YOUR_COLLECTION_ID',
+        DATABASE_ID,
+        COLLECTION_ID,
         [
           Query.equal('approved', false)
         ],
