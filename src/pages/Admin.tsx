@@ -16,6 +16,8 @@ import {
 } from 'firebase/firestore'
 import * as XLSX from 'xlsx'
 import type { User } from '@/lib/types/firebase'
+import { Dialog, Transition } from '@headlessui/react'
+import { Fragment } from 'react'
 
 interface PendingUser {
   id: string
@@ -56,7 +58,9 @@ export default function Admin() {
     receivedBy: userProfile?.displayName || '',
     receivedAt: new Date().toLocaleString(),
   })
-  const [editingClaim, setEditingClaim] = useState<Claim | null>(null)
+  const [showModal, setShowModal] = useState(false);
+  const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null);
+  const [_editingClaim, setEditingClaim] = useState<Claim | null>(null);
   const technicians = ['René', 'Roman', 'Oscar', 'Dalmiro']
 
   useEffect(() => {
@@ -180,7 +184,8 @@ export default function Admin() {
     }
   }
 
-  async function updateClaim(claim: Claim) {
+  // @ts-ignore: to be used in upcoming feature
+  async function _updateClaim(claim: Claim) {
     try {
       const claimRef = doc(db, 'claims', claim.id!)
       await updateDoc(claimRef, { ...claim })
@@ -472,33 +477,74 @@ export default function Admin() {
                       {claim.receivedAt || 'N/A'}
                     </td>
                     <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
-                      {editingClaim?.id === claim.id ? (
-                        <>
-                          <button
-                            onClick={() => updateClaim(editingClaim!)}
-                            className='px-2 py-1 mr-2 text-white bg-blue-600 rounded-md hover:bg-blue-700'
+                      <button
+                        onClick={() =>{ 
+                          if (claim.id){ 
+                          setShowModal(true); 
+                          setSelectedClaim(claim);
+                        }
+                        }}
+                        className='px-2 py-1 mr-2 text-white bg-blue-600 rounded-md hover:bg-blue-700'
+                      >
+                        Detalles
+                      </button>
+                      <button
+                        onClick={() => deleteClaim(claim.id!)}
+                        className='px-2 py-1 text-white bg-red-600 rounded-md hover:bg-red-700'
+                      >
+                        Eliminar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Ventana modal para los detalles del reclamo */}
+          <Transition.Root show={showModal} as={Fragment}>
+            <Dialog as='div' className='relative z-10' onClose={setShowModal}>
+              <Transition.Child
+                as={Fragment}
+                enter='ease-out duration-300'
+                enterFrom='opacity-0'
+                enterTo='opacity-100'
+                leave='ease-in duration-200'
+                leaveFrom='opacity-100'
+                leaveTo='opacity-0'
+              >
+                <div className='fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75' />
+              </Transition.Child>
+
+              <div className='fixed inset-0 z-10 overflow-y-auto'>
+                <div className='flex items-end justify-center min-h-full p-4 text-center sm:items-center sm:p-0'>
+                  <Transition.Child
+                    as={Fragment}
+                    enter='ease-out duration-300'
+                    enterFrom='opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95'
+                    enterTo='opacity-100 translate-y-0 sm:scale-100'
+                    leave='ease-in duration-200'
+                    leaveFrom='opacity-100 translate-y-0 sm:scale-100'
+                    leaveTo='opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95'
+                  >
+                    <Dialog.Panel className='relative px-4 pt-5 pb-4 overflow-hidden text-left transition-all transform bg-white rounded-lg shadow-xl dark:bg-gray-800 sm:my-8 sm:w-full sm:max-w-lg sm:p-6'>
+                      <div>
+                        <div className='mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left'>
+                          <Dialog.Title
+                            as='h3'
+                            className='text-lg font-medium leading-6 text-gray-900 dark:text-white'
                           >
-                            Guardar
-                          </button>
-                          <button
-                            onClick={() => setEditingClaim(null)}
-                            className='px-2 py-1 text-white bg-gray-600 rounded-md hover:bg-gray-700'
-                          >
-                            Cancelar
-                          </button>
-                          {/* Sección de detalles técnicos */}
-                          <div className='mt-4'>
-                            <h3 className='text-lg font-medium text-gray-900 dark:text-white'>
-                              Detalles Técnicos
-                            </h3>
-                            <div className='grid grid-cols-2 gap-4 mt-2'>
+                            Detalles del Reclamo
+                          </Dialog.Title>
+                          <div className='mt-2'>
+                            <div className='grid grid-cols-2 gap-4'>
                               <div>
                                 <label className='block text-sm font-medium text-gray-700 dark:text-gray-400'>
                                   Técnico Asignado
                                 </label>
                                 <input
                                   type='text'
-                                  value={claim.technician || ''}
+                                  value={selectedClaim?.technician || ''}
                                   readOnly
                                   className='block w-full mt-1 bg-gray-100 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm'
                                 />
@@ -508,36 +554,32 @@ export default function Admin() {
                                   Descripción de la Resolución
                                 </label>
                                 <textarea
-                                  value={claim.resolution || 'No resuelto'}
+                                  value={
+                                    selectedClaim?.resolution || 'No resuelto'
+                                  }
                                   readOnly
                                   className='block w-full mt-1 bg-gray-100 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm'
                                 ></textarea>
                               </div>
                             </div>
                           </div>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => setEditingClaim(claim)}
-                            className='px-2 py-1 mr-2 text-white bg-yellow-600 rounded-md hover:bg-yellow-700'
-                          >
-                            Editar
-                          </button>
-                          <button
-                            onClick={() => deleteClaim(claim.id!)}
-                            className='px-2 py-1 text-white bg-red-600 rounded-md hover:bg-red-700'
-                          >
-                            Eliminar
-                          </button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                        </div>
+                      </div>
+                      <div className='mt-5 sm:mt-4 sm:flex sm:flex-row-reverse'>
+                        <button
+                          type='button'
+                          className='inline-flex justify-center w-full px-4 py-2 text-base font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm'
+                          onClick={() => setShowModal(false)}
+                        >
+                          Cerrar
+                        </button>
+                      </div>
+                    </Dialog.Panel>
+                  </Transition.Child>
+                </div>
+              </div>
+            </Dialog>
+          </Transition.Root>
         </div>
       </div>
     </main>
