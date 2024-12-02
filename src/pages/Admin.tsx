@@ -480,6 +480,35 @@ export default function Admin() {
                           >
                             Cancelar
                           </button>
+                          {/* Sección de detalles del arreglo */}
+                          <div className='mt-4'>
+                            <h3 className='text-lg font-medium text-gray-900 dark:text-white'>
+                              Detalles del Arreglo
+                            </h3>
+                            <div className='grid grid-cols-2 gap-4 mt-2'>
+                              <div>
+                                <label className='block text-sm font-medium text-gray-700 dark:text-gray-400'>
+                                  Técnico Asignado
+                                </label>
+                                <input
+                                  type='text'
+                                  value={claim.technician || ''}
+                                  readOnly
+                                  className='block w-full mt-1 bg-gray-100 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm'
+                                />
+                              </div>
+                              <div>
+                                <label className='block text-sm font-medium text-gray-700 dark:text-gray-400'>
+                                  Descripción de la Resolución
+                                </label>
+                                <textarea
+                                  value={claim.resolution || 'No resuelto'}
+                                  readOnly
+                                  className='block w-full mt-1 bg-gray-100 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm'
+                                ></textarea>
+                              </div>
+                            </div>
+                          </div>
                         </>
                       ) : (
                         <>
