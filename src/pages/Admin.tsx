@@ -385,86 +385,124 @@ export default function Admin() {
 
         {/* Lista de reclamos */}
         <div className='p-6 mb-8 bg-white rounded-lg shadow-sm dark:bg-gray-800'>
-          <h2 className='text-xl font-semibold text-gray-900 dark:text-white'>
-            Reclamos
-          </h2>
-          <button
-            onClick={exportClaimsToExcel}
-            className='px-4 py-2 mb-4 text-white bg-blue-600 rounded-md hover:bg-blue-700'
-          >
-            Exportar Reclamos a Excel
-          </button>
-          <ul className='mt-4 space-y-4'>
-            {claims.map((claim) => (
-              <li
-                key={claim.id}
-                className='p-4 bg-gray-100 rounded-md dark:bg-gray-700'
-              >
-                <div>
-                  <strong>Teléfono:</strong> {claim.phone}
-                </div>
-                <div>
-                  <strong>Nombre:</strong> {claim.name}
-                </div>
-                <div>
-                  <strong>Dirección:</strong> {claim.address}
-                </div>
-                <div>
-                  <strong>Motivo:</strong> {claim.reason}
-                </div>
-                <div>
-                  <strong>Técnico:</strong> {claim.technician || 'No asignado'}
-                </div>
-                <div>
-                  <strong>Estado:</strong>{' '}
-                  {claim.status === 'pending' ? 'Pendiente' : 'Asignado'}
-                </div>
-                <div>
-                  <strong>Resolución:</strong>{' '}
-                  {claim.resolution || 'No resuelto'}
-                </div>
-                <div>
-                  <strong>Recibido por:</strong> {claim.receivedBy || 'N/A'}
-                </div>
-                <div>
-                  <strong>Recibido en:</strong> {claim.receivedAt || 'N/A'}
-                </div>
-                <div className='flex justify-end mt-4 space-x-2'>
-                  {editingClaim?.id === claim.id ? (
-                    <>
-                      <button
-                        onClick={() => updateClaim(editingClaim!)}
-                        className='px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700'
-                      >
-                        Guardar
-                      </button>
-                      <button
-                        onClick={() => setEditingClaim(null)}
-                        className='px-4 py-2 text-white bg-gray-600 rounded-md hover:bg-gray-700'
-                      >
-                        Cancelar
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => setEditingClaim(claim)}
-                        className='px-4 py-2 text-white bg-yellow-600 rounded-md hover:bg-yellow-700'
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => deleteClaim(claim.id!)}
-                        className='px-4 py-2 text-white bg-red-600 rounded-md hover:bg-red-700'
-                      >
-                        Eliminar
-                      </button>
-                    </>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
+          <div className='flex items-center justify-between mb-4'>
+            <h2 className='text-xl font-semibold text-gray-900 dark:text-white'>
+              Reclamos
+            </h2>
+            <button
+              onClick={exportClaimsToExcel}
+              className='px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700'
+            >
+              Exportar a Excel
+            </button>
+          </div>
+          <div className='overflow-x-auto'>
+            <table className='w-full table-auto'>
+              <thead>
+                <tr className='bg-gray-200 dark:bg-gray-700'>
+                  <th className='px-4 py-2 text-left text-gray-700 dark:text-gray-300'>
+                    Teléfono
+                  </th>
+                  <th className='px-4 py-2 text-left text-gray-700 dark:text-gray-300'>
+                    Nombre
+                  </th>
+                  <th className='px-4 py-2 text-left text-gray-700 dark:text-gray-300'>
+                    Dirección
+                  </th>
+                  <th className='px-4 py-2 text-left text-gray-700 dark:text-gray-300'>
+                    Motivo
+                  </th>
+                  <th className='px-4 py-2 text-left text-gray-700 dark:text-gray-300'>
+                    Técnico
+                  </th>
+                  <th className='px-4 py-2 text-left text-gray-700 dark:text-gray-300'>
+                    Estado
+                  </th>
+                  <th className='px-4 py-2 text-left text-gray-700 dark:text-gray-300'>
+                    Resolución
+                  </th>
+                  <th className='px-4 py-2 text-left text-gray-700 dark:text-gray-300'>
+                    Recibido por
+                  </th>
+                  <th className='px-4 py-2 text-left text-gray-700 dark:text-gray-300'>
+                    Recibido en
+                  </th>
+                  <th className='px-4 py-2 text-left text-gray-700 dark:text-gray-300'>
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {claims.map((claim) => (
+                  <tr
+                    key={claim.id}
+                    className='border-b border-gray-200 dark:border-gray-600'
+                  >
+                    <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
+                      {claim.phone}
+                    </td>
+                    <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
+                      {claim.name}
+                    </td>
+                    <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
+                      {claim.address}
+                    </td>
+                    <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
+                      {claim.reason}
+                    </td>
+                    <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
+                      {claim.technician || 'No asignado'}
+                    </td>
+                    <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
+                      {claim.status === 'pending' ? 'Pendiente' : 'Asignado'}
+                    </td>
+                    <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
+                      {claim.resolution || 'No resuelto'}
+                    </td>
+                    <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
+                      {claim.receivedBy || 'N/A'}
+                    </td>
+                    <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
+                      {claim.receivedAt || 'N/A'}
+                    </td>
+                    <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
+                      {editingClaim?.id === claim.id ? (
+                        <>
+                          <button
+                            onClick={() => updateClaim(editingClaim!)}
+                            className='px-2 py-1 mr-2 text-white bg-blue-600 rounded-md hover:bg-blue-700'
+                          >
+                            Guardar
+                          </button>
+                          <button
+                            onClick={() => setEditingClaim(null)}
+                            className='px-2 py-1 text-white bg-gray-600 rounded-md hover:bg-gray-700'
+                          >
+                            Cancelar
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => setEditingClaim(claim)}
+                            className='px-2 py-1 mr-2 text-white bg-yellow-600 rounded-md hover:bg-yellow-700'
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => deleteClaim(claim.id!)}
+                            className='px-2 py-1 text-white bg-red-600 rounded-md hover:bg-red-700'
+                          >
+                            Eliminar
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </main>
