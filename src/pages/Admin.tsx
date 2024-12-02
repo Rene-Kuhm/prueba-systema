@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { auth, db } from '@/lib/firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, collection, query, where, getDocs, updateDoc, addDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 import * as XLSX from 'xlsx';
 import type { User } from '@/lib/types/firebase';
 
@@ -46,6 +46,7 @@ export default function Admin() {
     receivedBy: userProfile?.displayName || '',
     receivedAt: new Date().toLocaleString(),
   });
+  const [editingClaim, setEditingClaim] = useState<Claim | null>(null);
   const technicians = ['René', 'Roman', 'Oscar', 'Dalmiro'];
 
   useEffect(() => {
@@ -162,10 +163,44 @@ export default function Admin() {
         receivedBy: userProfile?.displayName || '',
         receivedAt: new Date().toLocaleString(),
       });
-      fetchClaims(); // Actualizar la lista de reclamos después de agregar uno nuevo
+      fetchClaims();
     } catch (err) {
       console.error('Error adding new claim:', err);
       alert('Error al agregar un nuevo reclamo.');
+    }
+  }
+
+  async function updateClaim(claim: Claim) {
+    try {
+      const claimRef = doc(db, 'claims', claim.id!);
+      await updateDoc(claimRef, { ...claim });
+      fetchClaims();
+      setEditingClaim(null);
+    } catch (err) {
+      console.error('Error updating claim:', err);
+      alert('Error al actualizar el reclamo.');
+    }
+  }
+
+  async function deleteClaim(claimId: string) {
+    try {
+      const claimRef = doc(db, 'claims', claimId);
+      await deleteDoc(claimRef);
+      fetchClaims();
+    } catch (err) {
+      console.error('Error deleting claim:', err);
+      alert('Error al eliminar el reclamo.');
+    }
+  }
+
+  async function handleSignOut() {
+    try {
+      await signOut(auth);
+      setUserProfile(null);
+      navigate('/');
+    } catch (err) {
+      console.error('Error al cerrar sesión:', err);
+      alert('Error al cerrar sesión. Intenta de nuevo.');
     }
   }
 
@@ -194,41 +229,9 @@ export default function Admin() {
     }
   }
 
-  async function handleSignOut() {
-    try {
-      await signOut(auth);
-      setUserProfile(null);
-      navigate('/');
-    } catch (err) {
-      console.error('Error al cerrar sesión:', err);
-      alert('Error al cerrar sesión. Intenta de nuevo.');
-    }
-  }
-
-  if (loading) return <div>Cargando datos...</div>;
-  if (error) return <div>Error: {error}</div>;
-
   return (
     <main className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <div className="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Panel de Administración
-            </h1>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Bienvenido, {userProfile?.displayName || 'Administrador'}
-            </p>
-          </div>
-          <button
-            onClick={handleSignOut}
-            aria-label="Cerrar sesión"
-            className="px-4 py-2 text-white transition-colors bg-red-600 rounded-lg hover:bg-red-700"
-          >
-            Cerrar Sesión
-          </button>
-        </div>
-
         {/* Lista de usuarios pendientes */}
         <div className="p-6 mb-8 bg-white rounded-lg shadow-sm dark:bg-gray-800">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Usuarios Pendientes</h2>
@@ -263,78 +266,52 @@ export default function Admin() {
             }}
             className="space-y-4"
           >
-            <div>
-              <label htmlFor="phone" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                Teléfono
-              </label>
-              <input
-                type="text"
-                id="phone"
-                value={newClaim.phone}
-                onChange={(e) => setNewClaim({ ...newClaim, phone: e.target.value })}
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="name" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                Nombre
-              </label>
-              <input
-                type="text"
-                id="name"
-                value={newClaim.name}
-                onChange={(e) => setNewClaim({ ...newClaim, name: e.target.value })}
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="address" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                Dirección
-              </label>
-              <input
-                type="text"
-                id="address"
-                value={newClaim.address}
-                onChange={(e) => setNewClaim({ ...newClaim, address: e.target.value })}
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="reason" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                Motivo
-              </label>
-              <textarea
-                id="reason"
-                value={newClaim.reason}
-                onChange={(e) => setNewClaim({ ...newClaim, reason: e.target.value })}
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                required
-              ></textarea>
-            </div>
-            <div>
-              <label htmlFor="technician" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                Técnico Asignado
-              </label>
-              <select
-                id="technician"
-                value={newClaim.technician}
-                onChange={(e) => setNewClaim({ ...newClaim, technician: e.target.value })}
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-              >
-                <option value="">Seleccionar técnico</option>
-                {technicians.map((technician) => (
-                  <option key={technician} value={technician}>
-                    {technician}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <input
+              type="text"
+              placeholder="Teléfono"
+              value={newClaim.phone}
+              onChange={(e) => setNewClaim({ ...newClaim, phone: e.target.value })}
+              className="w-full p-2 border rounded"
+              required
+            />
+            <input
+              type="text"
+              placeholder="Nombre"
+              value={newClaim.name}
+              onChange={(e) => setNewClaim({ ...newClaim, name: e.target.value })}
+              className="w-full p-2 border rounded"
+              required
+            />
+            <input
+              type="text"
+              placeholder="Dirección"
+              value={newClaim.address}
+              onChange={(e) => setNewClaim({ ...newClaim, address: e.target.value })}
+              className="w-full p-2 border rounded"
+              required
+            />
+            <textarea
+              placeholder="Motivo del Reclamo"
+              value={newClaim.reason}
+              onChange={(e) => setNewClaim({ ...newClaim, reason: e.target.value })}
+              className="w-full p-2 border rounded"
+              required
+            ></textarea>
+            <select
+              value={newClaim.technician}
+              onChange={(e) => setNewClaim({ ...newClaim, technician: e.target.value })}
+              className="w-full p-2 border rounded"
+            >
+              <option value="">Seleccionar Técnico</option>
+              {technicians.map((technician) => (
+                <option key={technician} value={technician}>
+                  {technician}
+                </option>
+              ))}
+            </select>
             <button
               type="submit"
-              className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+              className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700"
             >
               Guardar Reclamo
             </button>
@@ -351,7 +328,7 @@ export default function Admin() {
             Exportar Reclamos a Excel
           </button>
           <ul className="mt-4 space-y-4">
-          {claims.map((claim) => (
+            {claims.map((claim) => (
               <li key={claim.id} className="p-4 bg-gray-100 rounded-md dark:bg-gray-700">
                 <div>
                   <strong>Teléfono:</strong> {claim.phone}
@@ -366,21 +343,52 @@ export default function Admin() {
                   <strong>Motivo:</strong> {claim.reason}
                 </div>
                 <div>
-                  <strong>Técnico Asignado:</strong> {claim.technician || 'No asignado'}
+                  <strong>Técnico:</strong> {claim.technician || 'No asignado'}
                 </div>
                 <div>
                   <strong>Estado:</strong> {claim.status === 'pending' ? 'Pendiente' : 'Asignado'}
                 </div>
-                {claim.status === 'assigned' && (
-                  <div>
-                    <strong>Resolución:</strong> {claim.resolution || 'No resuelto'}
-                  </div>
-                )}
+                <div>
+                  <strong>Resolución:</strong> {claim.resolution || 'No resuelto'}
+                </div>
                 <div>
                   <strong>Recibido por:</strong> {claim.receivedBy || 'N/A'}
                 </div>
                 <div>
                   <strong>Recibido en:</strong> {claim.receivedAt || 'N/A'}
+                </div>
+                <div className="flex justify-end mt-4 space-x-2">
+                  {editingClaim?.id === claim.id ? (
+                    <>
+                      <button
+                        onClick={() => updateClaim(editingClaim!)}
+                        className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                      >
+                        Guardar
+                      </button>
+                      <button
+                        onClick={() => setEditingClaim(null)}
+                        className="px-4 py-2 text-white bg-gray-600 rounded-md hover:bg-gray-700"
+                      >
+                        Cancelar
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => setEditingClaim(claim)}
+                        className="px-4 py-2 text-white bg-yellow-600 rounded-md hover:bg-yellow-700"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => deleteClaim(claim.id!)}
+                        className="px-4 py-2 text-white bg-red-600 rounded-md hover:bg-red-700"
+                      >
+                        Eliminar
+                      </button>
+                    </>
+                  )}
                 </div>
               </li>
             ))}
