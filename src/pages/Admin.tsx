@@ -453,8 +453,14 @@ export default function Admin() {
                     <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
                       {claim.technician || 'No asignado'}
                     </td>
-                    <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
-                      {claim.status === 'pending' ? 'Pendiente' : 'Asignado'}
+                    <td
+                      className={`px-4 py-2 ${
+                        claim.status === 'pending'
+                          ? 'text-yellow-600 dark:text-yellow-400'
+                          : 'text-green-600 dark:text-green-400'
+                      }`}
+                    >
+                      {claim.status === 'pending' ? 'Pendiente' : 'Completado'}
                     </td>
                     <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
                       {claim.resolution || 'No resuelto'}
@@ -480,10 +486,10 @@ export default function Admin() {
                           >
                             Cancelar
                           </button>
-                          {/* Sección de detalles del arreglo */}
+                          {/* Sección de detalles técnicos */}
                           <div className='mt-4'>
                             <h3 className='text-lg font-medium text-gray-900 dark:text-white'>
-                              Detalles del Arreglo
+                              Detalles Técnicos
                             </h3>
                             <div className='grid grid-cols-2 gap-4 mt-2'>
                               <div>
