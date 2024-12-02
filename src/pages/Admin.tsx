@@ -58,9 +58,9 @@ export default function Admin() {
     receivedBy: userProfile?.displayName || '',
     receivedAt: new Date().toLocaleString(),
   })
-  const [showModal, setShowModal] = useState(false);
-  const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null);
-  const [_editingClaim, setEditingClaim] = useState<Claim | null>(null);
+  const [showModal, setShowModal] = useState(false)
+  const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null)
+  const [_editingClaim, setEditingClaim] = useState<Claim | null>(null)
   const technicians = ['René', 'Roman', 'Oscar', 'Dalmiro']
 
   useEffect(() => {
@@ -389,52 +389,41 @@ export default function Admin() {
         </div>
 
         {/* Lista de reclamos */}
-        <div className='p-6 mb-8 bg-white rounded-lg shadow-sm dark:bg-gray-800'>
-          <div className='flex items-center justify-between mb-4'>
-            <h2 className='text-xl font-semibold text-gray-900 dark:text-white'>
+        <div className='p-4 mb-8 bg-white rounded-lg shadow-sm md:p-6 dark:bg-gray-800'>
+          <div className='flex flex-col mb-4 md:flex-row md:items-center md:justify-between'>
+            <h2 className='mb-2 text-xl font-semibold text-gray-900 dark:text-white md:mb-0'>
               Reclamos
             </h2>
             <button
               onClick={exportClaimsToExcel}
-              className='px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700'
+              className='w-full px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 md:w-auto'
             >
               Exportar a Excel
             </button>
           </div>
-          <div className='overflow-x-auto'>
+          <div className='-mx-4 overflow-x-auto md:mx-0'>
             <table className='w-full table-auto'>
-              <thead>
-                <tr className='bg-gray-200 dark:bg-gray-700'>
-                  <th className='px-4 py-2 text-left text-gray-700 dark:text-gray-300'>
-                    Teléfono
-                  </th>
-                  <th className='px-4 py-2 text-left text-gray-700 dark:text-gray-300'>
-                    Nombre
-                  </th>
-                  <th className='px-4 py-2 text-left text-gray-700 dark:text-gray-300'>
-                    Dirección
-                  </th>
-                  <th className='px-4 py-2 text-left text-gray-700 dark:text-gray-300'>
-                    Motivo
-                  </th>
-                  <th className='px-4 py-2 text-left text-gray-700 dark:text-gray-300'>
-                    Técnico
-                  </th>
-                  <th className='px-4 py-2 text-left text-gray-700 dark:text-gray-300'>
-                    Estado
-                  </th>
-                  <th className='px-4 py-2 text-left text-gray-700 dark:text-gray-300'>
-                    Resolución
-                  </th>
-                  <th className='px-4 py-2 text-left text-gray-700 dark:text-gray-300'>
-                    Recibido por
-                  </th>
-                  <th className='px-4 py-2 text-left text-gray-700 dark:text-gray-300'>
-                    Recibido en
-                  </th>
-                  <th className='px-4 py-2 text-left text-gray-700 dark:text-gray-300'>
-                    Acciones
-                  </th>
+              <thead className='bg-gray-200 dark:bg-gray-700'>
+                <tr>
+                  {[
+                    'Teléfono',
+                    'Nombre',
+                    'Dirección',
+                    'Motivo',
+                    'Técnico',
+                    'Estado',
+                    'Resolución',
+                    'Recibido por',
+                    'Recibido en',
+                    'Acciones',
+                  ].map((header) => (
+                    <th
+                      key={header}
+                      className='px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-300 md:text-base'
+                    >
+                      {header}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -443,57 +432,62 @@ export default function Admin() {
                     key={claim.id}
                     className='border-b border-gray-200 dark:border-gray-600'
                   >
-                    <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
-                      {claim.phone}
-                    </td>
-                    <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
-                      {claim.name}
-                    </td>
-                    <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
-                      {claim.address}
-                    </td>
-                    <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
-                      {claim.reason}
-                    </td>
-                    <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
-                      {claim.technician || 'No asignado'}
-                    </td>
-                    <td
-                      className={`px-4 py-2 ${
-                        claim.status === 'pending'
-                          ? 'text-yellow-600 dark:text-yellow-400'
-                          : 'text-green-600 dark:text-green-400'
-                      }`}
-                    >
-                      {claim.status === 'pending' ? 'Pendiente' : 'Completado'}
-                    </td>
-                    <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
-                      {claim.resolution || 'No resuelto'}
-                    </td>
-                    <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
-                      {claim.receivedBy || 'N/A'}
-                    </td>
-                    <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
-                      {claim.receivedAt || 'N/A'}
-                    </td>
-                    <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
-                      <button
-                        onClick={() =>{ 
-                          if (claim.id){ 
-                          setShowModal(true); 
-                          setSelectedClaim(claim);
-                        }
-                        }}
-                        className='px-2 py-1 mr-2 text-white bg-blue-600 rounded-md hover:bg-blue-700'
+                    {[
+                      'phone',
+                      'name',
+                      'address',
+                      'reason',
+                      'technician',
+                      'status',
+                      'resolution',
+                      'receivedBy',
+                      'receivedAt',
+                    ].map((field) => (
+                      <td
+                        key={field}
+                        className='px-4 py-2 text-sm text-gray-800 dark:text-gray-400 md:text-base'
                       >
-                        Detalles
-                      </button>
-                      <button
-                        onClick={() => deleteClaim(claim.id!)}
-                        className='px-2 py-1 text-white bg-red-600 rounded-md hover:bg-red-700'
-                      >
-                        Eliminar
-                      </button>
+                        {field === 'status' ? (
+                          <span
+                            className={`${
+                              claim.status === 'pending'
+                                ? 'text-yellow-600 dark:text-yellow-400'
+                                : 'text-green-600 dark:text-green-400'
+                            }`}
+                          >
+                            {claim.status === 'pending'
+                              ? 'Pendiente'
+                              : 'Completado'}
+                          </span>
+                        ) : field === 'technician' ? (
+                          claim[field] || 'No asignado'
+                        ) : field === 'resolution' ? (
+                          claim[field] || 'No resuelto'
+                        ) : (
+                          claim[field as keyof Claim] || 'N/A'
+                        )}
+                      </td>
+                    ))}
+                    <td className='px-4 py-2 text-gray-800 dark:text-gray-400'>
+                      <div className='flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2'>
+                        <button
+                          onClick={() => {
+                            if (claim.id) {
+                              setShowModal(true)
+                              setSelectedClaim(claim)
+                            }
+                          }}
+                          className='px-2 py-1 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 md:text-base'
+                        >
+                          Detalles
+                        </button>
+                        <button
+                          onClick={() => deleteClaim(claim.id!)}
+                          className='px-2 py-1 text-sm text-white bg-red-600 rounded-md hover:bg-red-700 md:text-base'
+                        >
+                          Eliminar
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -501,7 +495,7 @@ export default function Admin() {
             </table>
           </div>
 
-          {/* Ventana modal para los detalles del reclamo */}
+          {/* Modal para los detalles del reclamo */}
           <Transition.Root show={showModal} as={Fragment}>
             <Dialog as='div' className='relative z-10' onClose={setShowModal}>
               <Transition.Child
@@ -527,17 +521,17 @@ export default function Admin() {
                     leaveFrom='opacity-100 translate-y-0 sm:scale-100'
                     leaveTo='opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95'
                   >
-                    <Dialog.Panel className='relative px-4 pt-5 pb-4 overflow-hidden text-left transition-all transform bg-white rounded-lg shadow-xl dark:bg-gray-800 sm:my-8 sm:w-full sm:max-w-lg sm:p-6'>
+                    <Dialog.Panel className='relative w-full max-w-lg px-4 pt-5 pb-4 overflow-hidden text-left transition-all transform bg-white rounded-lg shadow-xl dark:bg-gray-800 sm:my-8 sm:w-full sm:max-w-lg sm:p-6'>
                       <div>
-                        <div className='mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left'>
+                        <div className='mt-3 text-center sm:mt-0 sm:text-left'>
                           <Dialog.Title
                             as='h3'
                             className='text-lg font-medium leading-6 text-gray-900 dark:text-white'
                           >
                             Detalles del Reclamo
                           </Dialog.Title>
-                          <div className='mt-2'>
-                            <div className='grid grid-cols-2 gap-4'>
+                          <div className='mt-4'>
+                            <div className='space-y-4'>
                               <div>
                                 <label className='block text-sm font-medium text-gray-700 dark:text-gray-400'>
                                   Técnico Asignado
@@ -559,16 +553,17 @@ export default function Admin() {
                                   }
                                   readOnly
                                   className='block w-full mt-1 bg-gray-100 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm'
+                                  rows={3}
                                 ></textarea>
                               </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                      <div className='mt-5 sm:mt-4 sm:flex sm:flex-row-reverse'>
+                      <div className='mt-5 sm:mt-6'>
                         <button
                           type='button'
-                          className='inline-flex justify-center w-full px-4 py-2 text-base font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm'
+                          className='inline-flex justify-center w-full px-4 py-2 text-base font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:text-sm'
                           onClick={() => setShowModal(false)}
                         >
                           Cerrar
