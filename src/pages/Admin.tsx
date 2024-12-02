@@ -364,9 +364,10 @@ export default function Admin() {
               required
             />
             <input
-              type='datetime-local'
+              type='text'
               placeholder='Recibido en'
               value={newClaim.receivedAt}
+              defaultValue={new Date().toLocaleString()}
               onChange={(e) =>
                 setNewClaim({ ...newClaim, receivedAt: e.target.value })
               }
