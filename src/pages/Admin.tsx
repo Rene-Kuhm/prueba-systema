@@ -229,9 +229,25 @@ export default function Admin() {
     }
   }
 
+  if (loading) return <div className="text-center">Cargando datos...</div>;
+
+  if (error) return <div className="text-center text-red-500">Error: {error}</div>;
+
   return (
     <main className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <div className="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Panel de Administración
+          </h1>
+          <button
+            onClick={handleSignOut}
+            className="px-4 py-2 text-white bg-red-600 rounded hover:bg-red-700"
+          >
+            Cerrar Sesión
+          </button>
+        </div>
+
         {/* Lista de usuarios pendientes */}
         <div className="p-6 mb-8 bg-white rounded-lg shadow-sm dark:bg-gray-800">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Usuarios Pendientes</h2>
