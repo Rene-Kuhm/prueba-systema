@@ -17,6 +17,7 @@ export const adminService = {
                 id: doc.id,
                 email: userData.email,
                 fullName: userData.fullName,
+                displayName: userData.displayName || userData.fullName,
                 role: userData.role,
                 createdAt: userData.createdAt,
             })
@@ -58,7 +59,7 @@ export const adminService = {
             Nombre: claim.name,
             Dirección: claim.address,
             Motivo: claim.reason,
-            Técnico: claim.technician || 'No asignado',
+            Técnico: claim.technicianId || 'No asignado',
             Estado: claim.status === 'pending' ? 'Pendiente' : 'Asignado',
             Resolución: claim.resolution || 'No resuelto',
             'Recibido por': claim.receivedBy || 'N/A',

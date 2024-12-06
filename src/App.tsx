@@ -6,7 +6,7 @@ import Signup from './pages/Signup';
 
 // Lazy load components for better performance
 const Admin = lazy(() => import('./pages/Admin'));
-const Technician = lazy(() => import('@/pages/Technician'));
+//const Technician = lazy(() => import('@/pages/Technician'));
 const TestSignup = lazy(() => import('@/pages/TestSignup'));
 
 /**
@@ -30,14 +30,14 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
+       {/* <Route
           path="/technician"
           element={
             <ProtectedRoute role="technician">
-              <Technician />
+            <Technician />
             </ProtectedRoute>
           }
-        />
+        />*/}
 
         {/* Fallback Route */}
         <Route
