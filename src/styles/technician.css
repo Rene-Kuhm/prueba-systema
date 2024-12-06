@@ -1,0 +1,61 @@
+/* styles para la página de técnico */
+
+.main-container {
+    @apply min-h-screen bg-gray-100 dark:bg-gray-900;
+}
+    
+.content-wrapper {
+    @apply px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8;
+}
+    
+.header-container {
+    @apply flex items-center justify-between mb-8;
+}
+    
+.header-title {
+    @apply text-3xl font-bold text-gray-900 dark:text-white;
+}
+    
+.header-subtitle {
+    @apply mt-1 text-sm text-gray-500 dark:text-gray-400;
+}
+    
+.signout-button {
+    @apply px-4 py-2 text-white transition-colors bg-red-600 rounded-lg hover:bg-red-700;
+}
+    
+.claims-container {
+    @apply p-6 bg-white rounded-lg shadow-sm dark:bg-gray-800;
+}
+
+.claims-title {
+    @apply text-xl font-semibold text-gray-900 dark:text-white;
+}
+    
+.claims-list {
+    @apply mt-4 space-y-4;
+}
+    
+.claim-item {
+    @apply p-4 bg-gray-100 rounded-md dark:bg-gray-700;
+}
+    
+.claim-field {
+    @apply mb-1;
+}
+    
+.claim-field-label {
+    @apply font-bold;
+}
+    
+.loading-state {
+    @apply p-4 text-gray-600 dark:text-gray-400;
+}
+    
+.error-state {
+    @apply p-4 text-red-500;
+}
+    
+.empty-state {
+    @apply p-4 text-gray-500 dark:text-gray-400;
+}

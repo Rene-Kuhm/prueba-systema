@@ -1,0 +1,74 @@
+/* AdminSearch.css */
+.admin-search-container {
+    @apply relative w-full max-w-2xl mx-auto;
+}
+
+.search-input-wrapper {
+    @apply relative flex items-center bg-slate-600 dark:bg-gray-800 
+           rounded-lg shadow-sm;
+}
+
+.search-icon {
+    @apply absolute left-4 w-5 h-5 text-blue-400;
+}
+
+.search-input {
+    @apply w-full pl-12 pr-10 py-3
+           bg-transparent
+           border border-gray-200 dark:border-gray-700 rounded-lg
+           text-gray-900 dark:text-white
+           placeholder-gray-500 dark:placeholder-gray-400
+           focus:outline-none focus:ring-2 focus:ring-blue-500/50
+           hover:border-gray-300 dark:hover:border-gray-600;
+}
+
+.clear-search {
+    @apply absolute right-3 p-1 rounded-full
+           text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
+           hover:bg-gray-100 dark:hover:bg-gray-700
+           transition-colors duration-200;
+}
+
+.search-results {
+    @apply absolute z-50 w-full mt-2
+           bg-slate-500 dark:bg-gray-800 rounded-lg
+           border border-gray-200 dark:border-gray-700
+           shadow-lg max-h-96 overflow-y-auto;
+}
+
+.search-result-item {
+    @apply w-full flex items-center px-4 py-3 gap-3
+           hover:bg-gray-50 dark:hover:bg-gray-700
+           text-left transition-colors duration-200;
+}
+
+.result-icon {
+    @apply text-gray-100 flex-shrink-0;
+}
+
+.result-content {
+    @apply flex flex-col flex-grow min-w-0;
+}
+
+.result-title {
+    @apply text-sm font-medium text-black  dark:text-white truncate;
+}
+
+.result-subtitle {
+    @apply text-xs text-black dark:text-gray-400 truncate mt-0.5;
+}
+
+.result-type {
+    @apply text-xs px-2 py-1 rounded-full
+           bg-gray-100 dark:bg-gray-700
+           text-gray-600 dark:text-gray-300
+           font-medium;
+}
+
+.search-no-results {
+    @apply absolute z-50 w-full mt-2 p-4
+           bg-white dark:bg-gray-800 rounded-lg
+           border border-gray-200 dark:border-gray-700
+           text-center text-gray-500 dark:text-gray-400
+           shadow-lg;
+}

@@ -1,0 +1,56 @@
+/* styles para la página de registro */
+
+.form-container {
+    @apply space-y-6;
+}
+    
+.form-label {
+    @apply block font-medium text-gray-300;
+}
+    
+.form-input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+}
+    
+.submit-button {
+    @apply inline-block w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-medium text-center transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98];
+}
+    
+.error-message {
+    @apply font-medium text-red-500;
+}
+    
+  /* Success Page Styles */
+.success-container {
+    @apply space-y-6 text-center;
+}
+    
+.success-title {
+    @apply text-2xl font-semibold text-blue-300;
+}
+    
+.success-message {
+    @apply text-blue-200;
+}
+    
+  /* Protected Component Styles */
+.protected-loading {
+    @apply text-center py-8;
+}
+    
+  /* Access Denied Styles */
+.access-denied-container {
+    @apply p-8 max-w-2xl mx-auto text-center space-y-4;
+}
+    
+.access-denied-title {
+    @apply text-2xl font-bold text-red-500;
+}
+    
+.access-denied-text {
+    @apply text-gray-600;
+}
+    
+.access-denied-link {
+    @apply text-blue-500 hover:text-blue-600 underline;
+}

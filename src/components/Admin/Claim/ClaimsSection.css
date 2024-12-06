@@ -1,0 +1,31 @@
+.claims-container {
+    @apply space-y-6;
+  }
+  
+  .claims-header {
+    @apply flex flex-col sm:flex-row justify-between items-center gap-4 mb-6;
+  }
+  
+  .claims-title {
+    @apply text-2xl font-bold text-gray-900;
+  }
+  
+  .tabs-container {
+    @apply w-full;
+  }
+  
+  .tabs-list {
+    @apply mb-4;
+  }
+  
+  .tab-trigger {
+    @apply flex items-center gap-2;
+  }
+  
+  .tab-icon {
+    @apply w-4 h-4;
+  }
+  
+  .tab-content {
+    @apply mt-4;
+  }

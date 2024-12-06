@@ -1,0 +1,170 @@
+.login-container {
+    @apply relative flex items-center justify-center min-h-screen overflow-hidden;
+    background: linear-gradient(
+      45deg,
+      #1a1a1a 0%,
+      #2a2a2a 50%,
+      #1a1a1a 100%
+    );
+  }
+  
+  .background-effects {
+    @apply absolute inset-0 z-0;
+    background: 
+      radial-gradient(circle at 20% 30%, rgba(76, 29, 149, 0.2) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.2) 0%, transparent 40%);
+  }
+  
+  .content-wrapper {
+    @apply container relative z-10 flex flex-col items-center px-4 mx-auto;
+  }
+  
+  .brand-container {
+    @apply mb-8 text-center;
+  }
+  
+  .brand-title {
+    @apply mb-2 text-6xl font-bold text-white;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+    animation: fadeInDown 0.8s ease-out;
+  }
+  
+  .brand-subtitle {
+    @apply text-xl tracking-widest text-blue-300;
+    animation: fadeInUp 0.8s ease-out 0.2s backwards;
+  }
+  
+  .login-card {
+    @apply w-full max-w-md p-8 shadow-2xl bg-white/10 backdrop-blur-xl rounded-2xl;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: fadeIn 0.8s ease-out 0.4s backwards;
+  }
+  
+  .form-header {
+    @apply mb-8 text-center;
+  }
+  
+  .form-title {
+    @apply mb-2 text-2xl font-semibold text-white;
+  }
+  
+  .form-subtitle {
+    @apply text-sm text-blue-200/80;
+  }
+  
+  .input-group {
+    @apply mb-8 space-y-6;
+  }
+  
+  .input-wrapper {
+    @apply relative;
+  }
+  
+  .input-label {
+    @apply block mb-2 text-sm font-medium text-white/80;
+  }
+  
+  .input-field {
+    @apply w-full h-12 px-4 text-white transition-all duration-200 border rounded-lg bg-white/5 border-white/10 placeholder-white/30 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20;
+    backdrop-filter: blur(4px);
+  }
+  
+  .input-field:hover {
+    @apply border-white/20;
+  }
+  
+  .input-field:focus {
+    @apply bg-white/10;
+  }
+  
+  .role-selector {
+    @apply mt-8;
+  }
+  
+  .role-buttons {
+    @apply grid grid-cols-2 gap-4;
+  }
+  
+  .role-button {
+    @apply px-4 py-3 text-sm font-medium transition-all duration-300 ease-in-out rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500;
+  }
+  
+  .role-button.active {
+    @apply text-white bg-blue-500 shadow-lg;
+    transform: translateY(-1px);
+  }
+  
+  .role-button:not(.active) {
+    @apply bg-white/5 text-white/80 hover:bg-white/10 hover:text-white;
+  }
+  
+  .submit-button {
+    @apply w-full h-12 font-medium text-white transition-all duration-200 transform rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  .submit-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+  
+  .signup-link {
+    @apply block mt-6 text-center transition-colors duration-200 text-white/60 hover:text-white;
+  }
+  
+  .error-message {
+    @apply p-4 mb-6 text-red-200 border rounded-lg bg-red-500/10 border-red-500/20;
+    animation: shake 0.6s cubic-bezier(.36,.07,.19,.97) both;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes fadeInDown {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes shake {
+    10%, 90% { transform: translateX(-1px); }
+    20%, 80% { transform: translateX(2px); }
+    30%, 50%, 70% { transform: translateX(-3px); }
+    40%, 60% { transform: translateX(3px); }
+  }
+  
+  @media (max-width: 640px) {
+    .brand-title {
+      @apply text-4xl;
+    }
+    
+    .brand-subtitle {
+      @apply text-lg;
+    }
+    
+    .login-card {
+      @apply p-6;
+    }
+  }

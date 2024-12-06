@@ -1,3 +1,5 @@
+// Tipos de datos para Firebase
+
 import { User as FirebaseUser } from 'firebase/auth';
 import { Timestamp } from 'firebase/firestore';
 
@@ -6,6 +8,17 @@ export interface User extends FirebaseUser {
     role: 'admin' | 'technician';
     approved: boolean;
     name: string;
+    avatar?: string;
+}
+
+export interface User {
+    uid: string;
+    email: string;
+    displayName: string | null;
+    role: 'admin' | 'technician';
+    approved: boolean;
+    createdAt: string;
+    avatar?: string;
 }
 
 // Definición de un documento de usuario en Firestore
@@ -17,6 +30,7 @@ export interface UserDocument {
     approved: boolean;
     createdAt: Timestamp;
     updatedAt: Timestamp;
+    avatar?: string;
 }
 
 // Tipo para la sesión de autenticación
@@ -26,6 +40,7 @@ export interface AuthSession {
     displayName: string | null;
     photoURL: string | null;
     emailVerified: boolean;
+    avatar?: string;
 }
 
 // Tipo para las preferencias del usuario (si las necesitas)

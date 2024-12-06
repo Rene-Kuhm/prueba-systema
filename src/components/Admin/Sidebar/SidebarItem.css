@@ -1,0 +1,19 @@
+.sidebar-item {
+    @apply flex items-center w-full justify-start;
+  }
+  
+  .sidebar-item-icon {
+    @apply mr-3 w-5 h-5;
+  }
+  
+  .sidebar-item-text {
+    @apply font-medium;
+  }
+  
+  .sidebar-item:hover {
+    @apply bg-gray-100;
+  }
+  
+  .sidebar-item[data-state="active"] {
+    @apply bg-blue-50 text-blue-600;
+  }
