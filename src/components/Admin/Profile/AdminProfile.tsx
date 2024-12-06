@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Key, LogOut, Upload } from 'lucide-react';
 import { collection, doc, getDoc } from 'firebase/firestore';
-import { uploadAvatar } from './uploadAvatar.';
+import  uploadAvatar  from '@/components/Admin/Profile/uploadAvatar.';
 import { db, auth } from '@/lib/firebase';
 import '@/components/Admin/Profile/AdminProfile.css';
 
