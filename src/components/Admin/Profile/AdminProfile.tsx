@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Key, LogOut, Upload } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { collection, doc, getDoc } from 'firebase/firestore';
-import  uploadAvatar  from '@/components/Admin/Profile/uploadAvatar.';
-import { db, auth } from '@/lib/firebase';
+import uploadAvatar from '@/components/Admin/Profile/uploadAvatar.';
+import { db, auth, storage } from '@/lib/firebase';
+import { getDownloadURL, ref } from 'firebase/storage';
 import '@/components/Admin/Profile/AdminProfile.css';
 
-interface AdminProfileProps {
+export interface AdminProfileProps {
     fullName: string;
     email: string;
     avatar: string;
@@ -23,7 +24,7 @@ interface UpdateProfileData {
 
 export const AdminProfile: React.FC<AdminProfileProps> = ({
     onLogout,
-    onUpdateProfile
+    onUpdateProfile,
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState<UpdateProfileData>({
@@ -47,14 +48,16 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({
                     const userDoc = await getDoc(userDocRef);
                     if (userDoc.exists()) {
                         const userData = userDoc.data();
+                        const avatarRef = ref(storage, userData.avatar);
+                        const avatarUrl = await getDownloadURL(avatarRef);
                         setFormData({
                             fullName: userData.fullName,
                             email: userData.email,
                             currentPassword: '',
                             newPassword: '',
-                            avatar: userData.avatar
+                            avatar: avatarUrl
                         });
-                        setAvatarPreview(userData.avatar);
+                        setAvatarPreview(avatarUrl);
                         setRole(userData.role);
                         setCreatedAt(userData.createdAt);
                     }
@@ -73,29 +76,29 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({
             if (!user) {
                 throw new Error("User not authenticated");
             }
-    
+
             let avatarUrl = formData.avatar as string;
-    
+
             if (formData.avatar instanceof File) {
                 avatarUrl = await uploadAvatar(formData.avatar) || avatarUrl;
             }
-    
+
             await onUpdateProfile({
                 ...formData,
                 avatar: avatarUrl
             });
-    
+
             setFormData(prevData => ({
                 ...prevData,
                 avatar: avatarUrl
             }));
             setAvatarPreview(avatarUrl);
             setIsEditing(false);
-    
-            alert('Perfil actualizado exitosamente');
+
+            alert('Profile updated successfully');
         } catch (error) {
-            console.error('Error detallado al actualizar el perfil:', error);
-            alert('Error al actualizar el perfil. Por favor, inténtalo de nuevo.');
+            console.error('Error updating profile:', error);
+            alert('Error updating profile. Please try again.');
         }
     };
 
@@ -155,14 +158,14 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({
                                     className="edit-profile-btn"
                                     onClick={() => setIsEditing(true)}
                                 >
-                                    Editar Perfil
+                                    Edit Profile
                                 </button>
                                 <button
                                     className="logout-btn"
                                     onClick={handleLogout}
                                 >
                                     <LogOut className="w-4 h-4" />
-                                    Cerrar Sesión
+                                    Logout
                                 </button>
                             </div>
                         </div>
@@ -170,8 +173,7 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({
                         <form onSubmit={handleSubmit} className="profile-form">
                             <div className="form-group">
                                 <label className="form-label">
-                                    <User className="w-4 h-4" />
-                                    Nombre Completo
+                                    Fullname
                                 </label>
                                 <input
                                     type="text"
@@ -186,7 +188,6 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({
 
                             <div className="form-group">
                                 <label className="form-label">
-                                    <Mail className="w-4 h-4" />
                                     Email
                                 </label>
                                 <input
@@ -202,7 +203,6 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({
 
                             <div className="form-group">
                                 <label className="form-label">
-                                    <Upload className="w-4 h-4" />
                                     Avatar
                                 </label>
                                 <input
@@ -222,8 +222,7 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({
 
                             <div className="form-group">
                                 <label className="form-label">
-                                    <Key className="w-4 h-4" />
-                                    Contraseña Actual
+                                    Current Password
                                 </label>
                                 <input
                                     type="password"
@@ -238,8 +237,7 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({
 
                             <div className="form-group">
                                 <label className="form-label">
-                                    <Key className="w-4 h-4" />
-                                    Nueva Contraseña
+                                    New Password
                                 </label>
                                 <input
                                     type="password"
@@ -258,13 +256,13 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({
                                     className="cancel-btn"
                                     onClick={() => setIsEditing(false)}
                                 >
-                                    Cancelar
+                                    Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     className="save-btn"
                                 >
-                                    Guardar Cambios
+                                    Save Changes
                                 </button>
                             </div>
                         </form>
