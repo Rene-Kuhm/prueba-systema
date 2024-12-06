@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LogOut } from 'lucide-react';
-import { collection, doc, getDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, updateDoc } from 'firebase/firestore';
 import uploadAvatar from '@/components/Admin/Profile/uploadAvatar.';
 import { db, auth, storage } from '@/lib/firebase';
 import { getDownloadURL, ref } from 'firebase/storage';
@@ -78,6 +78,13 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({
                 avatarUrl = await uploadAvatar(formData.avatar) || avatarUrl;
             }
 
+            // Update the user's profile in Firestore
+            const userDocRef = doc(collection(db, 'users'), user.uid);
+            await updateDoc(userDocRef, {
+                fullName: formData.fullName,
+                email: formData.email
+            });
+
             await onUpdateProfile({
                 ...formData,
                 avatar: avatarUrl
@@ -140,8 +147,24 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({
                                 className="profile-avatar-large"
                             />
                             <div className="profile-details">
-                                <h3 className="profile-name-large">{formData.fullName}</h3>
-                                <p className="profile-email">{formData.email}</p>
+                                <input
+                                    type="text"
+                                    value={formData.fullName}
+                                    onChange={(e) => setFormData({
+                                        ...formData,
+                                        fullName: e.target.value
+                                    })}
+                                    className="profile-name-large"
+                                />
+                                <input
+                                    type="email"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({
+                                        ...formData,
+                                        email: e.target.value
+                                    })}
+                                    className="profile-email"
+                                />
                             </div>
                         </div>
 
