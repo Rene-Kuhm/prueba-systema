@@ -57,31 +57,47 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         }
     }, [claim.technicianId]);
 
+    useEffect(() => {
+        console.log('selectedTechnicianId actualizado:', selectedTechnicianId);
+    }, [selectedTechnicianId]);
+
+    useEffect(() => {
+        console.log('Claim actualizado:', JSON.stringify(claim, null, 2));
+    }, [claim]);
+
     const handleTechnicianChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newTechnicianId = e.target.value;
+        console.log('Nuevo técnico seleccionado:', newTechnicianId);
         setSelectedTechnicianId(newTechnicianId);
-        onChange({ ...claim, technicianId: newTechnicianId });
+        const updatedClaim = { ...claim, technicianId: newTechnicianId };
+        console.log('Claim actualizado en handleTechnicianChange:', updatedClaim);
+        onChange(updatedClaim);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!claim.phone || !claim.name || !claim.address || !claim.reason || !selectedTechnicianId) {
+        console.log('Form submitted. Checking fields...');
+        if (!claim.phone || !claim.name || !claim.address || !claim.reason || !selectedTechnicianId || !claim.receivedBy) {
+            console.log('Missing required fields');
             setAlertMessage('Todos los campos son requeridos');
             return;
         }
         try {
-            // Set the current date and time
             const now = new Date().toLocaleString('es-AR');
             const updatedClaim = { ...claim, receivedAt: now, technicianId: selectedTechnicianId };
-            await onSubmit();
+            console.log('All fields present. Calling onSubmit with:', updatedClaim);
+            await onSubmit(); // Guarda el reclamo
+            console.log('onSubmit completed successfully');
 
             if (updatedClaim.id && updatedClaim.phone && updatedClaim.name) {
+                console.log('Calling sendClaimNotification...');
                 await sendClaimNotification(updatedClaim as Claim);
             } else {
+                console.error('Claim is missing required fields for notification');
                 setAlertMessage('Faltan campos requeridos en el reclamo para la notificación');
             }
         } catch (error) {
-            console.error('Error al guardar el reclamo o enviar la notificación:', error);
+            console.error('Error in handleSubmit:', error);
             setAlertMessage('Error al guardar el reclamo o enviar la notificación');
         }
     };
@@ -94,8 +110,12 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         }
 
         try {
+            console.log('Preparing to send notification for claim:', claim);
             const sendNotificationFunction = httpsCallable(functions, 'sendClaimNotification');
+            
+            console.log('Calling Cloud Function sendClaimNotification...');
             const result = await sendNotificationFunction({ claim });
+            
             console.log('Cloud Function response:', result.data);
             setAlertMessage('Notificación enviada con éxito');
         } catch (error) {
@@ -181,6 +201,30 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                         className="form-textarea"
                         required
                     />
+                </div>
+
+                <div className="claim-form-grid">
+                    <div className="input-container">
+                        <label className="form-label required-field">Recibido por</label>
+                        <input
+                            type="text"
+                            placeholder="Nombre del receptor"
+                            value={claim.receivedBy}
+                            onChange={(e) => onChange({ ...claim, receivedBy: e.target.value })}
+                            className="form-input"
+                            required
+                        />
+                    </div>
+
+                    <div className="input-container">
+                        <label className="form-label">Recibido en</label>
+                        <input
+                            type="text"
+                            value={claim.receivedAt || new Date().toLocaleString('es-AR')}
+                            className="form-input"
+                            readOnly
+                        />
+                    </div>
                 </div>
 
                 <div className="flex justify-end mt-6">
