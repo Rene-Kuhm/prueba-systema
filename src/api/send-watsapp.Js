@@ -7,7 +7,7 @@ export default async (Request, Responce) => {
     // Example usage of req to get the recipient's phone number from the request body
     const { to, message } = req.body; // Assuming you're sending a JSON body
 
-    const client = twilio(VITE_TWILIO_ACCOUNT_SID, VITE_TWILIO_AUTH_TOKEN);
+    const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 
     try {
         await client.messages.create({
