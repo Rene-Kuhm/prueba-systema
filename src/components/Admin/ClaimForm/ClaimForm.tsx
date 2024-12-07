@@ -6,7 +6,7 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 const formatClaimMessage = (claim: Partial<Claim>, technicianPhone: string): string => {
-  return `
+    return `
 Nuevo reclamo recibido:
 Teléfono: ${claim.phone || 'N/A'}
 Nombre: ${claim.name || 'N/A'}
@@ -85,14 +85,14 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         e.preventDefault();
         try {
             await onSubmit(); // Guarda el reclamo
-            
+
             // Obtén la información del técnico asignado
             const selectedTechnician = technicians.find(tech => tech.id === selectedTechnicianId);
             const technicianPhone = selectedTechnician ? selectedTechnician.phone : 'N/A';
-            
+
             // Formatea el mensaje de WhatsApp
             const message = formatClaimMessage(claim, technicianPhone);
-            
+
             // Envía el mensaje de WhatsApp al técnico
             await sendWhatsAppMessage(technicianPhone, message);
             console.log('Notificación de WhatsApp enviada al técnico con éxito');
