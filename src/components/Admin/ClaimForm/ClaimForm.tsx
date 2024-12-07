@@ -98,7 +98,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
             console.log('Notificación de WhatsApp enviada al técnico con éxito');
 
             // Envía el mensaje de WhatsApp al administrador (si está configurado)
-            const adminPhoneNumber = import.meta.env.VITE_ADMIN_WHATSAPP_NUMBER;
+            const adminPhoneNumber = import.meta.env.APP_ADMIN_WHATSAPP_NUMBER;
             if (adminPhoneNumber) {
                 await sendWhatsAppMessage(adminPhoneNumber, message);
                 console.log('Notificación de WhatsApp enviada al administrador con éxito');
