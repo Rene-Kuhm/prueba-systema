@@ -54,3 +54,10 @@ export interface ClaimsTableProps {
     onDelete: (claimId: string) => Promise<void>;
     onShowDetails: (claim: Claim) => void;
 }
+// src/lib/types/profile.ts
+export interface UpdateProfileData {
+    fullName?: string; // Optional properties
+    email?: string;
+    avatar?: File | string;
+    // Add any other relevant fields
+}
