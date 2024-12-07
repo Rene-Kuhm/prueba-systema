@@ -4,7 +4,7 @@ import { ClaimsTable } from '../ClainTable/ClaimTable'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus, List } from 'lucide-react'
-import type { Claim } from '@/lib/types/admin'
+import type { Claim, Technician } from '@/lib/types/admin'
 import '@/components/Admin/Claim/ClaimsSection.css'
 
 // Definimos un tipo para un nuevo reclamo, omitiendo el id
@@ -12,14 +12,16 @@ type NewClaim = Omit<Claim, 'id'>
 
 interface ClaimsSectionProps {
   claims: Claim[]
-  technicians: Array<{ id: string; name: string }>
-  newClaim: NewClaim // Cambiamos el tipo aquí
-  onSubmit: (claim: NewClaim) => void // Y aquí
-  onChange: (claim: NewClaim) => void // Y aquí
+  technicians: Technician[]
+  newClaim: NewClaim
+  onSubmit: (claim: NewClaim) => void
+  onChange: (claim: NewClaim) => void
   onDelete: (id: string) => Promise<void>
   onShowDetails: (claim: Claim) => void
   onExport: () => void
 }
+
+
 
 export const ClaimsSection: React.FC<ClaimsSectionProps> = ({
   claims,
@@ -31,9 +33,6 @@ export const ClaimsSection: React.FC<ClaimsSectionProps> = ({
   onShowDetails,
   onExport,
 }) => {
-  // Convertir technicians a array de strings (nombres)
-  const technicianNames = technicians.map((tech) => tech.name)
-
   return (
     <div className='claims-section'>
       <Card>
@@ -57,17 +56,19 @@ export const ClaimsSection: React.FC<ClaimsSectionProps> = ({
               <ClaimsTable
                 claims={claims}
                 onExport={onExport}
-                onDelete={onDelete}
+                onDelete={async (id) => {
+                  await onDelete(id);
+                }} // Marcamos la función como asíncrona
                 onShowDetails={onShowDetails}
               />
             </TabsContent>
 
             <TabsContent value='new'>
               <ClaimForm
-                claim={newClaim as NewClaim} // Aseguramos que es del tipo correcto
-                technicians={technicianNames} // Pasamos solo los nombres
-                onSubmit={() => onSubmit(newClaim)} // Ajustamos la función
-                onChange={(updatedClaim) => onChange(updatedClaim as NewClaim)} // Y aquí también
+                claim={newClaim as NewClaim}
+                technicians={technicians}
+                onSubmit={async () => onSubmit(newClaim)}
+                onChange={(updatedClaim) => onChange(updatedClaim as NewClaim)}
               />
             </TabsContent>
           </Tabs>

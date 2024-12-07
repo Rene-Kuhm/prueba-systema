@@ -42,7 +42,8 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                 const technicianSnapshot = await getDocs(technicianCollection);
                 const technicianList = technicianSnapshot.docs.map(doc => ({
                     id: doc.id,
-                    ...doc.data()
+                    name: doc.data().name,
+                    phone: doc.data().phone
                 } as Technician));
                 console.log("Lista de técnicos:", technicianList);
                 setTechnicians(technicianList);
