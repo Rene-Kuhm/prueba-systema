@@ -89,7 +89,7 @@ export function useAdmin() {
                     name: '',
                     address: '',
                     reason: '',
-                    technician: '',
+                    technicianId: '',
                     status: 'pending',
                     resolution: '',
                     receivedBy: userProfile?.displayName || '',

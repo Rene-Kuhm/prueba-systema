@@ -14,3 +14,9 @@ export interface TechnicianContextType {
     user: User | null;
     claims: Claim[];
 }
+
+export interface Technician {
+    id: string;
+    name: string;
+    phone: string; // Ensure this property is included if required
+}
