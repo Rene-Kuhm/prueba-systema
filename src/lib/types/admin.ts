@@ -13,15 +13,15 @@ export interface PendingUser {
 
 export interface Claim {
     id: string;
-    title: string;
-    customer: string;
-    date: string;
-    status: 'pending' | 'assigned';
+    title?: string;
+    customer?: string;
+    date?: string;
+    status: 'pending' | 'assigned' | 'resolved';
     resolution?: string;
-    receivedBy?: string;
-    receivedAt?: string;
+    receivedBy: string;
+    receivedAt: string;
     description?: string;
-    technicianId?: string;
+    technicianId: string;
     scheduledDate?: string;
     // Añadimos los campos que faltan
     phone: string;

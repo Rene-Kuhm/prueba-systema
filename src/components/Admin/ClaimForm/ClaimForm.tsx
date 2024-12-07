@@ -26,28 +26,6 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         };
 
         initializeFunctions();
-    }, []);
-
-    useEffect(() => {
-        const fetchTechnicians = async () => {
-            try {
-                const technicianCollection = collection(db, 'technicians');
-                const technicianSnapshot = await getDocs(technicianCollection);
-                const technicianList = technicianSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    name: doc.data().name,
-                    phone: doc.data().phone
-                } as Technician));
-                console.log("Lista de técnicos:", technicianList);
-                setTechnicians(technicianList);
-                setLoading(false);
-            } catch (err) {
-                console.error("Error fetching technicians:", err);
-                setError("No se pudieron cargar los técnicos. Por favor, intente de nuevo más tarde.");
-                setLoading(false);
-            }
-        };
-
         fetchTechnicians();
     }, []);
 
@@ -57,45 +35,59 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         }
     }, [claim.technicianId]);
 
-    useEffect(() => {
-        console.log('selectedTechnicianId actualizado:', selectedTechnicianId);
-    }, [selectedTechnicianId]);
-
-    useEffect(() => {
-        console.log('Claim actualizado:', JSON.stringify(claim, null, 2));
-    }, [claim]);
+    const fetchTechnicians = async () => {
+        try {
+            const technicianCollection = collection(db, 'technicians');
+            const technicianSnapshot = await getDocs(technicianCollection);
+            const technicianList = technicianSnapshot.docs.map(doc => ({
+                id: doc.id,
+                name: doc.data().name,
+                phone: doc.data().phone
+            } as Technician));
+            setTechnicians(technicianList);
+            setLoading(false);
+        } catch (err) {
+            console.error("Error fetching technicians:", err);
+            setError("No se pudieron cargar los técnicos. Por favor, intente de nuevo más tarde.");
+            setLoading(false);
+        }
+    };
 
     const handleTechnicianChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newTechnicianId = e.target.value;
-        console.log('Nuevo técnico seleccionado:', newTechnicianId);
         setSelectedTechnicianId(newTechnicianId);
-        const updatedClaim = { ...claim, technicianId: newTechnicianId };
-        console.log('Claim actualizado en handleTechnicianChange:', updatedClaim);
-        onChange(updatedClaim);
+        onChange({ ...claim, technicianId: newTechnicianId });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('Form submitted. Checking fields...');
         if (!claim.phone || !claim.name || !claim.address || !claim.reason || !selectedTechnicianId || !claim.receivedBy) {
-            console.log('Missing required fields');
             setAlertMessage('Todos los campos son requeridos');
             return;
         }
         try {
             const now = new Date().toLocaleString('es-AR');
-            const updatedClaim = { ...claim, receivedAt: now, technicianId: selectedTechnicianId };
-            console.log('All fields present. Calling onSubmit with:', updatedClaim);
-            await onSubmit(); // Guarda el reclamo
-            console.log('onSubmit completed successfully');
-
-            if (updatedClaim.id && updatedClaim.phone && updatedClaim.name) {
-                console.log('Calling sendClaimNotification...');
-                await sendClaimNotification(updatedClaim as Claim);
-            } else {
-                console.error('Claim is missing required fields for notification');
-                setAlertMessage('Faltan campos requeridos en el reclamo para la notificación');
-            }
+            const updatedClaim: Claim = {
+                ...claim,
+                receivedAt: now,
+                technicianId: selectedTechnicianId,
+                id: claim.id || `temp_${Date.now()}`,
+                status: claim.status || 'pending',
+                receivedBy: claim.receivedBy,
+                phone: claim.phone,
+                name: claim.name,
+                address: claim.address,
+                reason: claim.reason,
+                // Asegurarse de que todos los campos requeridos estén presentes
+                title: claim.title || '',
+                customer: claim.customer || '',
+                date: claim.date || now,
+                resolution: claim.resolution || ''
+            };
+            await onSubmit();
+            
+            await sendClaimNotification(updatedClaim);
+            setAlertMessage('Reclamo guardado y notificación enviada con éxito');
         } catch (error) {
             console.error('Error in handleSubmit:', error);
             setAlertMessage('Error al guardar el reclamo o enviar la notificación');
@@ -105,22 +97,16 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
     const sendClaimNotification = async (claim: Claim) => {
         if (!functions) {
             console.error('Firebase Functions not initialized');
-            setAlertMessage('Error: Firebase Functions not initialized');
-            return;
+            throw new Error('Firebase Functions not initialized');
         }
 
         try {
-            console.log('Preparing to send notification for claim:', claim);
             const sendNotificationFunction = httpsCallable(functions, 'sendClaimNotification');
-            
-            console.log('Calling Cloud Function sendClaimNotification...');
             const result = await sendNotificationFunction({ claim });
-            
-            console.log('Cloud Function response:', result.data);
-            setAlertMessage('Notificación enviada con éxito');
+            console.log('Notification sent:', result.data);
         } catch (error) {
             console.error('Error in sendClaimNotification:', error);
-            setAlertMessage(`Error al enviar la notificación: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            throw error;
         }
     };
 
@@ -149,7 +135,6 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                             required
                         />
                     </div>
-
                     <div className="input-container">
                         <label className="form-label required-field">Nombre</label>
                         <input
@@ -161,7 +146,6 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                             required
                         />
                     </div>
-
                     <div className="input-container">
                         <label className="form-label required-field">Dirección</label>
                         <input
@@ -173,7 +157,6 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                             required
                         />
                     </div>
-
                     <div className="input-container">
                         <label className="form-label required-field">Técnico Asignado</label>
                         <select
@@ -191,7 +174,6 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                         </select>
                     </div>
                 </div>
-
                 <div className="input-container">
                     <label className="form-label required-field">Motivo del Reclamo</label>
                     <textarea
@@ -202,7 +184,6 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                         required
                     />
                 </div>
-
                 <div className="claim-form-grid">
                     <div className="input-container">
                         <label className="form-label required-field">Recibido por</label>
@@ -215,7 +196,6 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                             required
                         />
                     </div>
-
                     <div className="input-container">
                         <label className="form-label">Recibido en</label>
                         <input
@@ -226,7 +206,6 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                         />
                     </div>
                 </div>
-
                 <div className="flex justify-end mt-6">
                     <button type="submit" className="submit-button">
                         Guardar Reclamo
