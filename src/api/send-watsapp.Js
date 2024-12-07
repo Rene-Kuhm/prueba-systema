@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import twilio from 'twilio'; // Ensure you import twilio
 
 export default async (Request, Responce) => {
-    const { VITE_TWILIO_ACCOUNT_SID, VITE_TWILIO_AUTH_TOKEN, VITE_TWILIO_PHONE_NUMBER } = process.env;
+    const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER } = process.env;
 
     // Example usage of req to get the recipient's phone number from the request body
     const { to, message } = req.body; // Assuming you're sending a JSON body
@@ -12,7 +12,7 @@ export default async (Request, Responce) => {
     try {
         await client.messages.create({
             body: message,
-            from: VITE_TWILIO_PHONE_NUMBER,
+            from: TWILIO_PHONE_NUMBER,
             to: `whatsapp:${to}`, // Use the phone number from the request
         });
 
