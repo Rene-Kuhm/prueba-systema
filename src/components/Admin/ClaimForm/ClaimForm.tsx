@@ -1,23 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { ClaimFormProps, Claim, Technician } from '@/lib/types/admin';
 import '@/components/Admin/ClaimForm/ClaimForm.css';
-import { sendWhatsAppMessage } from '@/services/watsappService';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-
-const formatClaimMessage = (claim: Partial<Claim>, technicianPhone: string): string => {
-    return `
-Nuevo reclamo recibido:
-Teléfono: ${claim.phone || 'N/A'}
-Nombre: ${claim.name || 'N/A'}
-Dirección: ${claim.address || 'N/A'}
-Técnico: ${claim.technicianId || 'N/A'}
-Teléfono Técnico: ${technicianPhone || 'N/A'}
-Motivo: ${claim.reason || 'N/A'}
-Recibido por: ${claim.receivedBy || 'N/A'}
-Fecha y Hora: ${claim.receivedAt || 'N/A'}
-  `;
-};
+import { getMessaging, onMessage } from "firebase/messaging";
 
 const formatDateForInput = (dateString: string) => {
     if (!dateString) return '';
@@ -86,27 +72,38 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         try {
             await onSubmit(); // Guarda el reclamo
 
-            // Obtén la información del técnico asignado
-            const selectedTechnician = technicians.find(tech => tech.id === selectedTechnicianId);
-            const technicianPhone = selectedTechnician ? selectedTechnician.phone : 'N/A';
-
-            // Formatea el mensaje de WhatsApp
-            const message = formatClaimMessage(claim, technicianPhone);
-
-            // Envía el mensaje de WhatsApp al técnico
-            await sendWhatsAppMessage(technicianPhone, message);
-            console.log('Notificación de WhatsApp enviada al técnico con éxito');
-
-            // Envía el mensaje de WhatsApp al administrador (si está configurado)
-            const adminPhoneNumber = import.meta.env.APP_ADMIN_WHATSAPP_NUMBER;
-            if (adminPhoneNumber) {
-                await sendWhatsAppMessage(adminPhoneNumber, message);
-                console.log('Notificación de WhatsApp enviada al administrador con éxito');
+            // Ensure all required fields are present before sending notification
+            if (claim.id && claim.phone && claim.name) {
+                await sendClaimNotification(claim as Claim);
             } else {
-                console.warn('Número de administrador no configurado para WhatsApp');
+                console.error('Claim is missing required fields');
             }
         } catch (error) {
             console.error('Error al guardar el reclamo o enviar la notificación:', error);
+        }
+    };
+
+    const sendClaimNotification = async (claim: Claim) => {
+        try {
+            const messagingInstance = getMessaging();
+            
+            // Set up a message listener
+            onMessage(messagingInstance, (payload) => {
+                console.log('Received new claim notification:', payload);
+                // Handle the incoming message (e.g., show a notification to the user)
+            });
+
+            // Here you would typically make an API call to your backend to send the notification
+            // The backend would use Firebase Admin SDK to send the actual notification
+            console.log('Sending notification for claim:', claim);
+
+            // Simulate sending a notification (replace this with actual API call)
+            setTimeout(() => {
+                console.log('Notification sent for claim:', claim.id);
+            }, 1000);
+
+        } catch (error) {
+            console.error('Error setting up claim notifications:', error);
         }
     };
 
