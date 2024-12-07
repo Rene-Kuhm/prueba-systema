@@ -7,7 +7,7 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 
 const formatDateForInput = (dateString: string) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
+    const date = new Date(dateString.replace(',', '').replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$2-$1'));
     if (isNaN(date.getTime())) {
         console.error('Fecha inválida:', dateString);
         return '';
@@ -20,6 +20,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedTechnicianId, setSelectedTechnicianId] = useState(claim.technicianId || '');
+    const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchTechnicians = async () => {
@@ -69,6 +70,10 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!claim.phone || !claim.name || !claim.address || !claim.reason || !selectedTechnicianId) {
+            setAlertMessage('Todos los campos son requeridos');
+            return;
+        }
         try {
             await onSubmit(); // Guarda el reclamo
 
@@ -77,22 +82,27 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                 await sendClaimNotification(claim as Claim);
             } else {
                 console.error('Claim is missing required fields');
+                setAlertMessage('Faltan campos requeridos en el reclamo');
             }
         } catch (error) {
             console.error('Error al guardar el reclamo o enviar la notificación:', error);
+            setAlertMessage('Error al guardar el reclamo o enviar la notificación');
         }
     };
 
     const sendClaimNotification = async (claim: Claim) => {
         try {
+            console.log('Intentando enviar notificación para el reclamo:', claim);
             const functions = getFunctions();
             const sendNotificationFunction = httpsCallable(functions, 'sendClaimNotification');
             
             const result = await sendNotificationFunction({ claim });
             
-            console.log('Notification sent:', result.data);
+            console.log('Respuesta de la función de notificación:', result.data);
+            setAlertMessage('Notificación enviada con éxito');
         } catch (error) {
-            console.error('Error sending claim notification:', error);
+            console.error('Error al enviar la notificación del reclamo:', error);
+            setAlertMessage('Error al enviar la notificación');
         }
     };
 
@@ -102,6 +112,12 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
     return (
         <div className="claim-form-container">
             <h2 className="claim-form-title">Cargar Nuevo Reclamo</h2>
+            {alertMessage && (
+                <div className="alert alert-info mb-4">
+                    {alertMessage}
+                    <button onClick={() => setAlertMessage(null)} className="ml-2">×</button>
+                </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="claim-form-grid">
                     <div className="input-container">
