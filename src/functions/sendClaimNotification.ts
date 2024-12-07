@@ -1,39 +1,60 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+import * as cors from 'cors';
 
 admin.initializeApp();
 
-export const sendClaimNotification = functions.https.onCall(async (data: any, _context) => {
-    const claim = data.claim;
-    
-    if (!claim || !claim.technicianId) {
-        throw new functions.https.HttpsError('invalid-argument', 'Invalid claim data');
-    }
+const corsHandler = cors({ origin: true });
 
-    // Get the technician's FCM token (you need to store this when the technician logs in)
-    const technicianDoc = await admin.firestore().collection('technicians').doc(claim.technicianId).get();
-    const technicianFcmToken = technicianDoc.data()?.fcmToken;
+export const sendClaimNotification = functions.https.onRequest((req, res) => {
+    corsHandler(req, res, async () => {
+        // Manejo específico para la solicitud de preflight OPTIONS
+        if (req.method === 'OPTIONS') {
+            res.set('Access-Control-Allow-Origin', '*');
+            res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+            res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+            res.set('Access-Control-Max-Age', '3600');
+            return res.status(204).send('');
+        }
 
-    if (!technicianFcmToken) {
-        throw new functions.https.HttpsError('failed-precondition', 'Technician FCM token not found');
-    }
+        // Para solicitudes que no son OPTIONS
+        res.set('Access-Control-Allow-Origin', '*');
 
-    // Prepare the notification message
-    const message = {
-        notification: {
-            title: 'New Claim Assigned',
-            body: `A new claim has been assigned to you: ${claim.reason}`
-        },
-        token: technicianFcmToken
-    };
+        if (req.method !== 'POST') {
+            return res.status(405).json({ error: 'Method Not Allowed' });
+        }
 
-    // Send the notification
-    try {
-        const response = await admin.messaging().send(message);
-        console.log('Successfully sent message:', response);
-        return { success: true, message: 'Notification sent successfully' };
-    } catch (error) {
-        console.log('Error sending message:', error);
-        throw new functions.https.HttpsError('internal', 'Error sending notification');
-    }
+        try {
+            const claim = req.body.claim;
+
+            if (!claim || !claim.technicianId) {
+                return res.status(400).json({ error: 'Invalid claim data' });
+            }
+
+            // Obtener el token FCM del técnico
+            const technicianDoc = await admin.firestore().collection('technicians').doc(claim.technicianId).get();
+            const technicianFcmToken = technicianDoc.data()?.fcmToken;
+
+            if (!technicianFcmToken) {
+                return res.status(400).json({ error: 'Technician FCM token not found' });
+            }
+
+            // Preparar el mensaje de notificación
+            const message = {
+                notification: {
+                    title: 'New Claim Assigned',
+                    body: `A new claim has been assigned to you: ${claim.reason}`
+                },
+                token: technicianFcmToken
+            };
+
+            // Enviar la notificación
+            const response = await admin.messaging().send(message);
+            console.log('Successfully sent message:', response);
+            return res.status(200).json({ success: true, message: 'Notification sent successfully' });
+        } catch (error) {
+            console.error('Error sending message:', error);
+            return res.status(500).json({ error: 'Error sending notification' });
+        }
+    });
 });
