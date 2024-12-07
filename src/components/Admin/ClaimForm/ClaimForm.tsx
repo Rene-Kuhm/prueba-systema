@@ -3,17 +3,7 @@ import { ClaimFormProps, Claim, Technician } from '@/lib/types/admin';
 import '@/components/Admin/ClaimForm/ClaimForm.css';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-
-const formatDateForInput = (dateString: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString.replace(',', '').replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$2-$1'));
-    if (isNaN(date.getTime())) {
-        console.error('Fecha inválida:', dateString);
-        return '';
-    }
-    return date.toISOString().slice(0, 16);
-};
+import { getFunctions, httpsCallable, Functions } from 'firebase/functions';
 
 const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
     const [technicians, setTechnicians] = useState<Technician[]>([]);
@@ -21,6 +11,22 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
     const [error, setError] = useState<string | null>(null);
     const [selectedTechnicianId, setSelectedTechnicianId] = useState(claim.technicianId || '');
     const [alertMessage, setAlertMessage] = useState<string | null>(null);
+    const [functions, setFunctions] = useState<Functions | null>(null);
+
+    useEffect(() => {
+        const initializeFunctions = async () => {
+            try {
+                const functionsInstance = getFunctions();
+                setFunctions(functionsInstance);
+                console.log('Firebase Functions initialized');
+            } catch (error) {
+                console.error('Error initializing Firebase Functions:', error);
+                setError('Error initializing Firebase Functions. Please try again later.');
+            }
+        };
+
+        initializeFunctions();
+    }, []);
 
     useEffect(() => {
         const fetchTechnicians = async () => {
@@ -70,39 +76,50 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        console.log('Form submitted. Checking fields...');
         if (!claim.phone || !claim.name || !claim.address || !claim.reason || !selectedTechnicianId) {
+            console.log('Missing required fields');
             setAlertMessage('Todos los campos son requeridos');
             return;
         }
         try {
+            console.log('All fields present. Calling onSubmit...');
             await onSubmit(); // Guarda el reclamo
+            console.log('onSubmit completed successfully');
 
             // Ensure all required fields are present before sending notification
             if (claim.id && claim.phone && claim.name) {
+                console.log('Calling sendClaimNotification...');
                 await sendClaimNotification(claim as Claim);
             } else {
-                console.error('Claim is missing required fields');
-                setAlertMessage('Faltan campos requeridos en el reclamo');
+                console.error('Claim is missing required fields for notification');
+                setAlertMessage('Faltan campos requeridos en el reclamo para la notificación');
             }
         } catch (error) {
-            console.error('Error al guardar el reclamo o enviar la notificación:', error);
+            console.error('Error in handleSubmit:', error);
             setAlertMessage('Error al guardar el reclamo o enviar la notificación');
         }
     };
 
     const sendClaimNotification = async (claim: Claim) => {
+        if (!functions) {
+            console.error('Firebase Functions not initialized');
+            setAlertMessage('Error: Firebase Functions not initialized');
+            return;
+        }
+
         try {
-            console.log('Intentando enviar notificación para el reclamo:', claim);
-            const functions = getFunctions();
+            console.log('Preparing to send notification for claim:', claim);
             const sendNotificationFunction = httpsCallable(functions, 'sendClaimNotification');
             
+            console.log('Calling Cloud Function sendClaimNotification...');
             const result = await sendNotificationFunction({ claim });
             
-            console.log('Respuesta de la función de notificación:', result.data);
+            console.log('Cloud Function response:', result.data);
             setAlertMessage('Notificación enviada con éxito');
         } catch (error) {
-            console.error('Error al enviar la notificación del reclamo:', error);
-            setAlertMessage('Error al enviar la notificación');
+            console.error('Error in sendClaimNotification:', error);
+            setAlertMessage(`Error al enviar la notificación: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     };
 
@@ -202,7 +219,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                         <label className="form-label required-field">Recibido en</label>
                         <input
                             type="datetime-local"
-                            value={formatDateForInput(claim.receivedAt ?? '')}
+                            value={claim.receivedAt ? new Date(claim.receivedAt.replace(',', '')).toISOString().slice(0, 16) : ''}
                             onChange={(e) => {
                                 const newDate = e.target.value ? new Date(e.target.value).toLocaleString('es-AR') : '';
                                 onChange({ ...claim, receivedAt: newDate });
