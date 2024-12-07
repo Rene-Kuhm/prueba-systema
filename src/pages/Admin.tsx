@@ -34,8 +34,6 @@ export default function Admin() {
     setSelectedClaim,
   } = useAdmin()
 
-
-
   const [activeSection, setActiveSection] = useState('dashboard');
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
@@ -51,6 +49,10 @@ export default function Admin() {
     setNotifications(prev =>
       prev.map(notif => ({ ...notif, read: true }))
     );
+  };
+
+  const handleNewClaimChange = (claim: Partial<Claim>) => {
+    setNewClaim(claim as Omit<Claim, "id">);
   };
 
   if (loading) {
@@ -93,9 +95,9 @@ export default function Admin() {
           <div className='claims-section'>
             <ClaimForm
               claim={newClaim}
-              technicians={technicians}
+              technicians={technicians.map(tech => ({ id: tech, name: tech, phone: 'N/A' }))}
               onSubmit={addNewClaim}
-              onChange={setNewClaim}
+              onChange={handleNewClaimChange}
             />
             <ClaimsTable
               claims={claims}
@@ -125,13 +127,13 @@ export default function Admin() {
       claims={claims}
       technicians={technicians.map(tech => ({
         id: tech,
-        name: tech
+        name: tech,
+        phone: 'N/A'
       }))}
       onSelectClaim={(claim) => {
         setSelectedClaim(claim);
         setShowModal(true);
       }}
-
       notifications={notifications}
       onMarkAsRead={handleMarkAsRead}
       onClearAllNotifications={handleClearAllNotifications}

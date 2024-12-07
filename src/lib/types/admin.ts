@@ -33,6 +33,7 @@ export interface Claim {
 export interface Technician {
     id: string;
     name: string;
+    phone: string;
 }
 
 export interface AdminState {
@@ -46,10 +47,10 @@ export interface AdminState {
 }
 
 export interface ClaimFormProps {
-    claim: Omit<Claim, 'id'>;
-    technicians: string[];
-    onSubmit: () => void;
-    onChange: (claim: Omit<Claim, 'id'>) => void;
+    claim: Partial<Claim>;
+    technicians: Technician[];
+    onSubmit: () => Promise<void>;
+    onChange: (claim: Partial<Claim>) => void;
 }
 
 export interface ClaimsTableProps {
@@ -69,12 +70,7 @@ export interface AdminState {
     newClaim: Omit<Claim, 'id'>;
 }
 
-export interface ClaimFormProps {
-    claim: Omit<Claim, 'id'>;
-    technicians: string[];
-    onSubmit: () => void;
-    onChange: (claim: Omit<Claim, 'id'>) => void;
-}
+
 
 
 // src/lib/types/user.ts

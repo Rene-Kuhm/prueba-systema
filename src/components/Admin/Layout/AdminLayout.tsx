@@ -4,14 +4,15 @@ import {
     LayoutDashboard,
     Users,
     FileText,
-    Settings,
-    LogOut,
+    Settings as SettingsIcon,
 } from 'lucide-react';
 import { AdminSearch } from '@/components/Admin/Search/Search';
 import type { PendingUser, Claim, UpdateProfileData } from '@/lib/types/admin';
 import { Notifications } from '@/components/Admin/Notifications/Notifications';
 import { Notification } from '@/lib/types/notifications';
 import AdminProfile from '@/components/Admin/Profile/AdminProfile';
+import LogOut from '@/components/Admin/Logout/Logout';
+import Settings from '@/components/Admin/Settings/Settings';
 import '@/components/Admin/Layout/AdminLayout.css';
 
 interface AdminLayoutProps {
@@ -92,63 +93,72 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                         <FileText className="nav-icon" />
                         <span>Claims</span>
                     </button>
+
+                    <button
+                        className={`nav-item ${activeSection === 'settings' ? 'active' : ''}`}
+                        onClick={() => setActiveSection('settings')}
+                    >
+                        <SettingsIcon className="nav-icon" />
+                        <span>Settings</span>
+                    </button>
                 </nav>
 
                 <div className="sidebar-footer">
-                    <button className="nav-item">
-                        <Settings className="nav-icon" />
-                        <span>Settings</span>
-                    </button>
                     <button className="text-red-400 nav-item hover:text-red-300">
-                        <LogOut className="nav-icon" />
-                        <span>Logout</span>
+                        <LogOut />
                     </button>
                 </div>
             </aside>
 
             <div className="admin-main">
-                <header className="main-header">
-                    <div className="header-search">
-                        <AdminSearch
-                            pendingUsers={pendingUsers}
-                            claims={claims}
-                            technicians={technicians}
-                            onResultClick={(result) => {
-                                if (result.type === 'claim' && onSelectClaim) {
-                                    onSelectClaim(result.data as Claim);
-                                }
-                                setActiveSection(result.section);
-                            }}
-                            setActiveSection={setActiveSection}
-                        />
-                    </div>
-                    <div className="header-actions">
-                        <Notifications
-                            notifications={notifications}
-                            onMarkAsRead={onMarkAsRead}
-                            onClearAll={onClearAllNotifications}
-                            onNotificationClick={(notification) => {
-                                if (notification.type === 'registration') {
-                                    setActiveSection('users');
-                                } else if (notification.type.includes('claim')) {
-                                    setActiveSection('claims');
-                                }
-                            }}
-                        />
-                        <div className="user-profile">
-                            <AdminProfile
-                                fullName="John Doe"
-                                email="john@example.com"
-                                avatar="/path/to/avatar.jpg"
-                                onLogout={handleSignOut}
-                                onUpdateProfile={handleUpdateProfile}
-                            />
-                            <span className="profile" />
-                        </div>
-                    </div>
-                </header>
+                {activeSection === 'settings' ? (
+                    <Settings />
+                ) : (
+                    <>
+                        <header className="main-header">
+                            <div className="header-search">
+                                <AdminSearch
+                                    pendingUsers={pendingUsers}
+                                    claims={claims}
+                                    technicians={technicians}
+                                    onResultClick={(result) => {
+                                        if (result.type === 'claim' && onSelectClaim) {
+                                            onSelectClaim(result.data as Claim);
+                                        }
+                                        setActiveSection(result.section);
+                                    }}
+                                    setActiveSection={setActiveSection}
+                                />
+                            </div>
+                            <div className="header-actions">
+                                <Notifications
+                                    notifications={notifications}
+                                    onMarkAsRead={onMarkAsRead}
+                                    onClearAll={onClearAllNotifications}
+                                    onNotificationClick={(notification) => {
+                                        if (notification.type === 'registration') {
+                                            setActiveSection('users');
+                                        } else if (notification.type.includes('claim')) {
+                                            setActiveSection('claims');
+                                        }
+                                    }}
+                                />
+                                <div className="user-profile">
+                                    <AdminProfile
+                                        fullName="John Doe"
+                                        email="john@example.com"
+                                        avatar="/path/to/avatar.jpg"
+                                        onLogout={handleSignOut}
+                                        onUpdateProfile={handleUpdateProfile}
+                                    />
+                                    <span className="profile" />
+                                </div>
+                            </div>
+                        </header>
 
-                <main className="main-content">{children}</main>
+                        <main className="main-content">{children}</main>
+                    </>
+                )}
             </div>
         </div>
     );
