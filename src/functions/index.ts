@@ -1,1 +1,0 @@
-export { sendClaimNotification } from './sendClaimNotification';

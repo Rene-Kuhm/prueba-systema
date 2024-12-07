@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ClaimFormProps, Claim, Technician } from '@/lib/types/admin';
 import '@/components/Admin/ClaimForm/ClaimForm.css';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { getFunctions, httpsCallable, Functions } from 'firebase/functions';
 
 const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
     const [technicians, setTechnicians] = useState<Technician[]>([]);
@@ -11,21 +10,8 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
     const [error, setError] = useState<string | null>(null);
     const [selectedTechnicianId, setSelectedTechnicianId] = useState(claim.technicianId || '');
     const [alertMessage, setAlertMessage] = useState<string | null>(null);
-    const [functions, setFunctions] = useState<Functions | null>(null);
 
     useEffect(() => {
-        const initializeFunctions = async () => {
-            try {
-                const functionsInstance = getFunctions();
-                setFunctions(functionsInstance);
-                console.log('Firebase Functions initialized');
-            } catch (error) {
-                console.error('Error initializing Firebase Functions:', error);
-                setError('Error initializing Firebase Functions. Please try again later.');
-            }
-        };
-
-        initializeFunctions();
         fetchTechnicians();
     }, []);
 
@@ -59,6 +45,21 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         onChange({ ...claim, technicianId: newTechnicianId });
     };
 
+    const createClaim = async (claimData: Claim) => {
+        try {
+            const docRef = await addDoc(collection(db, "claims"), {
+                ...claimData,
+                createdAt: new Date(),
+                notificationSent: false
+            });
+            console.log("Claim created with ID: ", docRef.id);
+            return docRef.id;
+        } catch (e) {
+            console.error("Error adding claim: ", e);
+            throw e;
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!claim.phone || !claim.name || !claim.address || !claim.reason || !selectedTechnicianId || !claim.receivedBy) {
@@ -78,35 +79,20 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                 name: claim.name,
                 address: claim.address,
                 reason: claim.reason,
-                // Asegurarse de que todos los campos requeridos estén presentes
                 title: claim.title || '',
                 customer: claim.customer || '',
                 date: claim.date || now,
                 resolution: claim.resolution || ''
             };
-            await onSubmit();
             
-            await sendClaimNotification(updatedClaim);
-            setAlertMessage('Reclamo guardado y notificación enviada con éxito');
+            const claimId = await createClaim(updatedClaim);
+            updatedClaim.id = claimId;
+            
+            await onSubmit();
+            setAlertMessage('Reclamo guardado con éxito');
         } catch (error) {
             console.error('Error in handleSubmit:', error);
-            setAlertMessage('Error al guardar el reclamo o enviar la notificación');
-        }
-    };
-
-    const sendClaimNotification = async (claim: Claim) => {
-        if (!functions) {
-            console.error('Firebase Functions not initialized');
-            throw new Error('Firebase Functions not initialized');
-        }
-
-        try {
-            const sendNotificationFunction = httpsCallable(functions, 'sendClaimNotification');
-            const result = await sendNotificationFunction({ claim });
-            console.log('Notification sent:', result.data);
-        } catch (error) {
-            console.error('Error in sendClaimNotification:', error);
-            throw error;
+            setAlertMessage('Error al guardar el reclamo');
         }
     };
 
