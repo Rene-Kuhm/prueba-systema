@@ -3,7 +3,7 @@ import { ClaimFormProps, Claim, Technician } from '@/lib/types/admin';
 import '@/components/Admin/ClaimForm/ClaimForm.css';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { getMessaging, onMessage } from "firebase/messaging";
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 const formatDateForInput = (dateString: string) => {
     if (!dateString) return '';
@@ -85,29 +85,17 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
 
     const sendClaimNotification = async (claim: Claim) => {
         try {
-            const messagingInstance = getMessaging();
+            const functions = getFunctions();
+            const sendNotificationFunction = httpsCallable(functions, 'sendClaimNotification');
             
-            // Set up a message listener
-            onMessage(messagingInstance, (payload) => {
-                console.log('Received new claim notification:', payload);
-                // Handle the incoming message (e.g., show a notification to the user)
-            });
-
-            // Here you would typically make an API call to your backend to send the notification
-            // The backend would use Firebase Admin SDK to send the actual notification
-            console.log('Sending notification for claim:', claim);
-
-            // Simulate sending a notification (replace this with actual API call)
-            setTimeout(() => {
-                console.log('Notification sent for claim:', claim.id);
-            }, 1000);
-
+            const result = await sendNotificationFunction({ claim });
+            
+            console.log('Notification sent:', result.data);
         } catch (error) {
-            console.error('Error setting up claim notifications:', error);
+            console.error('Error sending claim notification:', error);
         }
     };
 
-    // Muestra el formulario solo cuando se hayan cargado los técnicos
     if (loading) return <div>Cargando técnicos...</div>;
     if (error) return <div>{error}</div>;
 
