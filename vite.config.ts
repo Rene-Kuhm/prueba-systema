@@ -8,8 +8,8 @@ export default defineConfig({
     react(),
     VitePWA({
       strategies: 'injectManifest',
-      srcDir: '.',
-      filename: 'public/sw.js',
+      srcDir: 'src',
+      filename: 'sw.js',
       injectRegister: 'auto',
       manifest: {
         name: 'Telecom Complaints',
