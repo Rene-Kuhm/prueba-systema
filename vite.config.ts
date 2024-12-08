@@ -9,7 +9,7 @@ export default defineConfig({
     VitePWA({
       strategies: 'injectManifest',
       srcDir: '.',
-      filename: 'sw.js',
+      filename: 'public/sw.js',
       injectRegister: 'auto',
       manifest: {
         name: 'Telecom Complaints',
