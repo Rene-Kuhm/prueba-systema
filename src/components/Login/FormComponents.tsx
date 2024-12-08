@@ -1,4 +1,5 @@
-// componente para los campos de entrada de formulario
+import React from 'react';
+import { requestNotificationPermission } from '../../utils/notifications';
 
 interface FormInputProps {
     id: string;
@@ -51,8 +52,7 @@ export const RoleButton: React.FC<RoleButtonProps> = ({
     <button
         type="button"
         onClick={onClick}
-        className={`role-button ${selectedRole === role ? 'role-button-active' : 'role-button-inactive'
-            }`}
+        className={`role-button ${selectedRole === role ? 'role-button-active' : 'role-button-inactive'}`}
         aria-pressed={selectedRole === role}
         aria-label={`Seleccionar ${label}`}
     >
@@ -69,3 +69,97 @@ export const SubmitButton: React.FC<SubmitButtonProps> = ({ isSubmitting }) => (
         Iniciar Sesión
     </button>
 );
+
+interface LoginCredentials {
+    email: string;
+    password: string;
+    role: 'admin' | 'technician';
+}
+
+export function Login() {
+    const [formData, setFormData] = React.useState<LoginCredentials>({
+        email: '',
+        password: '',
+        role: 'admin'
+    });
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { id, value } = e.target;
+        setFormData(prevState => ({
+            ...prevState,
+            [id]: value
+        }));
+    };
+
+    const handleRoleChange = (role: 'admin' | 'technician') => {
+        setFormData(prevState => ({
+            ...prevState,
+            role
+        }));
+    };
+
+    const handleLogin = async (credentials: LoginCredentials) => {
+        setIsSubmitting(true);
+        try {
+            // Aquí deberías implementar tu lógica de inicio de sesión
+            console.log('Intentando iniciar sesión con:', credentials);
+            
+            // Simulamos un inicio de sesión exitoso
+            const loginSuccessful = true;
+            
+            if (loginSuccessful) {
+                requestNotificationPermission();
+                // Otras acciones post-login...
+                console.log('Inicio de sesión exitoso');
+            }
+        } catch (error) {
+            console.error('Error durante el inicio de sesión:', error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        handleLogin(formData);
+    };
+
+    return (
+        <form onSubmit={handleSubmit}>
+            <FormInput
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                placeholder="correo@ejemplo.com"
+                label="Correo Electrónico"
+                required
+            />
+            <FormInput
+                id="password"
+                type="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                placeholder="Contraseña"
+                label="Contraseña"
+                required
+            />
+            <div>
+                <RoleButton
+                    role="admin"
+                    selectedRole={formData.role}
+                    onClick={() => handleRoleChange('admin')}
+                    label="Administrador"
+                />
+                <RoleButton
+                    role="technician"
+                    selectedRole={formData.role}
+                    onClick={() => handleRoleChange('technician')}
+                    label="Técnico"
+                />
+            </div>
+            <SubmitButton isSubmitting={isSubmitting} />
+        </form>
+    );
+}
