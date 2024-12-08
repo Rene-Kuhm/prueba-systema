@@ -1,7 +1,13 @@
 /// <reference lib="webworker" />
 
+declare const self: ServiceWorkerGlobalScope;
+
 // Ensure this file is treated as a module to support global augmentations
 export {};
+
+
+
+self.__WB_MANIFEST;
 
 const CACHE_NAME = 'Cospec-Reclamos-v1.0';
 
@@ -13,6 +19,15 @@ const ASSETS_TO_CACHE = [
   '/src/main.tsx',
   '/src/App.tsx',
 ];
+
+declare global {
+    interface ServiceWorkerGlobalScope {
+      __WB_MANIFEST: any;
+    }
+  }
+
+  (self as any).__WB_MANIFEST;
+
 
 // Extend ServiceWorkerGlobalScopeEventMap to include `sync`
 declare global {
