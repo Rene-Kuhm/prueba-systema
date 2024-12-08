@@ -9,7 +9,7 @@ export default defineConfig({
     VitePWA({
       strategies: 'injectManifest',
       srcDir: '.',
-      filename: 'sw.ts',
+      filename: 'sw.js',
       injectRegister: 'auto',
       manifest: {
         name: 'Telecom Complaints',
@@ -36,7 +36,7 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
+        '@': './src'
     }
   }
 })
