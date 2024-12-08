@@ -1,5 +1,5 @@
 import React from 'react';
-import { requestNotificationPermission } from '../../utils/notifications';
+import { requestNotificationPermission } from '@/utils/notifications';
 
 interface FormInputProps {
     id: string;
