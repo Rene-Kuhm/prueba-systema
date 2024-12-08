@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       strategies: 'injectManifest',
-      srcDir: '.',
+      srcDir: '@/sw.ts',
       filename: 'sw.ts',
       injectRegister: 'auto',
       manifest: {
