@@ -7,7 +7,7 @@ import Signup from './pages/Signup';
 // Lazy load components for better performance
 const Admin = lazy(() => import('./pages/Admin'));
 //const Technician = lazy(() => import('@/pages/Technician'));
-const TestSignup = lazy(() => import('@/pages/TestSignup'));
+
 
 /**
  * Main application component.
@@ -19,7 +19,7 @@ function App() {
         {/* Public Routes */}
         <Route path="/" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/test-signup" element={<TestSignup />} />
+
 
         {/* Protected Routes */}
         <Route
