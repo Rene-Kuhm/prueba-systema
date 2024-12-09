@@ -8,6 +8,13 @@
             "dest": "/sw.js"
         },
         {
+            "src": "/(.*).js",
+            "headers": {
+                "Content-Type": "application/javascript"
+            },
+            "dest": "/$1.js"
+        },
+        {
             "src": "/(.*)",
             "dest": "/"
         }
