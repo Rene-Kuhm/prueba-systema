@@ -1,11 +1,8 @@
-/* eslint-env node */
-require('@rushstack/eslint-patch/modern-module-resolution');
-
 module.exports = {
-  root: true,
   env: {
     browser: true,
     es2021: true,
+    node: true, // Agregar esto para reconocer las variables globales de Node.js
   },
   extends: [
     'eslint:recommended',
@@ -17,7 +14,7 @@ module.exports = {
     ecmaFeatures: {
       jsx: true,
     },
-    ecmaVersion: 'latest',
+    ecmaVersion: 12,
     sourceType: 'module',
   },
   plugins: [
@@ -25,12 +22,11 @@ module.exports = {
     '@typescript-eslint',
   ],
   rules: {
-     "react/react-in-jsx-scope": "off"
-    // Add your custom rules here
+    // ...tus reglas personalizadas...
   },
-  settings: {
-    react: {
-      version: 'detect',
-    },
+  globals: {
+    require: 'readonly', // Agregar esto para reconocer `require`
+    module: 'readonly',  // Agregar esto para reconocer `module`
+    process: 'readonly', // Agregar esto para reconocer `process`
   },
 };

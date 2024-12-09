@@ -4,6 +4,13 @@ import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html') // Ensure the entry point is correct
+      }
+    }
+  },
   plugins: [
     react(),
     VitePWA({
@@ -11,6 +18,10 @@ export default defineConfig({
       srcDir: '.',
       filename: 'sw.js',
       injectRegister: 'auto',
+      workbox: {
+        navigateFallback: '/index.html',
+        navigateFallbackAllowlist: [/^(?!\/@).*$/]
+      },
       manifest: {
         name: 'Telecom Complaints',
         short_name: 'TeleComplaints',
@@ -36,7 +47,10 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src'),
+      '@': path.resolve(__dirname, 'src') // Ensure the alias is correctly resolved
     }
+  },
+  server: {
+    open: true
   }
 })

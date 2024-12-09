@@ -23,10 +23,10 @@
     /* Path Aliases */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["src/*"]
     }
   },
-  "include": ["src", "src/sw.js"],
+  "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }],
   "exclude": ["node_modules", "**/*.spec.ts"]
 }

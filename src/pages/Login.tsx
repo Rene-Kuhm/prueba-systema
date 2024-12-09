@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import '@/styles/login.css';
@@ -21,6 +21,13 @@ export default function Login() {
 
     try {
       await signIn(email, password, selectedRole);
+      // Solicitar permisos de notificaciones
+      if (Notification.permission !== 'granted') {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          console.log('Permiso de notificaciones denegado');
+        }
+      }
       navigate(`/${selectedRole}`);
     } catch {
       setIsSubmitting(false);

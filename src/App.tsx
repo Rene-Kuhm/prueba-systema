@@ -3,15 +3,12 @@ import { Routes, Route } from 'react-router-dom';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import SomeComponent from '@/components/SomeComponent';
 
 // Lazy load components for better performance
 const Admin = lazy(() => import('./pages/Admin'));
-//const Technician = lazy(() => import('@/pages/Technician'));
+// const Technician = lazy(() => import('@/pages/Technician'));
 
-
-/**
- * Main application component.
- */
 function App() {
   return (
     <Suspense fallback={<div className="py-8 text-center">Loading...</div>}>
@@ -19,7 +16,6 @@ function App() {
         {/* Public Routes */}
         <Route path="/" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-
 
         {/* Protected Routes */}
         <Route
@@ -30,14 +26,14 @@ function App() {
             </ProtectedRoute>
           }
         />
-       {/* <Route
+        {/* <Route
           path="/technician"
           element={
             <ProtectedRoute role="technician">
-            <Technician />
+              <Technician />
             </ProtectedRoute>
           }
-        />*/}
+        /> */}
 
         {/* Fallback Route */}
         <Route
@@ -50,6 +46,7 @@ function App() {
           }
         />
       </Routes>
+      <SomeComponent />
     </Suspense>
   );
 }

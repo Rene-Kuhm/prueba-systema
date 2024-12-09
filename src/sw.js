@@ -86,5 +86,13 @@ async function syncData() {
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  } else if (event.data && event.data.type === 'SEND_NOTIFICATION') {
+    const { title, options } = event.data;
+
+    sendNotification(title, options);
   }
 });
+async function sendNotification(title, options) {
+  const registration = await self.registration.showNotification(title, options);
+  return registration;
+}

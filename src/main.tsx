@@ -1,26 +1,18 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
-import App from './App'
-import '@/styles/globals.css'
+import React from 'react';
+import ReactDOM from 'react-dom';
+import App from './App';
+import { BrowserRouter } from 'react-router-dom';
+import '@/styles/globals.css';
+import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+ReactDOM.render(
   <React.StrictMode>
     <BrowserRouter>
       <App />
     </BrowserRouter>
-  </React.StrictMode>
-)
+  </React.StrictMode>,
+  document.getElementById('root')
+);
 
-// Registrar el Service Worker
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.ts', { type: 'module' })
-      .then(registration => {
-        console.log('Service Worker registrado con éxito:', registration.scope);
-      })
-      .catch(error => {
-        console.log('Error al registrar el Service Worker:', error);
-      });
-  });
-}
+// Registrar el service worker
+serviceWorkerRegistration.register();
