@@ -53,10 +53,22 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                 notificationSent: false
             });
             console.log("Claim created with ID: ", docRef.id);
+            await sendNotification(docRef.id, claimData);
             return docRef.id;
         } catch (e) {
             console.error("Error adding claim: ", e);
             throw e;
+        }
+    };
+
+    const sendNotification = async (claimId: string , claimData: Claim) => {
+        console.log(`Sending notification for claim ID: ${claimId} with data:`, claimData);
+        try {
+            // Aquí puedes agregar la lógica para enviar la notificación
+            console.log(`Sending notification for claim ID: ${claimId}`);
+            // Ejemplo: enviar un correo electrónico, una notificación push, etc.
+        } catch (e) {
+            console.error("Error sending notification: ", e);
         }
     };
 
