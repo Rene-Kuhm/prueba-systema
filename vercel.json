@@ -8,6 +8,6 @@
             "status": 200
         },
         { "src": "/sw.js", "dest": "/sw.js" },
-        { "src": "/(.*)", "dest": "/index.html" }
+        { "src": "/(.*)", "dest": "/" }
     ]
 }
