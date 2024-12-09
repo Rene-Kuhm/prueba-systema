@@ -3,7 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import SomeComponent from '@/components/SomeComponent';
+//import SomeComponent from '@/components/SomeComponent';
 
 // Lazy load components for better performance
 const Admin = lazy(() => import('./pages/Admin'));
@@ -46,7 +46,7 @@ function App() {
           }
         />
       </Routes>
-      <SomeComponent />
+      {/* <SomeComponent /> */}
     </Suspense>
   );
 }
