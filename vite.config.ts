@@ -14,6 +14,12 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      registerType: 'autoUpdate',
+      workbox: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // Aumenta el límite a 5 MB
+        navigateFallback: '/index.html',
+        navigateFallbackAllowlist: [/^(?!\/@).*$/]
+      },
       strategies: 'generateSW',
       srcDir: '.',
       filename: 'sw.js',
