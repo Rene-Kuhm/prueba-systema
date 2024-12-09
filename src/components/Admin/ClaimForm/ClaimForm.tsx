@@ -3,6 +3,7 @@ import { ClaimFormProps, Claim, Technician } from '@/lib/types/admin';
 import '@/components/Admin/ClaimForm/ClaimForm.css';
 import { collection, getDocs, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { handleReclamo } from '@/reclamoHandler'; // Importa la función handleReclamo
 
 const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
     const [technicians, setTechnicians] = useState<Technician[]>([]);
@@ -53,22 +54,11 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                 notificationSent: false
             });
             console.log("Claim created with ID: ", docRef.id);
-            await sendNotification(docRef.id, claimData);
+            await handleReclamo({ ...claimData, description: claimData.description || '' }); // Llama a handleReclamo después de crear el reclamo
             return docRef.id;
         } catch (e) {
             console.error("Error adding claim: ", e);
             throw e;
-        }
-    };
-
-    const sendNotification = async (claimId: string , claimData: Claim) => {
-        console.log(`Sending notification for claim ID: ${claimId} with data:`, claimData);
-        try {
-            // Aquí puedes agregar la lógica para enviar la notificación
-            console.log(`Sending notification for claim ID: ${claimId}`);
-            // Ejemplo: enviar un correo electrónico, una notificación push, etc.
-        } catch (e) {
-            console.error("Error sending notification: ", e);
         }
     };
 
@@ -206,7 +196,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                 </div>
                 <div className="flex justify-end mt-6">
                     <button type="submit" className="submit-button">
-                        Guardar Reclamo
+                        Cargar Reclamo
                     </button>
                 </div>
             </form>
