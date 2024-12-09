@@ -5,19 +5,14 @@ import { BrowserRouter } from 'react-router-dom';
 import '@/styles/globals.css';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
-const container = document.getElementById('root');
-if (container) {
-  const root = ReactDOM.createRoot(container);
-  root.render(
+const root = ReactDOM.createRoot(document.getElementById('root')!);
+root.render(
     <React.StrictMode>
       <BrowserRouter>
         <App />
       </BrowserRouter>
     </React.StrictMode>
-  );
+);
 
-  // Registrar el service worker
-  serviceWorkerRegistration.register();
-} else {
-  console.error('No se encontró el elemento con id "root"');
-}
+// Registrar el service worker
+serviceWorkerRegistration.register();

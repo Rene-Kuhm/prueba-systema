@@ -1,5 +1,4 @@
 // Este archivo es una adaptación del archivo create-react-app para registrar un service worker personalizado
-// Este archivo es una adaptación del archivo create-react-app para registrar un service worker personalizado
 
 const isLocalhost = Boolean(
   window.location.hostname === 'localhost' ||

@@ -1,13 +1,25 @@
 {
-
     "routes": [
         {
-        
             "src": "/[^.]+",
             "dest": "/",
             "status": 200
         },
-        { "src": "/sw.js", "dest": "/sw.js" },
-        { "src": "/(.*)", "dest": "/" }
+        {
+            "src": "/sw.js",
+            "dest": "/sw.js"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/"
+        },
+        {
+            "rewrites": [
+                {
+                    "source": "/(.*)",
+                    "destination": "/"
+                }
+            ]
+        }
     ]
 }
