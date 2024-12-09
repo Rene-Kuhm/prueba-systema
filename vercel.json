@@ -1,12 +1,10 @@
 {
     "routes": [
         {
-            "src": "/[^.]+",
-            "dest": "/",
-            "status": 200
-        },
-        {
             "src": "/sw.js",
+            "headers": {
+                "cache-control": "public,max-age=0,must-revalidate"
+            },
             "dest": "/sw.js"
         },
         {
