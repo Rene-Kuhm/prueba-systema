@@ -8,6 +8,7 @@ const firebaseConfig = {
   storageBucket: "cospecreclamos.appspot.com",
   messagingSenderId: "1010981981198",
   appId: "1:838077251670:web:4f9f50feaaa158bdc77bf7"
+
 };
 
 firebase.initializeApp(firebaseConfig);
