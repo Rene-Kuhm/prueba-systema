@@ -2,6 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import '@/styles/login.css';
+import { getMessaging, getToken } from "firebase/messaging";
+import { initializeApp } from 'firebase/app';
+import { firebaseConfig } from '@/lib/firebase';
+
+// Inicializa Firebase
+const app = initializeApp(firebaseConfig);
+const messaging = getMessaging(app);
 
 export default function Login() {
   const navigate = useNavigate();
@@ -17,18 +24,53 @@ export default function Login() {
     if (error) setIsSubmitting(false);
   }, [error]);
 
+  const requestNotificationPermission = async () => {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        const currentToken = await getToken(messaging, { vapidKey: 'VITE_FIREBASE_PUSH_PUBLIC_KEY' });
+        if (currentToken) {
+          await sendTokenToServer(currentToken);
+        } else {
+          console.log('No se pudo obtener el token.');
+        }
+      }
+    } catch (err) {
+      console.error('Ocurrió un error al obtener el token.', err);
+    }
+  };
+
+  const sendTokenToServer = async (token: string) => {
+    try {
+      const response = await fetch('/api/save-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token, role: selectedRole }),
+      });
+      if (!response.ok) {
+        throw new Error('Error al enviar el token al servidor');
+      }
+    } catch (error) {
+      console.error('Error al enviar el token al servidor:', error);
+    }
+  };
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setIsSubmitting(true);
   
     try {
       await signIn(email, password, selectedRole);
+      await requestNotificationPermission();
       navigate(`/${selectedRole}`);
     } catch {
       setIsSubmitting(false);
     }
   }
 
+  // El resto del componente permanece igual
   return (
     <div className="login-container">
       <div className="background-effects" />

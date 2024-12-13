@@ -15,6 +15,9 @@ export default defineConfig({
     },
   },
   server: {
+    headers: {
+      'Service-Worker-Allowed': '/'
+    },
     port: 3000,
   },
   build: {
