@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, useSearchParams, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Login from './pages/Login';
@@ -21,6 +21,17 @@ const AuthAction: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        .then(function(registration) {
+          console.log('Service Worker registrado con éxito:', registration.scope);
+        }).catch(function(err) {
+          console.log('Error al registrar el Service Worker:', err);
+        });
+    }
+  }, []);
+
   return (
     <Router>
       <Routes>
