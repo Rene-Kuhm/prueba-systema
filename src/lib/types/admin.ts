@@ -10,16 +10,20 @@ export interface PendingUser {
 
 export interface Claim {
     id: string;
-    // Add other claim properties
     phone: string;
     name: string;
     address: string;
     reason: string;
-    technicianId?: string;
-    status: 'pending' | 'assigned';
-    resolution?: string;
-    receivedBy?: string;
+    status: 'pending' | 'in_progress' | 'completed';
+    technicianId: string;
+    receivedBy: string;
     receivedAt?: string;
+    title?: string;        // Agregado
+    customer?: string;     // Agregado
+    date?: string;        // Agregado
+    resolution?: string;   // Agregado
+    createdAt?: Date;
+    notificationSent?: boolean;
 }
 
 export interface Technician {
