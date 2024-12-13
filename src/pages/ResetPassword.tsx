@@ -1,32 +1,77 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuthStore } from '@/stores/authStore';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { auth } from '@/lib/firebase';
+import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
 import '@/styles/login.css';
 
-export default function Login() {
+export default function ResetPassword() {
   const navigate = useNavigate();
-  const { signIn, error } = useAuthStore();
   const [searchParams] = useSearchParams();
-  const resetSuccess = searchParams.get('resetSuccess');
+  const oobCode = searchParams.get('oobCode');
+  const [isVerifying, setIsVerifying] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedRole, setSelectedRole] = useState<'admin' | 'technician'>('technician');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (error) setIsSubmitting(false);
-  }, [error]);
+    async function verifyCode() {
+      if (!oobCode) {
+        setError('Link inválido');
+        setIsVerifying(false);
+        return;
+      }
+
+      try {
+        const email = await verifyPasswordResetCode(auth, oobCode);
+        setEmail(email);
+      } catch (error) {
+        setError('El link ha expirado o es inválido');
+      } finally {
+        setIsVerifying(false);
+      }
+    }
+
+    verifyCode();
+  }, [oobCode]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setIsSubmitting(true);
-  
+    setError(null);
+
+    if (password !== confirmPassword) {
+      setError('Las contraseñas no coinciden');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
-      await signIn(email, password, selectedRole);
-      navigate(`/${selectedRole}`);
-    } catch {
+      if (!oobCode) throw new Error('Código inválido');
+      await confirmPasswordReset(auth, oobCode, password);
+      navigate('/?resetSuccess=true');
+    } catch (error) {
+      setError('Error al restablecer la contraseña. Por favor, intenta nuevamente.');
       setIsSubmitting(false);
     }
+  }
+
+  if (isVerifying) {
+    return (
+      <div className="login-container">
+        <div className="background-effects" />
+        <div className="flex flex-col items-center justify-center w-full max-w-md">
+          <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -73,29 +118,17 @@ export default function Login() {
         <div className="login-card w-full">
           <div className="login-form">
             <div className="login-header">
-              <p className="login-subtitle text-lg">Ingresa para continuar</p>
+              <p className="login-subtitle text-lg">Restablecer contraseña</p>
+              <p className="text-sm text-gray-400 mt-2">
+                {email ? `Para la cuenta: ${email}` : 'Ingresa tu nueva contraseña'}
+              </p>
             </div>
 
             <form onSubmit={handleSubmit} className="form-container">
               <div className="space-y-4">
                 <div className="form-group">
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
-                    Correo electrónico
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    placeholder="ejemplo@correo.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="input-field"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
                   <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
-                    Contraseña
+                    Nueva contraseña
                   </label>
                   <input
                     id="password"
@@ -109,18 +142,18 @@ export default function Login() {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="role" className="block text-sm font-medium text-gray-300 mb-1">
-                    Rol
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-1">
+                    Confirmar contraseña
                   </label>
-                  <select
-                    id="role"
-                    value={selectedRole}
-                    onChange={(e) => setSelectedRole(e.target.value as 'admin' | 'technician')}
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     className="input-field"
-                  >
-                    <option value="technician">Técnico</option>
-                    <option value="admin">Administrador</option>
-                  </select>
+                    required
+                  />
                 </div>
               </div>
 
@@ -133,43 +166,14 @@ export default function Login() {
                   {isSubmitting ? (
                     <div className="flex items-center justify-center">
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                      Ingresando...
+                      Actualizando...
                     </div>
                   ) : (
-                    'Ingresar'
+                    'Actualizar contraseña'
                   )}
                 </button>
               </div>
-
-              <div className="mt-6 text-center">
-                <Link 
-                  to="/forgot-password" 
-                  className="text-sm text-gray-400 hover:text-blue-400 transition-colors"
-                >
-                  ¿Olvidaste tu contraseña?
-                </Link>
-              </div>
             </form>
-
-            <div className="mt-8 pt-6 border-t border-gray-700">
-              <div className="text-center text-sm">
-                <span className="text-gray-400">¿No tienes una cuenta? </span>
-                <Link 
-                  to="/signup" 
-                  className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
-                >
-                  Regístrate aquí
-                </Link>
-              </div>
-            </div>
-
-            {resetSuccess && (
-              <div className="mt-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                <p className="text-sm text-green-400 text-center">
-                  Tu contraseña ha sido actualizada exitosamente
-                </p>
-              </div>
-            )}
 
             {error && (
               <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">

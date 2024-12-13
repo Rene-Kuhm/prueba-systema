@@ -23,6 +23,7 @@ interface AuthState {
   signUp: (email: string, password: string, fullName: string, role: 'admin' | 'technician') => Promise<void>
   signOut: () => Promise<void>
   loadUserProfile: () => Promise<void>
+  clearError: () => void  // Added clearError method
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -30,6 +31,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   loading: false,
   error: null,
   setUserProfile: (profile) => set({ userProfile: profile }),
+  clearError: () => set({ error: null }), // Added clearError implementation
 
   signIn: async (email, password, role) => {
     try {
@@ -39,6 +41,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       
       const userDoc = await getDoc(doc(db, 'users', user.uid))
       const userData = userDoc.data()
+
+      if (!userData?.approved && role === 'technician') {
+        throw new Error('Tu cuenta aún no ha sido aprobada. Por favor, espera la aprobación del administrador.')
+      }
 
       if (userData?.role !== role) {
         throw new Error(`No tienes permisos de ${role}.`)

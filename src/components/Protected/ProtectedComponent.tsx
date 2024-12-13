@@ -1,52 +1,39 @@
-// componente para el componente Protected
+import { ReactNode, useEffect } from 'react';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
-import { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { auth, db } from '@/lib/firebase'
-import { doc, getDoc } from 'firebase/firestore'
-
-export const ProtectedComponent: React.FC = () => {
-    const [userRole, setUserRole] = useState<string | null>(null)
-    const navigate = useNavigate()
-
-    useEffect(() => {
-        const checkUserRole = async () => {
-            const user = auth.currentUser
-            if (user) {
-                const userDoc = await getDoc(doc(db, 'users', user.uid))
-                if (userDoc.exists()) {
-                    const userData = userDoc.data()
-                    setUserRole(userData.role)
-
-                    if (userData.role !== 'admin' && userData.role !== 'technician') {
-                        navigate('/acceso-denegado')
-                    }
-                } else {
-                    navigate('/acceso-denegado')
-                }
-            } else {
-                navigate('/login')
-            }
-        }
-
-        checkUserRole()
-    }, [navigate])
-
-    if (!userRole) {
-        return <div className="protected-loading">Cargando...</div>
-    }
-
-    return (
-        <div>
-            <h1>Bienvenido, {userRole}</h1>
-        </div>
-    )
+interface ProtectedComponentProps {
+    children: ReactNode;
 }
 
-// componente para el componente AccessDenied
+export const ProtectedComponent = ({ children }: ProtectedComponentProps) => {
+    useEffect(() => {
+        const checkUserRole = async () => {
+            const user = auth.currentUser;
+            if (!user) {
+                window.location.href = '/login';
+                return;
+            }
 
+            const userDoc = await getDoc(doc(db, 'users', user.uid));
+            if (!userDoc.exists()) {
+                window.location.href = '/acceso-denegado';
+                return;
+            }
 
-export const AccessDenied: React.FC = () => (
+            const userData = userDoc.data();
+            if (userData.role !== 'admin' && userData.role !== 'technician') {
+                window.location.href = '/acceso-denegado';
+            }
+        };
+
+        checkUserRole();
+    }, []);
+
+    return <>{children}</>;
+};
+
+export const AccessDenied = () => (
     <div className="access-denied-container">
         <h1 className="access-denied-title">Acceso Denegado</h1>
         <p className="access-denied-text">
@@ -55,8 +42,8 @@ export const AccessDenied: React.FC = () => (
         <p className="access-denied-text">
             Si crees que esto es un error, por favor contacta al administrador.
         </p>
-        <Link to="/" className="access-denied-link">
+        <a href="/" className="access-denied-link">
             Volver a la página principal
-        </Link>
+        </a>
     </div>
-)
+);

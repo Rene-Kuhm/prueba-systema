@@ -1,46 +1,53 @@
 export interface PendingUser {
     id: string;
+    // Add other user properties
     email: string;
     fullName: string;
     displayName: string;
     role: string;
-    createdAt: string;
+    createdAt: any;
 }
 
 export interface Claim {
     id: string;
-    title: string;
-    customer: string;
-    date: string;
-    status: "pending" | "assigned" ;
-    resolution?: string;
-    receivedBy: string;
-    receivedAt: string;
-    description?: string;
-    technicianId: string;
-    scheduledDate?: string;
+    // Add other claim properties
     phone: string;
     name: string;
     address: string;
     reason: string;
+    technicianId?: string;
+    status: 'pending' | 'assigned';
+    resolution?: string;
+    receivedBy?: string;
+    receivedAt?: string;
 }
 
 export interface Technician {
     id: string;
-    name: string;
-    phone: string;
-}
+    // Add other technician properties
+    [key: string]: any;
+}    
 
 export interface AdminState {
     pendingUsers: PendingUser[];
     claims: Claim[];
+    technicians: Technician[];
     loading: boolean;
     error: string | null;
     showModal: boolean;
     selectedClaim: Claim | null;
-    newClaim: Omit<Claim, "id">;
+    newClaim: Omit<Claim, 'id'>;
 }
 
+export interface AdminService {
+    fetchPendingUsers: () => Promise<PendingUser[]>;
+    fetchClaims: () => Promise<Claim[]>;
+    fetchTechnicians: () => Promise<Technician[]>;
+    approveUser: (userId: string) => Promise<void>;
+    addClaim: (claim: Omit<Claim, 'id'>) => Promise<void>;
+    deleteClaim: (claimId: string) => Promise<void>;
+    exportClaimsToExcel: (claims: Claim[]) => void;
+}
 export interface ClaimFormProps {
     claim: Partial<Claim>;
     technicians: Technician[];

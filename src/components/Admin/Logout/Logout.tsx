@@ -1,25 +1,21 @@
+// components/Admin/Logout/Logout.tsx
 import React from 'react';
-import { useAuthStore } from '@/stores/authStore';
 import { LogOut as LogOutIcon } from 'lucide-react';
 
-export const Logout: React.FC = () => {
-    const { signOut } = useAuthStore();
+interface LogOutProps {
+  onLogout: () => void;
+}
 
-    const handleLogout = async () => {
-        try {
-            await signOut();
-            // Redirect or perform other actions after logout
-        } catch (error) {
-            console.error('Error logging out:', error);
-        }
-    };
-
-    return (
-        <button className="text-red-400 nav-item hover:text-red-300" onClick={handleLogout}>
-            <LogOutIcon className="nav-icon" />
-            <span>Logout</span>
-        </button>
-    );
+const LogOut: React.FC<LogOutProps> = ({ onLogout }) => {
+  return (
+    <button 
+      onClick={onLogout} 
+      className="text-red-400 nav-item hover:text-red-300 w-full flex items-center gap-2"
+    >
+      <LogOutIcon className="w-5 h-5" />
+      <span>Cerrar Sesión</span>
+    </button>
+  );
 };
 
-export default Logout;
+export default LogOut;

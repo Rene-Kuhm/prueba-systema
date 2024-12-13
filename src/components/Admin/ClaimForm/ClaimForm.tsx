@@ -3,7 +3,6 @@ import { ClaimFormProps, Claim, Technician } from '@/lib/types/admin';
 import '@/components/Admin/ClaimForm/ClaimForm.css';
 import { collection, getDocs, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { handleReclamo } from '@/reclamoHandler'; // Importa la función handleReclamo
 
 const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
     const [technicians, setTechnicians] = useState<Technician[]>([]);
@@ -54,7 +53,6 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                 notificationSent: false
             });
             console.log("Claim created with ID: ", docRef.id);
-            await handleReclamo({ ...claimData, description: claimData.description || '' }); // Llama a handleReclamo después de crear el reclamo
             return docRef.id;
         } catch (e) {
             console.error("Error adding claim: ", e);

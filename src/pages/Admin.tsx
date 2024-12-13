@@ -9,22 +9,20 @@ import { PendingUsers } from "@/components/Admin/PendingUsers";
 import ClaimForm from "@/components/Admin/ClaimForm/ClaimForm";
 import { ClaimsTable } from "@/components/Admin/ClainTable/ClaimTable";
 import ClaimDetailsModal from "@/components/Admin/ClaimDetailsModal";
-import { useAdmin } from "@/hooks/useAdmin";
-import type { Claim } from "@/lib/types/admin";
-import type { Notification  } from "@/lib/types/notifications"
-import { Technician } from '@/lib/types/admin'; // Import the Technician type
-
-
-
+import { Notification } from '@/lib/types/notifications';
+import { AdminState, Claim, PendingUser,  Technician } from '@/lib/types/admin'; // Import the Technician type
+import { useAdmin, UseAdminReturn } from "@/hooks/useAdmin";
 import "@/styles/admin.css";
 
-export default function Admin() {
+
+
+const Admin = () => {
     const {
         loading,
         error,
         pendingUsers,
         claims,
-        technicians,
+        technicians, // Add this line to destructure technicians
         newClaim,
         selectedClaim,
         showModal,
@@ -36,25 +34,28 @@ export default function Admin() {
         setNewClaim,
         setShowModal,
         setSelectedClaim,
-    } = useAdmin();
+    }: UseAdminReturn = useAdmin();
 
     const [activeSection, setActiveSection] = useState("dashboard");
     const [notifications, setNotifications] = useState<Notification[]>([]);
-
+    
     const handleMarkAsRead = (id: string) => {
-        setNotifications((prev) =>
-            prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif))
-        );
-    };
-
-    const handleClearAllNotifications = () => {
-        setNotifications((prev) =>
-            prev.map((notif) => ({ ...notif, read: true }))
+        setNotifications(prev => 
+            prev.map(notif => notif.id === id ? {...notif, read: true} : notif)
         );
     };
 
     const handleNewClaimChange = (claim: Partial<Claim>) => {
         setNewClaim(claim as Omit<Claim, "id">);
+    };
+
+    const handleClearAllNotifications = () => {
+        setNotifications(prev => prev.map(notif => ({...notif, read: true})));
+    };
+
+    const handleSubmitNewClaim = async () => {
+        const claimWithId = { ...newClaim, id: crypto.randomUUID() };
+        await addNewClaim(claimWithId);
     };
 
     if (loading) {
@@ -81,18 +82,12 @@ export default function Admin() {
             />
             <DashboardCard
                 title="Técnicos"
-                value={technicians.length}
+                value={technicians.length} // Fix: use technicians.length instead of just length
                 icon={<Users className="w-6 h-6" />}
                 variant="techs"
             />
         </div>
     );
-
-    const technicianObjects: Technician[] = technicians.map((tech) => ({
-      id: tech, // Usa `tech` como ID si no tienes otro valor
-      name: tech, // Usa `tech` como nombre si no tienes más información
-      phone: "N/A", // Asigna un valor predeterminado para el número
-  }));
 
     const renderContent = () => {
         switch (activeSection) {
@@ -103,8 +98,8 @@ export default function Admin() {
                     <div className="claims-section">
                         <ClaimForm
                             claim={newClaim}
-                            technicians={technicianObjects}
-                            onSubmit={addNewClaim}
+                            technicians={technicians} // Use technicians directly
+                            onSubmit={handleSubmitNewClaim}
                             onChange={handleNewClaimChange}
                         />
                         <ClaimsTable
@@ -133,7 +128,7 @@ export default function Admin() {
             setActiveSection={setActiveSection}
             pendingUsers={pendingUsers}
             claims={claims}
-            technicians={technicianObjects}
+            technicians={technicians.map(tech => ({ id: tech.id, name: tech.name }))}
             onSelectClaim={(claim) => {
                 setSelectedClaim(claim);
                 setShowModal(true);
@@ -142,13 +137,15 @@ export default function Admin() {
             onMarkAsRead={handleMarkAsRead}
             onClearAllNotifications={handleClearAllNotifications}
         >
-            <Header onSignOut={handleSignOut} onExport={exportClaimsToExcel} />
-            <main className="main-content">{renderContent()}</main>
-            <ClaimDetailsModal
-                claim={selectedClaim}
-                isOpen={showModal}
-                onClose={() => setShowModal(false)}
-            />
+        <Header onSignOut={handleSignOut} onExport={exportClaimsToExcel} />
+        <main className="main-content">{renderContent()}</main>
+        <ClaimDetailsModal
+            claim={selectedClaim}
+            isOpen={showModal}
+            onClose={() => setShowModal(false)}
+        />
         </AdminLayout>
     );
 }
+
+export default Admin;
