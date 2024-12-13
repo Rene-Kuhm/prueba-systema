@@ -14,7 +14,7 @@ export interface Claim {
     name: string;
     address: string;
     reason: string;
-    status: 'pending' | 'in_progress' | 'completed';
+    status: 'pending' | 'assigned' | 'in_progress' | 'completed';
     technicianId: string;
     receivedBy: string;
     receivedAt?: string;
