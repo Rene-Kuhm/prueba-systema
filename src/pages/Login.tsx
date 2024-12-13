@@ -28,15 +28,19 @@ export default function Login() {
     try {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
-        const currentToken = await getToken(messaging, { vapidKey: 'VITE_FIREBASE_PUSH_PUBLIC_KEY' });
-        if (currentToken) {
-          await sendTokenToServer(currentToken);
-        } else {
-          console.log('No se pudo obtener el token.');
+        try {
+          const currentToken = await getToken(messaging, { vapidKey: 'BBz6uQVonzJwKpDQy35HjUQ4Jy7OgRWjUX2UKnDeV9GRJlMVwIKgs_hGdUMPlnfbkGwA4PpYn-Hxs406QVoe4rc' });
+          if (currentToken) {
+            await sendTokenToServer(currentToken);
+          } else {
+            console.log('No se pudo obtener el token.');
+          }
+        } catch (tokenError) {
+          console.error('Error específico al obtener el token:', tokenError);
         }
       }
     } catch (err) {
-      console.error('Ocurrió un error al obtener el token.', err);
+      console.error('Error general al solicitar permiso o obtener token:', err);
     }
   };
 
