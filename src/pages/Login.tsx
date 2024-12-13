@@ -29,7 +29,7 @@ export default function Login() {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
         try {
-          const currentToken = await getToken(messaging, { vapidKey: 'BBz6uQVonzJwKpDQy35HjUQ4Jy7OgRWjUX2UKnDeV9GRJlMVwIKgs_hGdUMPlnfbkGwA4PpYn-Hxs406QVoe4rc' });
+          const currentToken = await getToken(messaging, { vapidKey: 'VITE_FIREBASE_PUSH_PUBLIC_KEY' });
           if (currentToken) {
             await sendTokenToServer(currentToken);
           } else {
