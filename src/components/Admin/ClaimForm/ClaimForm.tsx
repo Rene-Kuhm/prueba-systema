@@ -148,8 +148,10 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'Origin': window.location.origin
                 },
+                credentials: 'include',
                 mode: 'cors',
                 body: JSON.stringify({
                     notification: {
@@ -167,6 +169,12 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                     token: technicianData.fcmToken
                 })
             });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                console.error('Response error:', response.status, errorData);
+                throw new Error(errorData?.error || `Error del servidor: ${response.status}`);
+            }
 
             // ... rest of the existing code ...
         } catch (error) {

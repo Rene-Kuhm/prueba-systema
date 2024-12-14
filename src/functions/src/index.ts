@@ -5,7 +5,11 @@ import * as cors from 'cors'
 admin.initializeApp()
 
 const corsHandler = cors({
-  origin: '*', // Allow any origin
+  origin: [
+    'https://www.tdpblog.com.ar',
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ],
   methods: ['POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
@@ -28,15 +32,16 @@ interface NotificationPayload {
 
 export const sendClaimNotification = functions.https.onRequest((req, res) => {
   return corsHandler(req, res, async () => {
-    // Set CORS headers for all responses
-    res.set('Access-Control-Allow-Origin', '*')
+    // Set explicit CORS headers
+    res.set('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.set('Access-Control-Allow-Credentials', 'true');
+    res.set('Access-Control-Max-Age', '3600');
 
     if (req.method === 'OPTIONS') {
-      res.set('Access-Control-Allow-Methods', 'POST')
-      res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-      res.set('Access-Control-Max-Age', '3600')
-      res.status(204).send('')
-      return
+      res.status(204).send('');
+      return;
     }
 
     try {
