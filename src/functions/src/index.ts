@@ -19,6 +19,9 @@ interface NotificationPayload {
 }
 
 export const sendClaimNotification = functions.https.onRequest((req, res) => {
+    const cors = require('cors')({
+        origin: ['https://www.tdpblog.com.ar']
+    });
   // Configurar manualmente los encabezados CORS
   res.set('Access-Control-Allow-Origin', 'https://www.tdpblog.com.ar'); // Ajusta esto a tu dominio exacto
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
