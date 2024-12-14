@@ -130,37 +130,24 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         try {
             const technicianDoc = await getDoc(doc(db, 'users', technicianId));
             const technicianData = technicianDoc.data();
-            const technicianName = technicians.find(t => t.id === technicianId)?.name || 'técnico';
             
             if (!technicianData?.fcmToken) {
-                // ... existing token check code ...
+                toast.warning('El técnico no tiene token de notificaciones configurado');
                 return false;
             }
 
-            // Check environment variable
-            const functionUrl = import.meta.env.VITE_FIREBASE_FUNCTIONS_URL;
-            if (!functionUrl || typeof functionUrl !== 'string') {
-                console.error('Firebase Functions URL is not properly configured:', functionUrl);
-                throw new Error('URL del servicio de notificaciones no configurada correctamente');
-            }
-
-            const response = await fetch(functionUrl.trim(), {
+            const response = await fetch('/sendClaimNotification', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'Origin': window.location.origin
+                    'Content-Type': 'application/json'
                 },
-                credentials: 'include',
-                mode: 'cors',
                 body: JSON.stringify({
                     notification: {
                         title: "Nuevo Reclamo Asignado",
-                        body: `Se te ha asignado un nuevo reclamo de ${claimDetails.name}`,
-                        icon: '/logo192.png'
+                        body: `Se te ha asignado un nuevo reclamo de ${claimDetails.name}`
                     },
                     data: {
-                        claimId,
+                        claimId: claimId,
                         customerName: claimDetails.name,
                         customerAddress: claimDetails.address,
                         customerPhone: claimDetails.phone,
@@ -170,15 +157,16 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                 })
             });
 
+            const result = await response.json();
+
             if (!response.ok) {
-                const errorData = await response.json().catch(() => null);
-                console.error('Response error:', response.status, errorData);
-                throw new Error(errorData?.error || `Error del servidor: ${response.status}`);
+                throw new Error(result.error || 'Error al enviar la notificación');
             }
 
-            // ... rest of the existing code ...
+            toast.success('Notificación enviada al técnico');
+            return true;
         } catch (error) {
-            console.error('Error detallado al enviar la notificación:', error);
+            console.error('Error al enviar la notificación:', error);
             toast.error(error instanceof Error ? error.message : 'Error al enviar la notificación');
             return false;
         }

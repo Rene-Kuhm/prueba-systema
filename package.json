@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "proxy": "https://us-central1-cospecreclamos.cloudfunctions.net",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

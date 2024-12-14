@@ -19,6 +19,13 @@ export default defineConfig({
       'Service-Worker-Allowed': '/'
     },
     port: 3000,
+    proxy: {
+      '/sendClaimNotification': {
+        target: 'https://us-central1-cospecreclamos.cloudfunctions.net',
+        changeOrigin: true,
+        secure: false
+      }
+    }
   },
   build: {
     outDir: 'dist',
