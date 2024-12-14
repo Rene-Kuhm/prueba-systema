@@ -155,14 +155,11 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
             }
 
             // Verificar que la URL de la función esté definida
-            const sendNotificationUrl = import.meta.env.VITE_FIREBASE_FUNCTIONS_URL;
-            if (!sendNotificationUrl) {
+            const notificationEndpoint = import.meta.env.VITE_FIREBASE_FUNCTIONS_URL;
+            if (!notificationEndpoint) {
                 throw new Error('Firebase Functions URL no configurada. Verifica el archivo .env');
             }
 
-            // Asegurarse de que la URL esté correctamente formada
-            const notificationEndpoint = `${sendNotificationUrl.replace(/\/$/, '')}/sendNotification`;
-            
             console.log('Sending notification to:', notificationEndpoint); // Para debug
 
             const response = await fetch(notificationEndpoint, {
