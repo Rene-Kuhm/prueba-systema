@@ -28,9 +28,15 @@ export interface Claim {
 
 export interface Technician {
     id: string;
-    // Add other technician properties
-    [key: string]: any;
-}    
+    name: string;
+    phone: string;
+    email: string;
+    active: boolean;
+    availableForAssignment: boolean;
+    currentAssignments: number;
+    completedAssignments: number;
+    totalAssignments: number;
+}
 
 export interface AdminState {
     pendingUsers: PendingUser[];

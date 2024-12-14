@@ -3,14 +3,22 @@ import { Link, useNavigate } from 'react-router-dom';
 import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
+import { toast } from 'react-toastify';
+
+interface FormData {
+  email: string;
+  password: string;
+  fullName: string;
+  role: 'admin' | 'technician';
+}
 
 export default function Signup() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
     fullName: '',
-    role: 'technician' as 'admin' | 'technician'
+    role: 'technician'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +29,7 @@ export default function Signup() {
     setError(null);
 
     try {
+      // Validaciones
       if (!formData.email || !formData.password || !formData.fullName || !formData.role) {
         throw new Error('Todos los campos son requeridos');
       }
@@ -29,26 +38,66 @@ export default function Signup() {
         throw new Error('La contraseña debe tener al menos 6 caracteres');
       }
 
+      // Crear usuario en Authentication
       const userCredential = await createUserWithEmailAndPassword(
         auth, 
         formData.email, 
         formData.password
       );
       
-      await updateProfile(userCredential.user, { displayName: formData.fullName });
+      // Actualizar el perfil del usuario
+      await updateProfile(userCredential.user, { 
+        displayName: formData.fullName
+      });
 
-      await setDoc(doc(db, 'users', userCredential.user.uid), {
+      const timestamp = new Date().toISOString();
+
+      // Datos base del usuario
+      const userData = {
         email: formData.email,
         fullName: formData.fullName,
         role: formData.role,
         approved: false,
-        createdAt: new Date().toISOString(),
-      });
+        active: false,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+        userId: userCredential.user.uid,
+        lastLogin: timestamp
+      };
 
+      // Guardar en la colección general de usuarios
+      await setDoc(doc(db, 'users', userCredential.user.uid), userData);
+
+      // Guardar en la colección específica según el rol
+      if (formData.role === 'technician') {
+        await setDoc(doc(db, 'technicians', userCredential.user.uid), {
+          ...userData,
+          phone: '',
+          availableForAssignment: false,
+          currentAssignments: 0,
+          totalAssignments: 0,
+          completedAssignments: 0,
+          rating: 0,
+          ratingCount: 0
+        });
+      } else if (formData.role === 'admin') {
+        await setDoc(doc(db, 'admins', userCredential.user.uid), {
+          ...userData,
+          permissionLevel: 'basic',
+          lastActivity: timestamp,
+          department: 'general',
+          canApproveUsers: false,
+          canAssignTasks: false
+        });
+      }
+
+      toast.success('Registro exitoso. Por favor espera la aprobación de un administrador.');
       navigate('/');
     } catch (err) {
       console.error('Error en el proceso de registro:', err);
-      setError(err instanceof Error ? err.message : 'Error en el registro');
+      const errorMessage = err instanceof Error ? err.message : 'Error en el registro';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -130,7 +179,11 @@ export default function Signup() {
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
                     className="input-field"
                     required
+                    minLength={6}
                   />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Mínimo 6 caracteres
+                  </p>
                 </div>
 
                 <div className="form-group">

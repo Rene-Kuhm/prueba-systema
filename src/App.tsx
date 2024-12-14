@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, useSearchParams, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Login from './pages/Login';
@@ -6,9 +6,14 @@ import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Admin from './pages/Admin';
-import OneSignal from 'react-onesignal';
+import TechnicianPage from './pages/Technician';
+import { getAuth, signInAnonymously } from "firebase/auth";
+import { getToken, onMessage, type MessagePayload } from "firebase/messaging";
+import { messaging } from "./firebase"; 
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-// Componente para manejar las acciones de autenticación
+// Auth Action Component
 const AuthAction: React.FC = () => {
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode');
@@ -23,20 +28,60 @@ const AuthAction: React.FC = () => {
 
 const App: React.FC = () => {
   useEffect(() => {
-    /*
-    console.log("OneSignal App ID:", import.meta.env.VITE_ONESIGNAL_APP_ID);
-    OneSignal.init({ 
-      appId: import.meta.env.VITE_ONESIGNAL_APP_ID 
-    }).then(() => {
-      console.log("OneSignal initialized successfully");
-      return OneSignal.Slidedown.promptPush();
-    }).catch(error => {
-      console.error("Error initializing OneSignal:", error);
-    });*/
+    // Set up Firebase messaging listener
+    if (messaging) {
+      const unsubscribe = onMessage(messaging, (payload: MessagePayload) => {
+        console.log("Received foreground message:", payload);
+        if (payload.notification?.title) {
+          toast(payload.notification.title);
+        }
+      });
+
+      // Cleanup subscription on unmount
+      return () => unsubscribe();
+    }
   }, []);
+
+  const requestNotificationPermission = async () => {
+    try {
+      if (!messaging) {
+        console.log("Firebase messaging is not initialized");
+        return;
+      }
+
+      // Request notification permission
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        console.log('Notification permission denied');
+        return;
+      }
+      
+      // Then request FCM token
+      const token = await getToken(messaging, {
+        vapidKey: import.meta.env.VITE_FIREBASE_PUSH_PUBLIC_KEY 
+      });
+      
+      if (token) {
+        console.log("FCM Token:", token);
+        // Here you would typically send this token to your backend
+      } else {
+        console.log("No registration token available");
+      }
+    } catch (error) {
+      console.error("Error requesting notification permission:", error);
+    }
+  };
 
   return (
     <Router>
+      <ToastContainer />
+      <button 
+        onClick={requestNotificationPermission}
+        className="fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg z-50"
+      >
+        Enable Notifications
+      </button>
+      
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Login />} />
@@ -53,14 +98,14 @@ const App: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        {/* <Route
+        <Route
           path="/technician"
           element={
             <ProtectedRoute role="technician">
-              <Technician />
+              <TechnicianPage />
             </ProtectedRoute>
           }
-        /> */}
+        />
 
         {/* Fallback Route */}
         <Route

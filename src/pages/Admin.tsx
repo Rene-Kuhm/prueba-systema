@@ -92,7 +92,7 @@ const Admin = () => {
     const renderContent = () => {
         switch (activeSection) {
             case "users":
-                return <PendingUsers users={pendingUsers} onApprove={approveUser} />;
+                return <PendingUsers />;
             case "claims":
                 return (
                     <div className="claims-section">

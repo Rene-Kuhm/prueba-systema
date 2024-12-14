@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { ClaimFormProps, Claim, Technician } from '@/lib/types/admin';
 import '@/components/Admin/ClaimForm/ClaimForm.css';
-import { collection, getDocs, addDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import OneSignal from 'react-onesignal'; // Import OneSignal
-import axios from 'axios'; // Add this import at the top
+import { getMessaging, getToken } from 'firebase/messaging';
+import { toast } from 'react-toastify';
 
 const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
     const [technicians, setTechnicians] = useState<Technician[]>([]);
@@ -12,6 +12,8 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
     const [error, setError] = useState<string | null>(null);
     const [selectedTechnicianId, setSelectedTechnicianId] = useState(claim.technicianId || '');
     const [alertMessage, setAlertMessage] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [techniciansWithNotifications, setTechniciansWithNotifications] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         fetchTechnicians();
@@ -27,11 +29,47 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         try {
             const technicianCollection = collection(db, 'technicians');
             const technicianSnapshot = await getDocs(technicianCollection);
-            const technicianList = technicianSnapshot.docs.map(doc => ({
-                id: doc.id,
-                name: doc.data().name,
-                phone: doc.data().phone
-            } as Technician));
+            
+            const technicianList: Technician[] = [];
+            
+            await Promise.all(
+                technicianSnapshot.docs.map(async (techDoc) => {
+                    const technicianData = techDoc.data();
+                    
+                    // Check corresponding user document
+                    const userDoc = await getDoc(doc(db, 'users', techDoc.id));
+                    const userData = userDoc.data();
+                    
+                    // Filter technicians based on multiple conditions
+                    if (
+                        userData && 
+                        userData.role === 'technician' && 
+                        userData.active !== false && 
+                        userData.approved === true
+                    ) {
+                        technicianList.push({
+                            id: techDoc.id,
+                            name: technicianData.name || userData.fullName,
+                            phone: technicianData.phone || '',
+                            email: userData.email
+                        } as Technician);
+                    }
+                })
+            );
+    
+            // Verificar qué técnicos tienen token FCM
+            const notificationStatus = new Set<string>();
+            await Promise.all(
+                technicianList.map(async (tech) => {
+                    const userDoc = await getDoc(doc(db, 'users', tech.id));
+                    const userData = userDoc.data();
+                    if (userData?.fcmToken && userData?.active !== false) {
+                        notificationStatus.add(tech.id);
+                    }
+                })
+            );
+    
+            setTechniciansWithNotifications(notificationStatus);
             setTechnicians(technicianList);
             setLoading(false);
         } catch (err) {
@@ -45,29 +83,72 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         const newTechnicianId = e.target.value;
         setSelectedTechnicianId(newTechnicianId);
         onChange({ ...claim, technicianId: newTechnicianId });
+
+        // Advertir si el técnico no tiene notificaciones configuradas
+        if (newTechnicianId && !techniciansWithNotifications.has(newTechnicianId)) {
+            toast.warning('Este técnico no recibirá notificaciones automáticas');
+        }
     };
 
-    const sendNotification = async (claimId: string, technicianName: string) => {
+    const sendNotification = async (claimId: string, technicianId: string, claimDetails: Claim) => {
         try {
-            const response = await axios.post('https://onesignal.com/api/v1/notifications', {
-                app_id: import.meta.env.VITE_ONESIGNAL_APP_ID,
-                contents: {
-                    en: `Se ha asignado un nuevo reclamo al técnico ${technicianName}.`
-                },
-                headings: {
-                    en: "Nuevo Reclamo Asignado"
-                },
-                included_segments: ["Subscribed Users"],
-                data: { claimId }
-            }, {
+            const technicianDoc = await getDoc(doc(db, 'users', technicianId));
+            const technicianData = technicianDoc.data();
+            const technicianName = technicians.find(t => t.id === technicianId)?.name || 'técnico';
+            
+            if (!technicianData?.fcmToken || technicianData?.active === false) {
+                toast.warning(`El técnico ${technicianName} no tiene notificaciones configuradas`);
+                // Guardar notificación pendiente
+                await setDoc(doc(db, 'pendingNotifications', claimId), {
+                    technicianId,
+                    claimId,
+                    customerName: claimDetails.name,
+                    customerAddress: claimDetails.address,
+                    customerPhone: claimDetails.phone,
+                    reason: claimDetails.reason,
+                    createdAt: new Date(),
+                    attempts: 0,
+                    technicianName
+                });
+                return false;
+            }
+
+            const sendNotificationUrl = `${import.meta.env.VITE_FIREBASE_FUNCTIONS_URL}/sendNotification`;
+            
+            const response = await fetch(sendNotificationUrl, {
+                method: 'POST',
                 headers: {
-                    'Authorization': `Basic ${import.meta.env.VITE_ONESIGNAL_REST_API_KEY}`,
-                    'Content-Type': 'application/json'
-                }
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    notification: {
+                        title: "Nuevo Reclamo Asignado",
+                        body: `Se te ha asignado un nuevo reclamo de ${claimDetails.name}`,
+                        icon: '/logo192.png'
+                    },
+                    data: {
+                        claimId,
+                        customerName: claimDetails.name,
+                        customerAddress: claimDetails.address,
+                        customerPhone: claimDetails.phone,
+                        reason: claimDetails.reason,
+                        type: 'new_claim'
+                    },
+                    token: technicianData.fcmToken
+                })
             });
-            console.log('Notificación enviada exitosamente', response.data);
+
+            if (!response.ok) {
+                throw new Error(`Error al enviar la notificación: ${response.statusText}`);
+            }
+
+            console.log('Notificación enviada exitosamente');
+            toast.success(`Notificación enviada a ${technicianName}`);
+            return true;
         } catch (error) {
             console.error('Error al enviar la notificación:', error);
+            toast.error('No se pudo enviar la notificación al técnico');
+            return false;
         }
     };
 
@@ -76,14 +157,18 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
             const docRef = await addDoc(collection(db, "claims"), {
                 ...claimData,
                 createdAt: new Date(),
-                notificationSent: false
+                status: 'pending',
+                notificationSent: false,
+                lastUpdate: new Date()
             });
-            console.log("Claim created with ID: ", docRef.id);
-            // Obtener el nombre del técnico asignado
-            const technician = technicians.find(tech => tech.id === claimData.technicianId);
-            if (technician) {
-                await sendNotification(docRef.id, technician.name);
-            }
+            
+            const notificationSent = await sendNotification(docRef.id, claimData.technicianId, claimData);
+            
+            await setDoc(doc(db, "claims", docRef.id), {
+                notificationSent,
+                lastNotificationAttempt: new Date()
+            }, { merge: true });
+            
             return docRef.id;
         } catch (e) {
             console.error("Error adding claim: ", e);
@@ -97,6 +182,8 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
             setAlertMessage('Todos los campos son requeridos');
             return;
         }
+
+        setIsSubmitting(true);
         try {
             const now = new Date().toLocaleString('es-AR');
             const updatedClaim: Claim = {
@@ -120,23 +207,41 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
             updatedClaim.id = claimId;
             
             await onSubmit();
+            toast.success('Reclamo guardado con éxito');
             setAlertMessage('Reclamo guardado con éxito');
         } catch (error) {
             console.error('Error in handleSubmit:', error);
+            toast.error('Error al guardar el reclamo');
             setAlertMessage('Error al guardar el reclamo');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
-    if (loading) return <div>Cargando técnicos...</div>;
-    if (error) return <div>{error}</div>;
+    if (loading) return (
+        <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+    );
+
+    if (error) return (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-md text-red-700">
+            {error}
+        </div>
+    );
 
     return (
         <div className="claim-form-container">
             <h2 className="claim-form-title">Cargar Nuevo Reclamo</h2>
             {alertMessage && (
-                <div className="alert alert-info mb-4">
+                <div className={`alert ${alertMessage.includes('éxito') ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'} mb-4`}>
                     {alertMessage}
-                    <button onClick={() => setAlertMessage(null)} className="ml-2">×</button>
+                    <button 
+                        onClick={() => setAlertMessage(null)}
+                        className="ml-2 text-black hover:text-gray-700"
+                    >
+                        ×
+                    </button>
                 </div>
             )}
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -175,20 +280,48 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                         />
                     </div>
                     <div className="input-container">
-                        <label className="form-label required-field">Técnico Asignado</label>
-                        <select
-                            value={selectedTechnicianId}
-                            onChange={handleTechnicianChange}
-                            className="form-select"
-                            required
-                        >
-                            <option value="">Seleccionar Técnico</option>
-                            {technicians.map((technician) => (
-                                <option key={technician.id} value={technician.id}>
-                                    {technician.name} - {technician.phone}
-                                </option>
-                            ))}
-                        </select>
+                        <label className="form-label required-field">
+                            Técnico Asignado
+                            <span className="ml-2 text-xs text-gray-400">
+                                ({techniciansWithNotifications.size} de {technicians.length} con notificaciones)
+                            </span>
+                        </label>
+                        <div className="relative">
+                            <select
+                                value={selectedTechnicianId}
+                                onChange={handleTechnicianChange}
+                                className={`form-select ${
+                                    selectedTechnicianId && !techniciansWithNotifications.has(selectedTechnicianId)
+                                    ? 'border-yellow-400'
+                                    : ''
+                                }`}
+                                required
+                            >
+                                <option value="">Seleccionar Técnico</option>
+                                {technicians.map((technician) => {
+                                    const hasNotifications = techniciansWithNotifications.has(technician.id);
+                                    return (
+                                        <option 
+                                            key={technician.id} 
+                                            value={technician.id}
+                                            className={`${
+                                                hasNotifications 
+                                                    ? 'text-green-700' 
+                                                    : 'text-yellow-600'
+                                            }`}
+                                        >
+                                            {technician.name} - {technician.phone}
+                                            {!hasNotifications ? ' (Sin notificaciones)' : ' ✓'}
+                                        </option>
+                                    );
+                                })}
+                            </select>
+                            {selectedTechnicianId && !techniciansWithNotifications.has(selectedTechnicianId) && (
+                                <div className="absolute -bottom-6 left-0 text-sm text-yellow-600">
+                                    Este técnico no recibirá notificaciones automáticas
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
                 <div className="input-container">
@@ -224,8 +357,19 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                     </div>
                 </div>
                 <div className="flex justify-end mt-6">
-                    <button type="submit" className="submit-button">
-                        Cargar Reclamo
+                    <button 
+                        type="submit" 
+                        className="submit-button"
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting ? (
+                            <div className="flex items-center">
+                                <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                                Guardando...
+                            </div>
+                        ) : (
+                            'Cargar Reclamo'
+                        )}
                     </button>
                 </div>
             </form>

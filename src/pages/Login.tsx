@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuthStore } from '@/stores/authStore';
-import '@/styles/login.css';
-import { subscribeUser, addUserData } from '@/lib/onesignal';
+import { useAuthStore } from '../stores/authStore';
+import '../styles/login.css';
+import { getMessaging, getToken } from 'firebase/messaging';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { toast } from 'react-toastify';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -25,50 +28,113 @@ export default function Login() {
     if (error) {
       console.log('Error detectado:', error);
       setIsSubmitting(false);
+      toast.error(error);
     }
   }, [error]);
-  
-  useEffect(() => {
-    const setupOneSignal = async () => {
-      if (userProfile && userProfile.uid && isSubmitting) {
-        console.log('Configurando OneSignal para usuario:', userProfile.uid);
+
+  const setupFirebaseMessaging = async (userId: string) => {
+    try {
+      const messaging = getMessaging();
+
+      // Verificar soporte de notificaciones
+      if (!('Notification' in window)) {
+        console.log('Este navegador no soporta notificaciones');
+        toast.warning('Tu navegador no soporta notificaciones');
+        return false;
+      }
+
+      // Verificar permiso actual
+      let permission = Notification.permission;
+      if (permission === 'default') {
+        permission = await Notification.requestPermission();
+      }
+
+      if (permission !== 'granted') {
+        console.log('Permiso de notificación denegado');
+        toast.warning('Se requiere permiso para recibir notificaciones');
+        return false;
+      }
+
+      // Intentar obtener token con reintentos
+      let token = null;
+      let attempts = 0;
+      const maxAttempts = 3;
+
+      while (!token && attempts < maxAttempts) {
         try {
-          const subscribed = await subscribeUser(email, userProfile.uid);
-          console.log('Resultado suscripción OneSignal:', subscribed);
-          
-          if (subscribed) {
-            await addUserData({
-              role: selectedRole,
-              email,
-              lastLogin: new Date().toISOString(),
-              userId: userProfile.uid,
-              fullName: userProfile.displayName || email.split('@')[0]
-            });
-            console.log('Datos de usuario añadidos a OneSignal');
+          token = await getToken(messaging, {
+            vapidKey: import.meta.env.VITE_FIREBASE_PUSH_PUBLIC_KEY
+          });
+          break;
+        } catch (error) {
+          attempts++;
+          console.error(`Intento ${attempts} fallido:`, error);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+
+      if (!token) {
+        console.error('No se pudo obtener el token FCM');
+        toast.error('Error al configurar las notificaciones');
+        return false;
+      }
+
+      console.log('Token de FCM obtenido:', token);
+
+      // Guardar datos del usuario
+      const userData = {
+        role: selectedRole,
+        email,
+        fcmToken: token,
+        lastLogin: new Date().toISOString(),
+        lastTokenUpdate: new Date().toISOString(),
+        userId,
+        fullName: userProfile?.displayName || email.split('@')[0],
+        active: true
+      };
+
+      await setDoc(doc(db, 'users', userId), userData, { merge: true });
+
+      // Verificar que se guardó correctamente
+      const verifyDoc = await getDoc(doc(db, 'users', userId));
+      const verifyData = verifyDoc.data();
+
+      if (!verifyData?.fcmToken) {
+        throw new Error('Error al guardar el token');
+      }
+
+      console.log('Datos de usuario actualizados en Firestore');
+      toast.success('Notificaciones configuradas correctamente');
+      return true;
+    } catch (error) {
+      console.error('Error configurando Firebase Messaging:', error);
+      toast.error('Error al configurar las notificaciones');
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    const handleUserLogin = async () => {
+      if (userProfile && userProfile.uid && isSubmitting) {
+        try {
+          const notificationsConfigured = await setupFirebaseMessaging(userProfile.uid);
+          if (!notificationsConfigured) {
+            console.warn('Notificaciones no configuradas correctamente');
           }
         } catch (error) {
-          console.error('Error configurando OneSignal:', error);
+          console.error('Error en la configuración de notificaciones:', error);
         } finally {
           console.log('Navegando a:', `/${selectedRole}`);
           navigate(`/${selectedRole}`);
           setIsSubmitting(false);
         }
       } else if (userProfile && !isSubmitting) {
-        // Si tenemos usuario pero no estamos en proceso de submit, solo navegamos
         navigate(`/${selectedRole}`);
       }
     };
 
-    setupOneSignal();
+    handleUserLogin();
   }, [userProfile, isSubmitting, email, selectedRole, navigate]);
-
-  useEffect(() => {
-    if (error) {
-      console.log('Error detectado:', error);
-      setIsSubmitting(false);
-    }
-  }, [error]);
-
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -85,6 +151,7 @@ export default function Login() {
       console.log('Llamando a signIn...');
       await signIn(email, password, selectedRole);
       console.log('SignIn completado');
+      toast.success('Inicio de sesión exitoso');
     } catch (err) {
       console.error('Error en login:', err);
       setIsSubmitting(false);
