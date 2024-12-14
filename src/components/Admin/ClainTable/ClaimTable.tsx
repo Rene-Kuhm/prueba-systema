@@ -1,6 +1,16 @@
 import type { Claim } from '@/lib/types/admin';
-import { Eye, Trash2, FileText } from 'lucide-react';
-import '@/components/Admin/ClainTable/ClaimTable.css'
+import { Eye, Trash2, FileText, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import '@/components/Admin/ClainTable/ClaimTable.css';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 
 export interface ClaimsTableProps {
     claims: Claim[];
@@ -9,17 +19,39 @@ export interface ClaimsTableProps {
     onExport: () => void;
 }
 
-const formatDateTime = (dateString: string | undefined) => {
+const getStatusBadge = (status: string) => {
+    const statusConfig = {
+        pending: { color: 'bg-yellow-100 text-yellow-800', icon: Clock, text: 'Pendiente' },
+        in_progress: { color: 'bg-blue-100 text-blue-800', icon: Clock, text: 'En Proceso' },
+        completed: { color: 'bg-green-100 text-green-800', icon: CheckCircle, text: 'Completado' },
+        cancelled: { color: 'bg-red-100 text-red-800', icon: AlertCircle, text: 'Cancelado' }
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
+    const Icon = config.icon;
+
+    return (
+        <Badge variant="default" className={`${config.color} flex items-center gap-1`}>
+            <Icon size={14} />
+            {config.text}
+        </Badge>
+    );
+};
+
+const formatDateTime = (dateString: string | Date | undefined) => {
     if (!dateString) return 'Fecha no disponible';
-    try {
-        const date = new Date(dateString);
-        return new Intl.DateTimeFormat('es-AR', {
-            dateStyle: 'short',
-            timeStyle: 'short'
-        }).format(date);
-    } catch {
-        return 'Fecha inválida';
-    }
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+    
+    if (isNaN(date.getTime())) return 'Fecha inválida';
+    
+    return new Intl.DateTimeFormat('es-AR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    }).format(date);
 };
 
 export function ClaimsTable({
@@ -29,78 +61,86 @@ export function ClaimsTable({
     onExport,
 }: ClaimsTableProps) {
     return (
-        <div className="claims-table-container">
-            <div className="flex items-center justify-between table-header-section">
+        <div className="claims-table-container p-4">
+            <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h3 className="table-title">Gestión de Reclamos</h3>
-                    <p className="table-subtitle">{claims.length} reclamos en total</p>
+                    <h3 className="text-2xl font-bold">Gestión de Reclamos</h3>
+                    <p className="text-gray-500">{claims.length} reclamos en total</p>
                 </div>
-                <button onClick={onExport} className="export-button">
+                <Button onClick={onExport} variant="outline" className="flex items-center gap-2">
                     <FileText size={18} />
                     Exportar
-                </button>
+                </Button>
             </div>
 
-            <div className="table-wrapper">
-                {claims.length > 0 ? (
-                    <table className="claims-table">
-                        <thead>
-                            <tr>
-                                <th>Teléfono</th>
-                                <th>Nombre</th>
-                                <th>Dirección</th>
-                                <th>Servicio</th>
-                                <th>Motivo</th>
-                                <th>Recibido por</th>
-                                <th>Fecha y Hora</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {claims.map((claim: Claim) => (
-                                <tr key={claim.id}>
-                                    <td>{claim.phone}</td>
-                                    <td>{claim.name}</td>
-                                    <td>
-                                        <div className="truncate-text" title={claim.address}>
+            <div className="rounded-md border">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Estado</TableHead>
+                            <TableHead>Teléfono</TableHead>
+                            <TableHead>Nombre</TableHead>
+                            <TableHead>Dirección</TableHead>
+                            <TableHead>Técnico</TableHead>
+                            <TableHead>Motivo</TableHead>
+                            <TableHead>Recibido por</TableHead>
+                            <TableHead>Fecha y Hora</TableHead>
+                            <TableHead>Acciones</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {claims.length > 0 ? (
+                            claims.map((claim: Claim) => (
+                                <TableRow key={claim.id}>
+                                    <TableCell>
+                                        {getStatusBadge(claim.status || 'pending')}
+                                    </TableCell>
+                                    <TableCell>{claim.phone}</TableCell>
+                                    <TableCell>{claim.name}</TableCell>
+                                    <TableCell className="max-w-[200px]">
+                                        <div className="truncate" title={claim.address}>
                                             {claim.address}
                                         </div>
-                                    </td>
-                                    <td>{claim.technicianId}</td>
-                                    <td>
-                                        <div className="truncate-text" title={claim.reason}>
+                                    </TableCell>
+                                    <TableCell>{claim.technicianId}</TableCell>
+                                    <TableCell className="max-w-[200px]">
+                                        <div className="truncate" title={claim.reason}>
                                             {claim.reason}
                                         </div>
-                                    </td>
-                                    <td>{claim.receivedBy || 'N/A'}</td>
-                                    <td>{formatDateTime(claim.receivedAt)}</td>
-                                    <td>
-                                        <div className="action-buttons">
-                                            <button
+                                    </TableCell>
+                                    <TableCell>{claim.receivedBy || 'N/A'}</TableCell>
+                                    <TableCell>{formatDateTime(claim.receivedAt)}</TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
                                                 onClick={() => onShowDetails(claim)}
-                                                className="action-button action-view"
-                                                title="Ver detalles"
+                                                className="hover:bg-blue-50"
                                             >
                                                 <Eye size={18} />
-                                            </button>
-                                            <button
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
                                                 onClick={() => claim.id && onDelete(claim.id)}
-                                                className="action-button action-delete"
-                                                title="Eliminar reclamo"
+                                                className="hover:bg-red-50 text-red-600"
                                             >
                                                 <Trash2 size={18} />
-                                            </button>
+                                            </Button>
                                         </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                ) : (
-                    <div className="table-empty">
-                        No hay reclamos disponibles
-                    </div>
-                )}
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={9} className="text-center py-8">
+                                    No hay reclamos disponibles
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
             </div>
         </div>
     );

@@ -14,7 +14,21 @@ import { AdminState, Claim, PendingUser,  Technician } from '@/lib/types/admin';
 import { useAdmin, UseAdminReturn } from "@/hooks/useAdmin";
 import "@/styles/admin.css";
 
-
+const initialClaim: Claim = {
+    id: '',
+    name: '',
+    phone: '',
+    address: '',
+    reason: '',
+    technicianId: '',
+    receivedBy: '',
+    receivedAt: new Date().toLocaleString('es-AR'),
+    status: 'pending',
+    title: '',
+    customer: '',
+    date: new Date().toLocaleString('es-AR'),
+    resolution: ''
+};
 
 const Admin = () => {
     const {
@@ -97,7 +111,7 @@ const Admin = () => {
                 return (
                     <div className="claims-section">
                         <ClaimForm
-                            claim={newClaim}
+                            claim={newClaim || initialClaim}
                             technicians={technicians} // Use technicians directly
                             onSubmit={handleSubmitNewClaim}
                             onChange={handleNewClaimChange}

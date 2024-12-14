@@ -25,6 +25,42 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         }
     }, [claim.technicianId]);
 
+    // Initialize empty claim if not provided
+    useEffect(() => {
+        if (!claim) {
+            const now = new Date().toLocaleString('es-AR', {
+                dateStyle: 'short',
+                timeStyle: 'short'
+            });
+            onChange({
+                id: '',
+                name: '',
+                phone: '',
+                address: '',
+                reason: '',
+                technicianId: '',
+                receivedBy: '',
+                receivedAt: now,
+                status: 'pending',
+                title: '',
+                customer: '',
+                date: now,
+                resolution: ''
+            });
+        }
+    }, []);
+
+    // Ensure form values are never undefined
+    const formValues = {
+        phone: claim?.phone || '',
+        name: claim?.name || '',
+        address: claim?.address || '',
+        reason: claim?.reason || '',
+        receivedBy: claim?.receivedBy || '',
+        receivedAt: claim?.receivedAt || new Date().toLocaleString('es-AR'),
+        technicianId: selectedTechnicianId
+    };
+
     const fetchTechnicians = async () => {
         try {
             const technicianCollection = collection(db, 'technicians');
@@ -92,13 +128,17 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
 
     const sendNotification = async (claimId: string, technicianId: string, claimDetails: Claim) => {
         try {
+            // Obtener datos del técnico de users collection
             const technicianDoc = await getDoc(doc(db, 'users', technicianId));
             const technicianData = technicianDoc.data();
             const technicianName = technicians.find(t => t.id === technicianId)?.name || 'técnico';
             
-            if (!technicianData?.fcmToken || technicianData?.active === false) {
-                toast.warning(`El técnico ${technicianName} no tiene notificaciones configuradas`);
-                // Guardar notificación pendiente
+            // Verificar si el técnico tiene un token FCM válido
+            if (!technicianData?.fcmToken) {
+                console.log('No FCM token found for technician:', technicianId);
+                toast.warning(`El técnico ${technicianName} no tiene token de notificación configurado`);
+                
+                // Guardar notificación pendiente con más detalles
                 await setDoc(doc(db, 'pendingNotifications', claimId), {
                     technicianId,
                     claimId,
@@ -108,18 +148,40 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                     reason: claimDetails.reason,
                     createdAt: new Date(),
                     attempts: 0,
-                    technicianName
+                    technicianName,
+                    error: 'No FCM token found'
                 });
                 return false;
             }
 
-            const sendNotificationUrl = `${import.meta.env.VITE_FIREBASE_FUNCTIONS_URL}/sendNotification`;
-            
-            const response = await fetch(sendNotificationUrl, {
+            // Verificar que la URL de la función esté definida
+            const sendNotificationUrl = import.meta.env.VITE_FIREBASE_FUNCTIONS_URL;
+            if (!sendNotificationUrl) {
+                console.error('Firebase Functions URL no configurada. Verifica el archivo .env');
+                toast.error('Error en la configuración del servidor de notificaciones');
+                
+                // Guardar la notificación pendiente en vez de fallar
+                await setDoc(doc(db, 'pendingNotifications', claimId), {
+                    technicianId,
+                    claimId,
+                    customerName: claimDetails.name,
+                    customerAddress: claimDetails.address,
+                    customerPhone: claimDetails.phone,
+                    reason: claimDetails.reason,
+                    createdAt: new Date(),
+                    attempts: 0,
+                    error: 'Firebase Functions URL not configured'
+                });
+                return false;
+            }
+
+            const response = await fetch(`${sendNotificationUrl}/sendNotification`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
+                mode: 'cors',
                 body: JSON.stringify({
                     notification: {
                         title: "Nuevo Reclamo Asignado",
@@ -132,21 +194,24 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                         customerAddress: claimDetails.address,
                         customerPhone: claimDetails.phone,
                         reason: claimDetails.reason,
-                        type: 'new_claim'
+                        type: 'new_claim',
+                        timestamp: new Date().toISOString()
                     },
                     token: technicianData.fcmToken
                 })
             });
 
             if (!response.ok) {
-                throw new Error(`Error al enviar la notificación: ${response.statusText}`);
+                const errorData = await response.json();
+                console.error('Notification error:', errorData);
+                throw new Error(`Error al enviar la notificación: ${errorData.message || response.statusText}`);
             }
 
-            console.log('Notificación enviada exitosamente');
+            console.log('Notificación enviada exitosamente al técnico:', technicianName);
             toast.success(`Notificación enviada a ${technicianName}`);
             return true;
         } catch (error) {
-            console.error('Error al enviar la notificación:', error);
+            console.error('Error detallado al enviar la notificación:', error);
             toast.error('No se pudo enviar la notificación al técnico');
             return false;
         }
@@ -154,12 +219,16 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
 
     const createClaim = async (claimData: Claim) => {
         try {
+            const now = new Date();
             const docRef = await addDoc(collection(db, "claims"), {
                 ...claimData,
-                createdAt: new Date(),
+                createdAt: now,
+                receivedAt: now,
                 status: 'pending',
                 notificationSent: false,
-                lastUpdate: new Date()
+                lastUpdate: now,
+                // Asegúrate de que las fechas sean objetos Date
+                date: now
             });
             
             const notificationSent = await sendNotification(docRef.id, claimData.technicianId, claimData);
@@ -176,6 +245,32 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         }
     };
 
+    const resetForm = () => {
+        onChange({
+            id: '',
+            name: '',
+            phone: '',
+            address: '',
+            reason: '',
+            technicianId: '',
+            receivedBy: '',
+            receivedAt: new Date().toLocaleString('es-AR', {
+                dateStyle: 'short',
+                timeStyle: 'short'
+            }),
+            status: 'pending',
+            title: '',
+            customer: '',
+            date: new Date().toLocaleString('es-AR', {
+                dateStyle: 'short',
+                timeStyle: 'short'
+            }),
+            resolution: ''
+        });
+        setSelectedTechnicianId('');
+        setAlertMessage(null);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!claim.phone || !claim.name || !claim.address || !claim.reason || !selectedTechnicianId || !claim.receivedBy) {
@@ -185,10 +280,10 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
 
         setIsSubmitting(true);
         try {
-            const now = new Date().toLocaleString('es-AR');
+            const now = new Date();
             const updatedClaim: Claim = {
                 ...claim,
-                receivedAt: now,
+                receivedAt: now.toISOString(), // Usar ISO string para consistencia
                 technicianId: selectedTechnicianId,
                 id: claim.id || `temp_${Date.now()}`,
                 status: claim.status || 'pending',
@@ -199,7 +294,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                 reason: claim.reason,
                 title: claim.title || '',
                 customer: claim.customer || '',
-                date: claim.date || now,
+                date: now.toISOString(),
                 resolution: claim.resolution || ''
             };
             
@@ -207,8 +302,8 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
             updatedClaim.id = claimId;
             
             await onSubmit();
-            toast.success('Reclamo guardado con éxito');
             setAlertMessage('Reclamo guardado con éxito');
+            resetForm(); // Limpiamos el formulario después de guardar exitosamente
         } catch (error) {
             console.error('Error in handleSubmit:', error);
             toast.error('Error al guardar el reclamo');
@@ -251,7 +346,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                         <input
                             type="text"
                             placeholder="Ej: +54 11 1234-5678"
-                            value={claim.phone}
+                            value={formValues.phone}
                             onChange={(e) => onChange({ ...claim, phone: e.target.value })}
                             className="form-input"
                             required
@@ -262,7 +357,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                         <input
                             type="text"
                             placeholder="Nombre completo"
-                            value={claim.name}
+                            value={formValues.name}
                             onChange={(e) => onChange({ ...claim, name: e.target.value })}
                             className="form-input"
                             required
@@ -273,7 +368,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                         <input
                             type="text"
                             placeholder="Dirección completa"
-                            value={claim.address}
+                            value={formValues.address}
                             onChange={(e) => onChange({ ...claim, address: e.target.value })}
                             className="form-input"
                             required
@@ -328,7 +423,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                     <label className="form-label required-field">Motivo del Reclamo</label>
                     <textarea
                         placeholder="Descripción detallada del reclamo"
-                        value={claim.reason}
+                        value={formValues.reason}
                         onChange={(e) => onChange({ ...claim, reason: e.target.value })}
                         className="form-textarea"
                         required
@@ -340,7 +435,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                         <input
                             type="text"
                             placeholder="Nombre del receptor"
-                            value={claim.receivedBy}
+                            value={formValues.receivedBy}
                             onChange={(e) => onChange({ ...claim, receivedBy: e.target.value })}
                             className="form-input"
                             required
@@ -350,7 +445,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                         <label className="form-label">Recibido en</label>
                         <input
                             type="text"
-                            value={claim.receivedAt || new Date().toLocaleString('es-AR')}
+                            value={formValues.receivedAt}
                             className="form-input"
                             readOnly
                         />
@@ -365,6 +460,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                         {isSubmitting ? (
                             <div className="flex items-center">
                                 <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+export default ClaimForm;
                                 Guardando...
                             </div>
                         ) : (
