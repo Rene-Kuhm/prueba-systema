@@ -23,6 +23,7 @@ const AuthAction: React.FC = () => {
 
 const App: React.FC = () => {
   useEffect(() => {
+    console.log("OneSignal App ID:", import.meta.env.VITE_ONESIGNAL_APP_ID);
     OneSignal.init({ 
       appId: import.meta.env.VITE_ONESIGNAL_APP_ID 
     }).then(() => {
