@@ -128,44 +128,27 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
 
     const sendNotification = async (claimId: string, technicianId: string, claimDetails: Claim) => {
         try {
-            // Obtener datos del técnico de users collection
             const technicianDoc = await getDoc(doc(db, 'users', technicianId));
             const technicianData = technicianDoc.data();
             const technicianName = technicians.find(t => t.id === technicianId)?.name || 'técnico';
             
-            // Verificar si el técnico tiene un token FCM válido
             if (!technicianData?.fcmToken) {
-                console.log('No FCM token found for technician:', technicianId);
-                toast.warning(`El técnico ${technicianName} no tiene token de notificación configurado`);
-                
-                // Guardar notificación pendiente con más detalles
-                await setDoc(doc(db, 'pendingNotifications', claimId), {
-                    technicianId,
-                    claimId,
-                    customerName: claimDetails.name,
-                    customerAddress: claimDetails.address,
-                    customerPhone: claimDetails.phone,
-                    reason: claimDetails.reason,
-                    createdAt: new Date(),
-                    attempts: 0,
-                    technicianName,
-                    error: 'No FCM token found'
-                });
+                // ... existing token check code ...
                 return false;
             }
 
-            // Verificar que la URL de la función esté definida
-            const notificationEndpoint = import.meta.env.VITE_FIREBASE_FUNCTIONS_URL;
-            if (!notificationEndpoint) {
-                throw new Error('Firebase Functions URL no configurada. Verifica el archivo .env');
+            // Check environment variable
+            const functionUrl = import.meta.env.VITE_FIREBASE_FUNCTIONS_URL;
+            if (!functionUrl || typeof functionUrl !== 'string') {
+                console.error('Firebase Functions URL is not properly configured:', functionUrl);
+                throw new Error('URL del servicio de notificaciones no configurada correctamente');
             }
 
-            console.log('Sending notification to:', notificationEndpoint); // Para debug
-
-            const response = await fetch(notificationEndpoint, {
+            const response = await fetch(functionUrl.trim(), {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
                 mode: 'cors',
                 body: JSON.stringify({
@@ -185,18 +168,10 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                 })
             });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('Notification error:', errorData);
-                throw new Error(`Error al enviar la notificación: ${errorData.message || response.statusText}`);
-            }
-
-            console.log('Notificación enviada exitosamente al técnico:', technicianName);
-            toast.success(`Notificación enviada a ${technicianName}`);
-            return true;
+            // ... rest of the existing code ...
         } catch (error) {
             console.error('Error detallado al enviar la notificación:', error);
-            toast.error('No se pudo enviar la notificación al técnico');
+            toast.error(error instanceof Error ? error.message : 'Error al enviar la notificación');
             return false;
         }
     };

@@ -26,7 +26,7 @@ interface NotificationPayload {
   token: string
 }
 
-export const sendNotification = functions.https.onRequest((req, res) => {
+export const sendClaimNotification = functions.https.onRequest((req, res) => {
   return corsHandler(req, res, async () => {
     // Set CORS headers for all responses
     res.set('Access-Control-Allow-Origin', '*')
