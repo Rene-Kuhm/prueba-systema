@@ -38,6 +38,13 @@ export interface Technician {
     totalAssignments: number;
 }
 
+export interface ClaimFormTechnician {
+    id: string;
+    name: string;
+    phone: string;
+    email: string;
+}
+
 export interface AdminState {
     pendingUsers: PendingUser[];
     claims: Claim[];

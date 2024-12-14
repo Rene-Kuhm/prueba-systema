@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ClaimFormProps, Claim, Technician } from '@/lib/types/admin';
+import { ClaimFormProps, Claim, ClaimFormTechnician } from '@/lib/types/admin';
 import '@/components/Admin/ClaimForm/ClaimForm.css';
 import { collection, getDocs, addDoc, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -7,7 +7,7 @@ import { getMessaging, getToken } from 'firebase/messaging';
 import { toast } from 'react-toastify';
 
 const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
-    const [technicians, setTechnicians] = useState<Technician[]>([]);
+    const [technicians, setTechnicians] = useState<ClaimFormTechnician[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedTechnicianId, setSelectedTechnicianId] = useState(claim.technicianId || '');
@@ -30,7 +30,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
             const technicianCollection = collection(db, 'technicians');
             const technicianSnapshot = await getDocs(technicianCollection);
             
-            const technicianList: Technician[] = [];
+            const technicianList: ClaimFormTechnician[] = [];
             
             await Promise.all(
                 technicianSnapshot.docs.map(async (techDoc) => {
@@ -52,7 +52,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                             name: technicianData.name || userData.fullName,
                             phone: technicianData.phone || '',
                             email: userData.email
-                        } as Technician);
+                        } as ClaimFormTechnician);
                     }
                 })
             );
