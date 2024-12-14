@@ -23,19 +23,14 @@ const AuthAction: React.FC = () => {
 
 const App: React.FC = () => {
   useEffect(() => {
-    // Replace the initOneSignal call with direct OneSignal initialization
     OneSignal.init({ 
       appId: import.meta.env.VITE_ONESIGNAL_APP_ID 
+    }).then(() => {
+      console.log("OneSignal initialized successfully");
+      return OneSignal.Slidedown.promptPush();
+    }).catch(error => {
+      console.error("Error initializing OneSignal:", error);
     });
-    OneSignal.Slidedown.promptPush();  // Changed to use correct method
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/firebase-messaging-sw.js')
-        .then(function(registration) {
-          console.log('Service Worker registrado con éxito:', registration.scope);
-        }).catch(function(err) {
-          console.log('Error al registrar el Service Worker:', err);
-        });
-    }
   }, []);
 
   return (
