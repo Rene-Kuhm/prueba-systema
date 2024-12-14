@@ -157,29 +157,18 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
             // Verificar que la URL de la función esté definida
             const sendNotificationUrl = import.meta.env.VITE_FIREBASE_FUNCTIONS_URL;
             if (!sendNotificationUrl) {
-                console.error('Firebase Functions URL no configurada. Verifica el archivo .env');
-                toast.error('Error en la configuración del servidor de notificaciones');
-                
-                // Guardar la notificación pendiente en vez de fallar
-                await setDoc(doc(db, 'pendingNotifications', claimId), {
-                    technicianId,
-                    claimId,
-                    customerName: claimDetails.name,
-                    customerAddress: claimDetails.address,
-                    customerPhone: claimDetails.phone,
-                    reason: claimDetails.reason,
-                    createdAt: new Date(),
-                    attempts: 0,
-                    error: 'Firebase Functions URL not configured'
-                });
-                return false;
+                throw new Error('Firebase Functions URL no configurada. Verifica el archivo .env');
             }
 
-            const response = await fetch(`${sendNotificationUrl}/sendNotification`, {
+            // Asegurarse de que la URL esté correctamente formada
+            const notificationEndpoint = `${sendNotificationUrl.replace(/\/$/, '')}/sendNotification`;
+            
+            console.log('Sending notification to:', notificationEndpoint); // Para debug
+
+            const response = await fetch(notificationEndpoint, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Content-Type': 'application/json'
                 },
                 mode: 'cors',
                 body: JSON.stringify({
@@ -193,9 +182,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                         customerName: claimDetails.name,
                         customerAddress: claimDetails.address,
                         customerPhone: claimDetails.phone,
-                        reason: claimDetails.reason,
-                        type: 'new_claim',
-                        timestamp: new Date().toISOString()
+                        reason: claimDetails.reason
                     },
                     token: technicianData.fcmToken
                 })
