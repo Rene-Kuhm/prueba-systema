@@ -3,6 +3,8 @@ import { ClaimFormProps, Claim, Technician } from '@/lib/types/admin';
 import '@/components/Admin/ClaimForm/ClaimForm.css';
 import { collection, getDocs, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import OneSignal from 'react-onesignal'; // Import OneSignal
+import axios from 'axios'; // Add this import at the top
 
 const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
     const [technicians, setTechnicians] = useState<Technician[]>([]);
@@ -45,6 +47,30 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         onChange({ ...claim, technicianId: newTechnicianId });
     };
 
+    const sendNotification = async (claimId: string, technicianName: string) => {
+        try {
+            const response = await axios.post('https://onesignal.com/api/v1/notifications', {
+                app_id: import.meta.env.VITE_ONESIGNAL_APP_ID,
+                contents: {
+                    en: `Se ha asignado un nuevo reclamo al técnico ${technicianName}.`
+                },
+                headings: {
+                    en: "Nuevo Reclamo Asignado"
+                },
+                included_segments: ["Subscribed Users"],
+                data: { claimId }
+            }, {
+                headers: {
+                    'Authorization': `Basic ${import.meta.env.VITE_ONESIGNAL_REST_API_KEY}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            console.log('Notificación enviada exitosamente', response.data);
+        } catch (error) {
+            console.error('Error al enviar la notificación:', error);
+        }
+    };
+
     const createClaim = async (claimData: Claim) => {
         try {
             const docRef = await addDoc(collection(db, "claims"), {
@@ -53,6 +79,11 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                 notificationSent: false
             });
             console.log("Claim created with ID: ", docRef.id);
+            // Obtener el nombre del técnico asignado
+            const technician = technicians.find(tech => tech.id === claimData.technicianId);
+            if (technician) {
+                await sendNotification(docRef.id, technician.name);
+            }
             return docRef.id;
         } catch (e) {
             console.error("Error adding claim: ", e);

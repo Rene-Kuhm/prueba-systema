@@ -6,6 +6,7 @@ import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Admin from './pages/Admin';
+import OneSignal from 'react-onesignal';
 
 // Componente para manejar las acciones de autenticación
 const AuthAction: React.FC = () => {
@@ -22,6 +23,11 @@ const AuthAction: React.FC = () => {
 
 const App: React.FC = () => {
   useEffect(() => {
+    // Replace the initOneSignal call with direct OneSignal initialization
+    OneSignal.init({ 
+      appId: import.meta.env.VITE_ONESIGNAL_APP_ID 
+    });
+    OneSignal.Slidedown.promptPush();  // Changed to use correct method
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/firebase-messaging-sw.js')
         .then(function(registration) {

@@ -1,4 +1,3 @@
-// src/lib/firebase.ts
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
@@ -17,8 +16,27 @@ export const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
+
+export const requestNotificationPermission = async () => {
+  try {    
+    if (!('Notification' in window)) {
+      console.error('Este navegador no soporta notificaciones push');
+      return null;
+    }
+
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      console.error('Permiso de notificación denegado');
+      return null;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error al solicitar el token:', error);
+    return null;
+  }
+};

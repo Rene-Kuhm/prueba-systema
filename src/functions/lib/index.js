@@ -1,58 +1,68 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendClaimNotification = void 0;
-const functions = require("firebase-functions/v2");
-const admin = require("firebase-admin");
-admin.initializeApp();
-exports.sendClaimNotification = functions.firestore
-    .onDocumentCreated('claims/{claimId}', async (event) => {
-    var _a;
-    console.log('Function triggered for claim:', event.params.claimId);
-    const snap = event.data;
-    if (!snap) {
-        console.log('No data associated with the event');
-        return;
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
     }
-    const newClaim = snap.data();
-    console.log('New claim data:', newClaim);
-    const adminUserIds = [
-        'Pn99XedRMjZrG9UewHkPzVtct0K2',
-        // Otros IDs...
-    ];
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.saveToken = void 0;
+const https_1 = require("firebase-functions/v2/https");
+const admin = __importStar(require("firebase-admin"));
+admin.initializeApp();
+exports.saveToken = (0, https_1.onCall)(async (request) => {
+    // Verificar autenticación
+    if (!request.auth) {
+        throw new Error('Usuario no autenticado');
+    }
+    const { token, role } = request.data;
+    const userId = request.auth.uid;
+    if (!token || !role) {
+        throw new Error('Token y rol son requeridos');
+    }
     try {
-        for (const adminUserId of adminUserIds) {
-            console.log('Processing admin:', adminUserId);
-            const userDoc = await admin.firestore().collection('users').doc(adminUserId).get();
-            if (!userDoc.exists) {
-                console.log(`User document not found for admin: ${adminUserId}`);
-                continue;
-            }
-            const userFcmToken = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.fcmToken;
-            if (!userFcmToken) {
-                console.log(`No FCM token found for admin: ${adminUserId}`);
-                continue;
-            }
-            console.log(`FCM token found for admin: ${adminUserId}`);
-            const message = {
-                notification: {
-                    title: 'Nuevo Reclamo',
-                    body: `Se ha creado un nuevo reclamo: ${newClaim.reason}`
-                },
-                token: userFcmToken
-            };
-            try {
-                const response = await admin.messaging().send(message);
-                console.log(`Notification sent successfully to ${adminUserId}:`, response);
-            }
-            catch (sendError) {
-                console.error(`Error sending notification to ${adminUserId}:`, sendError);
-            }
-        }
-        await snap.ref.update({ notificationSent: true });
-        console.log('Claim updated: notificationSent set to true');
+        await admin.firestore()
+            .collection('fcmTokens')
+            .doc(userId)
+            .set({
+            token,
+            role,
+            userId,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        return { success: true };
     }
     catch (error) {
-        console.error('Error in sendClaimNotification:', error);
+        console.error('Error guardando token:', error);
+        throw new Error('Error al guardar el token');
     }
 });
 //# sourceMappingURL=index.js.map

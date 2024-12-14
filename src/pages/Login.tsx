@@ -2,17 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import '@/styles/login.css';
-import { getMessaging, getToken } from "firebase/messaging";
-import { initializeApp } from 'firebase/app';
-import { firebaseConfig } from '@/lib/firebase';
-
-// Inicializa Firebase
-const app = initializeApp(firebaseConfig);
-const messaging = getMessaging(app);
+import { subscribeUser, addUserData } from '@/lib/onesignal';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { signIn, error } = useAuthStore();
+  const { signIn, error, userProfile, loading } = useAuthStore();
   const [searchParams] = useSearchParams();
   const resetSuccess = searchParams.get('resetSuccess');
   const [email, setEmail] = useState('');
@@ -21,60 +15,82 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (error) setIsSubmitting(false);
+    if (userProfile) {
+      console.log('Usuario autenticado:', userProfile);
+      navigate(`/${selectedRole}`);
+    }
+  }, [userProfile, selectedRole, navigate]);
+
+  useEffect(() => {
+    if (error) {
+      console.log('Error detectado:', error);
+      setIsSubmitting(false);
+    }
+  }, [error]);
+  
+  useEffect(() => {
+    const setupOneSignal = async () => {
+      if (userProfile && userProfile.uid && isSubmitting) {
+        console.log('Configurando OneSignal para usuario:', userProfile.uid);
+        try {
+          const subscribed = await subscribeUser(email, userProfile.uid);
+          console.log('Resultado suscripción OneSignal:', subscribed);
+          
+          if (subscribed) {
+            await addUserData({
+              role: selectedRole,
+              email,
+              lastLogin: new Date().toISOString(),
+              userId: userProfile.uid,
+              fullName: userProfile.displayName || email.split('@')[0]
+            });
+            console.log('Datos de usuario añadidos a OneSignal');
+          }
+        } catch (error) {
+          console.error('Error configurando OneSignal:', error);
+        } finally {
+          console.log('Navegando a:', `/${selectedRole}`);
+          navigate(`/${selectedRole}`);
+          setIsSubmitting(false);
+        }
+      } else if (userProfile && !isSubmitting) {
+        // Si tenemos usuario pero no estamos en proceso de submit, solo navegamos
+        navigate(`/${selectedRole}`);
+      }
+    };
+
+    setupOneSignal();
+  }, [userProfile, isSubmitting, email, selectedRole, navigate]);
+
+  useEffect(() => {
+    if (error) {
+      console.log('Error detectado:', error);
+      setIsSubmitting(false);
+    }
   }, [error]);
 
-  const requestNotificationPermission = async () => {
-    try {
-      const permission = await Notification.requestPermission();
-      if (permission === 'granted') {
-        try {
-          const currentToken = await getToken(messaging, { vapidKey: 'VITE_FIREBASE_PUSH_PUBLIC_KEY' });
-          if (currentToken) {
-            await sendTokenToServer(currentToken);
-          } else {
-            console.log('No se pudo obtener el token.');
-          }
-        } catch (tokenError) {
-          console.error('Error específico al obtener el token:', tokenError);
-        }
-      }
-    } catch (err) {
-      console.error('Error general al solicitar permiso o obtener token:', err);
-    }
-  };
-
-  const sendTokenToServer = async (token: string) => {
-    try {
-      const response = await fetch('/api/save-token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token, role: selectedRole }),
-      });
-      if (!response.ok) {
-        throw new Error('Error al enviar el token al servidor');
-      }
-    } catch (error) {
-      console.error('Error al enviar el token al servidor:', error);
-    }
-  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    console.log('Iniciando login...', { email, role: selectedRole });
+    
+    if (isSubmitting || loading) {
+      console.log('Ya hay una solicitud en proceso');
+      return;
+    }
+    
     setIsSubmitting(true);
-  
+    
     try {
+      console.log('Llamando a signIn...');
       await signIn(email, password, selectedRole);
-      await requestNotificationPermission();
-      navigate(`/${selectedRole}`);
-    } catch {
+      console.log('SignIn completado');
+    } catch (err) {
+      console.error('Error en login:', err);
       setIsSubmitting(false);
     }
   }
 
-  // El resto del componente permanece igual
   return (
     <div className="login-container">
       <div className="background-effects" />
@@ -173,10 +189,10 @@ export default function Login() {
               <div className="mt-8 flex justify-center">
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || loading}
                   className="submit-button group"
                 >
-                  {isSubmitting ? (
+                  {(isSubmitting || loading) ? (
                     <div className="flex items-center justify-center">
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                       Ingresando...
