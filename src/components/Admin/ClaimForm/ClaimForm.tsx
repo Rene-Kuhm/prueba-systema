@@ -5,6 +5,7 @@ import { collection, getDocs, addDoc, doc, getDoc, setDoc } from 'firebase/fires
 import { db } from '@/lib/firebase';
 import { getMessaging, getToken } from 'firebase/messaging';
 import { toast } from 'react-toastify';
+import config from '../../../../config'; // Ajusta la ruta según la estructura de tu proyecto
 
 const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
     const [technicians, setTechnicians] = useState<ClaimFormTechnician[]>([]);
@@ -136,10 +137,8 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                 return false;
             }
 
-            // Asegúrate de usar la URL correcta de la función de Firebase
-            const functionUrl = 'https://us-central1-[TU-PROYECTO-ID].cloudfunctions.net/sendClaimNotification';
-            
-            const response = await fetch(functionUrl, {
+            // Usar la URL desde el archivo de configuración
+            const response = await fetch(config.firebase.functionUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
