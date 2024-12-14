@@ -136,10 +136,14 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                 return false;
             }
 
-            const response = await fetch('/sendClaimNotification', {
+            // Asegúrate de usar la URL correcta de la función de Firebase
+            const functionUrl = 'https://us-central1-[TU-PROYECTO-ID].cloudfunctions.net/sendClaimNotification';
+            
+            const response = await fetch(functionUrl, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
                 body: JSON.stringify({
                     notification: {
@@ -157,16 +161,24 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                 })
             });
 
-            const result = await response.json();
+            // Manejar respuestas no-JSON
+            let result;
+            const textResponse = await response.text();
+            try {
+                result = textResponse ? JSON.parse(textResponse) : {};
+            } catch (e) {
+                console.error('Error parsing response:', textResponse);
+                throw new Error('Invalid JSON response from server');
+            }
 
             if (!response.ok) {
-                throw new Error(result.error || 'Error al enviar la notificación');
+                throw new Error(result.error || `Error del servidor: ${response.status}`);
             }
 
             toast.success('Notificación enviada al técnico');
             return true;
         } catch (error) {
-            console.error('Error al enviar la notificación:', error);
+            console.error('Error detallado al enviar la notificación:', error);
             toast.error(error instanceof Error ? error.message : 'Error al enviar la notificación');
             return false;
         }

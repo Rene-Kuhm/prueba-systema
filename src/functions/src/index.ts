@@ -20,11 +20,11 @@ interface NotificationPayload {
 
 export const sendClaimNotification = functions.https.onRequest((req, res) => {
   // Configurar manualmente los encabezados CORS
-  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Origin', 'https://www.tdpblog.com.ar'); // Ajusta esto a tu dominio exacto
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-  // Manejar preflight request OPTIONS
+  // Asegurarse de que siempre hay una respuesta JSON válida
   if (req.method === 'OPTIONS') {
     res.status(204).send('');
     return;
@@ -38,6 +38,15 @@ export const sendClaimNotification = functions.https.onRequest((req, res) => {
 
   try {
     const payload = req.body as NotificationPayload;
+    
+    if (!payload || !payload.token || !payload.notification) {
+      res.status(400).json({ 
+        success: false, 
+        error: 'Invalid payload' 
+      });
+      return;
+    }
+
     const { notification, data, token } = payload;
 
     const message = {
@@ -56,6 +65,9 @@ export const sendClaimNotification = functions.https.onRequest((req, res) => {
       });
   } catch (error) {
     console.error('Error:', error);
-    res.status(500).json({ success: false, error: 'Internal Server Error' });
+    res.status(500).json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Internal Server Error' 
+    });
   }
 });
