@@ -136,8 +136,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                 toast.warning('El técnico no tiene token de notificaciones configurado');
                 return false;
             }
-
-            // Usar la URL desde el archivo de configuración
+    
             const response = await fetch(config.firebase.functionUrl, {
                 method: 'POST',
                 headers: {
@@ -157,32 +156,32 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                         reason: claimDetails.reason
                     },
                     token: technicianData.fcmToken
-                })
+                }),
+                // Add these options for more robust fetching
+                credentials: 'same-origin',
+                mode: 'cors'
             });
-
-            // Manejar respuestas no-JSON
-            let result;
-            const textResponse = await response.text();
-            try {
-                result = textResponse ? JSON.parse(textResponse) : {};
-            } catch (e) {
-                console.error('Error parsing response:', textResponse);
-                throw new Error('Invalid JSON response from server');
-            }
-
+    
             if (!response.ok) {
-                throw new Error(result.error || `Error del servidor: ${response.status}`);
+                const errorText = await response.text();
+                console.error('Server response:', errorText);
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-
-            toast.success('Notificación enviada al técnico');
-            return true;
+    
+            const result = await response.json();
+            
+            if (result.success) {
+                toast.success('Notificación enviada al técnico');
+                return true;
+            } else {
+                throw new Error(result.error || 'Error desconocido al enviar notificación');
+            }
         } catch (error) {
             console.error('Error detallado al enviar la notificación:', error);
             toast.error(error instanceof Error ? error.message : 'Error al enviar la notificación');
             return false;
         }
     };
-
     const createClaim = async (claimData: Claim) => {
         try {
             const now = new Date();
