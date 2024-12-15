@@ -35,11 +35,15 @@
     ],
     "headers": [
       {
-        "source": "**",
+        "source": "**/sendClaimNotification",
         "headers": [
           {
+            "content-type": "application/json",
+            "Accept": "application/json"
+          },
+          {
             "key": "Access-Control-Allow-Origin",
-            "value": "*"
+            "value": "https://www.tdpblog.com.ar"
           },
           {
             "key": "Access-Control-Allow-Methods",

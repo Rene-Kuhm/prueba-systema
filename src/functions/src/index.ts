@@ -1,7 +1,11 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+import * as cors from 'cors';
 
-admin.initializeApp();
+// Initialize Firebase Admin only once
+if (admin.apps.length === 0) {
+  admin.initializeApp();
+}
 
 interface NotificationPayload {
   notification: {
@@ -19,58 +23,67 @@ interface NotificationPayload {
 }
 
 export const sendClaimNotification = functions.https.onRequest((req, res) => {
-    const cors = require('cors')({
-        origin: ['https://www.tdpblog.com.ar']
-    });
-  // Configurar manualmente los encabezados CORS
-  res.set('Access-Control-Allow-Origin', 'https://www.tdpblog.com.ar'); // Ajusta esto a tu dominio exacto
-  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  // Configure CORS with specific options
+  const corsHandler = cors({
+    origin: ['https://www.tdpblog.com.ar'], // Specify exact origin
+    methods: ['POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  });
 
-  // Asegurarse de que siempre hay una respuesta JSON válida
-  if (req.method === 'OPTIONS') {
-    res.status(204).send('');
-    return;
-  }
+  // Apply CORS middleware
+  corsHandler(req, res, async () => {
+    try {
+      // Handle OPTIONS preflight request
+      if (req.method === 'OPTIONS') {
+        res.status(204).send('');
+        return;
+      }
 
-  // Validar que la solicitud es POST
-  if (req.method !== 'POST') {
-    res.status(405).send({ error: 'Method Not Allowed' });
-    return;
-  }
+      // Validate HTTP method
+      if (req.method !== 'POST') {
+        res.status(405).json({ 
+          success: false, 
+          error: 'Method Not Allowed' 
+        });
+        return;
+      }
 
-  try {
-    const payload = req.body as NotificationPayload;
-    
-    if (!payload || !payload.token || !payload.notification) {
-      res.status(400).json({ 
+      // Validate request payload
+      const payload = req.body as NotificationPayload;
+      
+      if (!payload || !payload.token || !payload.notification) {
+        res.status(400).json({ 
+          success: false, 
+          error: 'Invalid payload: Missing required fields' 
+        });
+        return;
+      }
+
+      const { notification, data, token } = payload;
+
+      const message = {
+        notification,
+        data,
+        token,
+      };
+
+      // Send Firebase Cloud Messaging notification
+      const result = await admin.messaging().send(message);
+      
+      res.status(200).json({ 
+        success: true, 
+        result 
+      });
+
+    } catch (error) {
+      console.error('Notification Error:', error);
+      
+      // Detailed error response
+      res.status(500).json({ 
         success: false, 
-        error: 'Invalid payload' 
+        error: error instanceof Error ? error.message : 'Unexpected server error',
+        details: error instanceof Error ? error.stack : null
       });
-      return;
     }
-
-    const { notification, data, token } = payload;
-
-    const message = {
-      notification,
-      data,
-      token,
-    };
-
-    // Enviar la notificación usando Firebase Admin
-    admin.messaging()
-      .send(message)
-      .then((result) => res.status(200).json({ success: true, result }))
-      .catch((error) => {
-        console.error('Error sending notification:', error);
-        res.status(500).json({ success: false, error: error.message });
-      });
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Internal Server Error' 
-    });
-  }
+  });
 });
