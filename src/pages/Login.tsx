@@ -79,8 +79,24 @@ export default function Login() {
         );
 
         // Reproducir sonido de notificación
-        const audio = new Audio('/notification-sound.mp3');
-        audio.play().catch(e => console.log('Error reproduciendo sonido:', e));
+        try {
+          const audio = new Audio('/assets/notification-sound.mp3');
+          audio.volume = 0.5; // Reducir volumen al 50%
+          const playPromise = audio.play();
+          
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                // La reproducción se inició correctamente
+                console.log('Sonido de notificación reproducido');
+              })
+              .catch(error => {
+                console.log('Error al reproducir sonido:', error);
+              });
+          }
+        } catch (error) {
+          console.log('Error al inicializar el sonido:', error);
+        }
 
         // Mostrar notificación del sistema si está permitido
         if (Notification.permission === 'granted') {
