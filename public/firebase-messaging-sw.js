@@ -1,8 +1,6 @@
-importScripts("https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js")
-importScripts("https://www.gstatic.com/firebasejs/11.1.0/firebase-messaging-compat.js")
+importScripts("https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/11.1.0/firebase-messaging-compat.js");
 
-
- 
 const firebaseConfig = {
     apiKey: "AIzaSyDTG1v3T8sDQGRD3nhWOieLP8CVnKijfiM",
     authDomain: "cospecreclamos.firebaseapp.com",
@@ -15,19 +13,20 @@ const firebaseConfig = {
 const app = firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging(app);
 
-
 messaging.onBackgroundMessage(payload => {
-    console.log("Recibiste mensaje mientras estabas ausente");
-// previo a mostrar notificación
-    const notificationTitle= payload.notification.title;
+    console.log("Recibiste mensaje mientras estabas ausente:", payload);
+
+    const notificationTitle = payload.notification.title;
     const notificationOptions = {
         body: payload.notification.body,
-        icon: "/logo192.png"
-    }
-
+        icon: "/logo192.png",
+        badge: "/logo192.png",
+        tag: payload.data?.claimId || 'notification',
+        data: payload.data // Incluir datos adicionales
+    };
 
     return self.registration.showNotification(
         notificationTitle, 
         notificationOptions
-    )
-})
+    );
+});

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import '../styles/login.css';
-import { getMessaging, getToken } from 'firebase/messaging';
+import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { toast } from 'react-toastify';
@@ -55,6 +55,51 @@ export default function Login() {
         return false;
       }
 
+      // Manejar mensajes en primer plano
+      onMessage(messaging, (payload) => {
+        console.log('Mensaje recibido en primer plano:', payload);
+        
+        // Mostrar notificación usando toast
+        toast.info(
+          <div>
+            <h4 className="font-bold">{payload.notification?.title}</h4>
+            <p>{payload.notification?.body}</p>
+            {payload.data?.customerName && (
+              <p className="text-sm mt-1">Cliente: {payload.data.customerName}</p>
+            )}
+          </div>,
+          {
+            autoClose: 5000,
+            position: "top-right",
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          }
+        );
+
+        // Reproducir sonido de notificación
+        const audio = new Audio('/notification-sound.mp3');
+        audio.play().catch(e => console.log('Error reproduciendo sonido:', e));
+
+        // Mostrar notificación del sistema si está permitido
+        if (Notification.permission === 'granted') {
+          const notification = new Notification(payload.notification?.title || 'Nuevo reclamo', {
+            body: payload.notification?.body,
+            icon: '/logo192.png',
+            tag: payload.data?.claimId,
+            data: payload.data
+          });
+
+          notification.onclick = () => {
+            window.focus();
+            if (payload.data?.claimId) {
+              window.location.href = `/reclamos/${payload.data.claimId}`;
+            }
+          };
+        }
+      });
+
       // Intentar obtener token con reintentos
       let token = null;
       let attempts = 0;
@@ -106,6 +151,7 @@ export default function Login() {
       console.log('Datos de usuario actualizados en Firestore');
       toast.success('Notificaciones configuradas correctamente');
       return true;
+
     } catch (error) {
       console.error('Error configurando Firebase Messaging:', error);
       toast.error('Error al configurar las notificaciones');
