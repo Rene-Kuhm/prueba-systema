@@ -80,7 +80,7 @@ export default function Login() {
 
         // Reproducir sonido de notificación
         try {
-          const audio = new Audio('/assets/notification-sound.mp3');
+          const audio = new Audio('/assets/notification.mp3');
           audio.volume = 0.5; // Reducir volumen al 50%
           const playPromise = audio.play();
           
