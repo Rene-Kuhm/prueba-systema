@@ -61,22 +61,34 @@ export default function Login() {
         
         // Mostrar notificación usando toast
         toast.info(
-          <div>
-            <h4 className="font-bold">{payload.notification?.title}</h4>
-            <p>{payload.notification?.body}</p>
-            {payload.data?.customerName && (
-              <p className="text-sm mt-1">Cliente: {payload.data.customerName}</p>
-            )}
-          </div>,
+          ({ closeToast }) => (
+            <div 
+              className="cursor-pointer"
+              onClick={() => {
+                closeToast();
+                if (payload.data?.claimId) {
+                  window.location.href = `/reclamos/${payload.data.claimId}`;
+                }
+              }}
+            >
+              <div className="font-bold text-lg mb-2">{payload.notification?.title}</div>
+              <p className="text-sm">{payload.notification?.body}</p>
+              {payload.data?.customerName && (
+                <p className="text-xs mt-1">Cliente: {payload.data.customerName}</p>
+              )}
+            </div>
+          ),
           {
-            autoClose: 5000,
-            position: "top-right",
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
+            autoClose: false,
+            closeOnClick: false,
+            draggable: false,
+            position: "bottom-right",
+            className: "bg-blue-500 text-white p-4 rounded-lg shadow-lg",
+            bodyClassName: "text-sm",
+            progressClassName: "bg-blue-700",
           }
         );
+      
 
         // Reproducir sonido de notificación
         try {
@@ -99,6 +111,7 @@ export default function Login() {
         }
 
         // Mostrar notificación del sistema si está permitido
+        /*
         if (Notification.permission === 'granted') {
           const notification = new Notification(payload.notification?.title || 'Nuevo reclamo', {
             body: payload.notification?.body,
@@ -114,6 +127,7 @@ export default function Login() {
             }
           };
         }
+          */
       });
 
       // Intentar obtener token con reintentos
