@@ -140,9 +140,9 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
             const response = await fetch(config.firebase.functionUrl, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Content-Type': 'application/json'
                 },
+                mode: 'cors',
                 body: JSON.stringify({
                     notification: {
                         title: "Nuevo Reclamo Asignado",
@@ -156,25 +156,21 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                         reason: claimDetails.reason
                     },
                     token: technicianData.fcmToken
-                }),
-                // Add these options for more robust fetching
-                credentials: 'same-origin',
-                mode: 'cors'
+                })
             });
     
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Server response:', errorText);
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Error al enviar la notificación');
             }
     
-            const result = await response.json();
+            const data = await response.json();
             
-            if (result.success) {
+            if (data.success) {
                 toast.success('Notificación enviada al técnico');
                 return true;
             } else {
-                throw new Error(result.error || 'Error desconocido al enviar notificación');
+                throw new Error(data.error || 'Error desconocido al enviar notificación');
             }
         } catch (error) {
             console.error('Error detallado al enviar la notificación:', error);

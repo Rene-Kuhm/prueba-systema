@@ -35,11 +35,15 @@
     ],
     "headers": [
       {
-        "source": "**/sendClaimNotification",
+        "source": "/**",
         "headers": [
           {
-            "content-type": "application/json",
-            "Accept": "application/json"
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
           },
           {
             "key": "Access-Control-Allow-Origin",
@@ -52,6 +56,10 @@
           {
             "key": "Access-Control-Allow-Headers",
             "value": "Content-Type, Authorization"
+          },
+          {
+            "key": "Access-Control-Max-Age",
+            "value": "3600"
           }
         ]
       }

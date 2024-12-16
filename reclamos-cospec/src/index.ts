@@ -1,59 +1,121 @@
-import * as functions from "firebase-functions/v2";
+import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 
-admin.initializeApp();
-
-interface Claim {
-    reason: string;
-    // Add other fields that your claim object might have
+// Initialize Firebase Admin
+if (!admin.apps.length) {
+  admin.initializeApp();
 }
 
-const TECH_USER_IDS = [
-  "PVchNzWr04Rvi2WIofC8tOO0Kfy2",
-  "Pn99XedRMjZrG9UewHkPzVtct0K2",
-  "user3_id",
-  // Agrega los IDs de los usuarios técnicos aquí
-];
+// Tipos para el payload
+interface NotificationPayload {
+  notification: {
+    title: string;
+    body: string;
+  };
+  data: {
+    claimId: string;
+    customerName: string;
+    customerAddress: string;
+    customerPhone: string;
+    reason: string;
+  };
+  token: string;
+}
 
-export const sendClaimNotification = functions.firestore.onDocumentCreated(
-  {
-    document: "claims/{claimId}",
-  },
-  async (event) => {
-    const documentPath = event.document; // This is a string representing the document path.
-    console.log("Function triggered for document path:", documentPath);
+// Validador de payload
+const isValidPayload = (payload: unknown): payload is NotificationPayload => {
+  return !!(
+    payload &&
+    typeof payload === "object" &&
+    "notification" in payload &&
+    "data" in payload &&
+    "token" in payload &&
+    payload.notification &&
+    typeof payload.notification === "object" &&
+    "title" in payload.notification &&
+    "body" in payload.notification &&
+    payload.data &&
+    typeof payload.data === "object" &&
+    "claimId" in payload.data &&
+    "customerName" in payload.data &&
+    "customerAddress" in payload.data &&
+    "customerPhone" in payload.data &&
+    "reason" in payload.data
+  );
+};
+
+export const sendClaimNotification = functions.https.onRequest(async (request, response) => {
+  // Configurar CORS
+  response.set("Access-Control-Allow-Origin", "https://www.tdpblog.com.ar");
+  response.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  response.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  response.set("Access-Control-Max-Age", "3600");
+
+  // Manejar preflight request
+  if (request.method === "OPTIONS") {
+    response.status(204).send("");
+    return;
+  }
+
+  try {
+    // Verificar método HTTP
+    if (request.method !== "POST") {
+      response.status(405).json({
+        success: false,
+        error: "Solo se acepta el método POST",
+      });
+      return;
+    }
+
+    // Validar el payload
+    const payload = request.body;
+    if (!isValidPayload(payload)) {
+      response.status(400).json({
+        success: false,
+        error: "Payload inválido: Faltan campos requeridos",
+      });
+      return;
+    }
 
     try {
-      const snapshot = await admin.firestore().doc(documentPath).get();
-      if (!snapshot.exists) {
-        console.error("Document does not exist:", documentPath);
-        return;
-      }
-
-      const newClaim = snapshot.data() as Claim;
-      console.log("New claim data:", newClaim);
-
-      const notification: admin.messaging.WebpushConfig = {
+      // Construir el mensaje para FCM
+      const message: admin.messaging.Message = {
         notification: {
-          title: "Nuevo Reclamo",
-          body: `Se ha creado un nuevo reclamo: ${newClaim.reason}`,
+          title: payload.notification.title,
+          body: payload.notification.body,
         },
         data: {
-          primaryKey: "new-claim-notification",
+          claimId: payload.data.claimId,
+          customerName: payload.data.customerName,
+          customerAddress: payload.data.customerAddress,
+          customerPhone: payload.data.customerPhone,
+          reason: payload.data.reason,
         },
+        token: payload.token,
       };
 
-      try {
-        const response = await admin.messaging().sendToDevice(TECH_USER_IDS, notification);
-        console.log("Notificaciones web enviadas con éxito:", response);
-      } catch (error) {
-        console.error("Error al enviar notificaciones web:", error);
-      }
+      // Enviar la notificación
+      const messageId = await admin.messaging().send(message);
 
-      await snapshot.ref.update({notificationSent: true});
-      console.log("Claim updated: notificationSent set to true");
-    } catch (error) {
-      console.error("Error in sendClaimNotification:", error);
+      response.status(200).json({
+        success: true,
+        messageId,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (fcmError) {
+      console.error("Error al enviar notificación FCM:", fcmError);
+      response.status(500).json({
+        success: false,
+        error: "Error al enviar la notificación Push",
+        details: fcmError instanceof Error ? fcmError.message : undefined,
+      });
     }
-  },
-);
+  } catch (error) {
+    console.error("Error en la función:", error);
+    response.status(500).json({
+      success: false,
+      error: "Error interno del servidor",
+      details: error instanceof Error ? error.message : undefined,
+    });
+  }
+});

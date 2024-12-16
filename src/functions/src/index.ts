@@ -1,21 +1,12 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
-import * as corsLib from 'cors';
 
-// Initialize Firebase Admin only once
-if (admin.apps.length === 0) {
+// Initialize Firebase Admin
+if (!admin.apps.length) {
   admin.initializeApp();
 }
 
-// Initialize CORS middleware
-const cors = corsLib({
-  origin: 'https://www.tdpblog.com.ar',
-  methods: ['POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  maxAge: 86400 // 24 hours
-});
-
-// Type definitions
+// Tipos para el payload
 interface NotificationPayload {
   notification: {
     title: string;
@@ -31,96 +22,96 @@ interface NotificationPayload {
   token: string;
 }
 
-interface ErrorResponse {
-  success: false;
-  error: string;
-  details?: unknown;
-}
-
-interface SuccessResponse {
-  success: true;
-  result: string; // Firebase returns message ID as string
-}
-
-export const sendClaimNotification = functions.https.onRequest((req, res) => {
-  return new Promise((resolve) => {
-    cors(req, res, async () => {
-      try {
-        // Validate HTTP method
-        if (req.method !== 'POST') {
-          const response: ErrorResponse = {
-            success: false,
-            error: 'Method Not Allowed'
-          };
-          res.status(405).json(response);
-          return resolve();
-        }
-
-        // Validate payload
-        const payload = req.body as NotificationPayload;
-        if (!isValidPayload(payload)) {
-          const response: ErrorResponse = {
-            success: false,
-            error: 'Invalid payload: Missing required fields'
-          };
-          res.status(400).json(response);
-          return resolve();
-        }
-
-        const { notification, data, token } = payload;
-
-        const message: admin.messaging.Message = {
-          notification,
-          data,
-          token,
-        };
-
-        try {
-          // Send Firebase Cloud Messaging notification
-          const messageId = await admin.messaging().send(message);
-          const response: SuccessResponse = {
-            success: true,
-            result: messageId
-          };
-          res.status(200).json(response);
-        } catch (error) {
-          console.error('Messaging Error:', error);
-          const response: ErrorResponse = {
-            success: false,
-            error: error instanceof Error ? error.message : 'Firebase Messaging Error',
-            details: error instanceof Error ? error.stack : error
-          };
-          res.status(500).json(response);
-        }
-
-      } catch (error) {
-        console.error('Notification Error:', error);
-        const response: ErrorResponse = {
-          success: false,
-          error: error instanceof Error ? error.message : 'Unexpected server error',
-          details: error instanceof Error ? error.stack : error
-        };
-        res.status(500).json(response);
-      }
-      resolve();
-    });
-  });
-});
-
-// Helper function to validate payload
-function isValidPayload(payload: unknown): payload is NotificationPayload {
-  if (!payload || typeof payload !== 'object') return false;
-  
-  const p = payload as NotificationPayload;
-  
-  return Boolean(
-    p.notification?.title &&
-    p.notification?.body &&
-    p.data?.claimId &&
-    p.data?.customerName &&
-    p.data?.customerAddress &&
-    p.data?.customerPhone &&
-    p.data?.reason &&
-    p.token
+// Validador de payload
+const isValidPayload = (payload: any): payload is NotificationPayload => {
+  return !!(
+    payload &&
+    payload.notification?.title &&
+    payload.notification?.body &&
+    payload.data?.claimId &&
+    payload.data?.customerName &&
+    payload.data?.customerAddress &&
+    payload.data?.customerPhone &&
+    payload.data?.reason &&
+    payload.token
   );
-}
+};
+
+export const sendClaimNotification = functions.https.onRequest(async (request, response) => {
+  // Configurar CORS
+  response.set('Access-Control-Allow-Origin', 'https://www.tdpblog.com.ar');
+  response.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  response.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  response.set('Access-Control-Max-Age', '3600');
+
+  // Manejar preflight request
+  if (request.method === 'OPTIONS') {
+    response.status(204).send('');
+    return;
+  }
+
+  try {
+    // Verificar método HTTP
+    if (request.method !== 'POST') {
+      response.status(405).json({
+        success: false,
+        error: 'Solo se acepta el método POST'
+      });
+      return;
+    }
+
+    // Validar el payload
+    const payload = request.body;
+    if (!isValidPayload(payload)) {
+      response.status(400).json({
+        success: false,
+        error: 'Payload inválido: Faltan campos requeridos'
+      });
+      return;
+    }
+
+    try {
+      // Construir el mensaje para FCM
+      const message: admin.messaging.Message = {
+        notification: {
+          title: payload.notification.title,
+          body: payload.notification.body,
+        },
+        data: {
+          claimId: payload.data.claimId,
+          customerName: payload.data.customerName,
+          customerAddress: payload.data.customerAddress,
+          customerPhone: payload.data.customerPhone,
+          reason: payload.data.reason,
+        },
+        token: payload.token,
+      };
+
+      // Enviar la notificación
+      const messageId = await admin.messaging().send(message);
+
+      // Retornar respuesta exitosa
+      response.status(200).json({
+        success: true,
+        messageId,
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (fcmError) {
+      console.error('Error al enviar notificación FCM:', fcmError);
+      response.status(500).json({
+        success: false,
+        error: 'Error al enviar la notificación Push',
+        details: fcmError instanceof Error ? fcmError.message : undefined
+      });
+    }
+
+  } catch (error) {
+    console.error('Error en la función:', error);
+    response.status(500).json({
+      success: false,
+      error: 'Error interno del servidor',
+      details: error instanceof Error ? error.message : undefined
+    });
+  }
+});
