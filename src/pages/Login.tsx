@@ -89,7 +89,6 @@ export default function Login() {
           }
         );
       
-
         // Reproducir sonido de notificación
         try {
           const audio = new Audio('/assets/notification.mp3');
@@ -109,44 +108,10 @@ export default function Login() {
         } catch (error) {
           console.log('Error al inicializar el sonido:', error);
         }
-
-        // Mostrar notificación del sistema si está permitido
-        /*
-        if (Notification.permission === 'granted') {
-          const notification = new Notification(payload.notification?.title || 'Nuevo reclamo', {
-            body: payload.notification?.body,
-            icon: '/logo192.png',
-            tag: payload.data?.claimId,
-            data: payload.data
-          });
-
-          notification.onclick = () => {
-            window.focus();
-            if (payload.data?.claimId) {
-              window.location.href = `/reclamos/${payload.data.claimId}`;
-            }
-          };
-        }
-          */
       });
 
-      // Intentar obtener token con reintentos
-      let token = null;
-      let attempts = 0;
-      const maxAttempts = 3;
-
-      while (!token && attempts < maxAttempts) {
-        try {
-          token = await getToken(messaging, {
-            vapidKey: import.meta.env.VITE_FIREBASE_PUSH_PUBLIC_KEY
-          });
-          break;
-        } catch (error) {
-          attempts++;
-          console.error(`Intento ${attempts} fallido:`, error);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-      }
+      // Obtener el token del dispositivo automáticamente
+      const token = await getDeviceToken();
 
       if (!token) {
         console.error('No se pudo obtener el token FCM');
@@ -186,6 +151,53 @@ export default function Login() {
       console.error('Error configurando Firebase Messaging:', error);
       toast.error('Error al configurar las notificaciones');
       return false;
+    }
+  };
+
+  // Obtener el token del dispositivo automáticamente
+  const getDeviceToken = async () => {
+    try {
+      const messaging = getMessaging();
+      const currentToken = await getToken(messaging, {
+        vapidKey: import.meta.env.VITE_FIREBASE_PUSH_PUBLIC_KEY,
+      });
+
+      if (currentToken) {
+        console.log('Token de registro:', currentToken);
+        // Enviar el token al servidor para almacenarlo y usarlo posteriormente
+        await sendTokenToServer(currentToken);
+        return currentToken;
+      } else {
+        console.log('No se pudo obtener el token de registro');
+        return null;
+      }
+    } catch (error) {
+      console.log('Error al obtener el token de registro:', error);
+      return null;
+    }
+  };
+
+  // Enviar el token al servidor
+  const sendTokenToServer = async (token: string) => {
+    try {
+      // Aquí puedes hacer una solicitud HTTP para enviar el token al servidor
+      // y almacenarlo asociado al usuario o dispositivo correspondiente
+      // Ejemplo:
+      const response = await fetch('/api/save-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token }),
+      });
+
+      if (response.ok) {
+        console.log('Token enviado al servidor correctamente');
+      } else {
+        console.log('Error al enviar el token al servidor');
+      }
+    } catch (error) {
+      console.log('Error al enviar el token al servidor:', error);
     }
   };
 
