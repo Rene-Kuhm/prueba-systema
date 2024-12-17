@@ -67,3 +67,16 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* In your global.css or tailwind.css */
+@layer components {
+  .Toastify__toast {
+    @apply p-0 rounded-lg shadow-xl;
+  }
+  .Toastify__toast-body {
+    @apply p-0;
+  }
+  .Toastify__progress-bar {
+    @apply bg-yellow-400 h-1;
+  }
+}
