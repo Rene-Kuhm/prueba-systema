@@ -27,24 +27,24 @@ self.addEventListener('notificationclick', function(event) {
 messaging.onBackgroundMessage(payload => {
     console.log("Recibiste mensaje mientras estabas ausente:", payload);
 
-    const notificationTitle = payload.notification.title;
+    const notificationTitle = payload.notification.title || 'Cospec Comunicaciones';
     const notificationOptions = {
-        body: payload.notification.body,
-        icon: "/logo192.png",
-        badge: "/logo192.png",
+        body: payload.notification.body || 'Nuevo reclamo cargado',
+        icon: "/images/logo_cospec.png",
+        badge: "/images/logo_cospec.png",
         tag: payload.data?.claimId || 'notification',
         vibrate: [200, 100, 200], // Agrega vibración
-        requireInteraction: true,  // La notificación permanece hasta que el usuario interactúe
-        actions: [
-            {
-                action: 'view',
-                title: 'Ver reclamo'
-            }
-        ]
+        requireInteraction: true,
+        sound: "/assets/notification.mp3",
+        data: {
+            ...payload.data,
+            clickAction: "https://www.tdpblog.com.ar"
+        }
     };
 
-    return self.registration.showNotification(
-        notificationTitle, 
-        notificationOptions
-    );
+    self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+self.addEventListener('install', (event) => {
+    self.skipWaiting();
 });
