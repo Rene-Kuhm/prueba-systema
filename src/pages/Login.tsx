@@ -59,6 +59,15 @@ export default function Login() {
       onMessage(messaging, (payload) => {
         console.log('Mensaje recibido en primer plano:', payload);
         
+        // Obtener los datos del reclamo de la carga útil
+        const { claimId, customerName, claimDescription, receivedBy, receivedAt } = payload.data as {
+          claimId?: string;
+          customerName?: string;
+          claimDescription?: string;
+          receivedBy?: string;
+          receivedAt?: string;
+        };
+        
         // Mostrar notificación usando toast
         toast.info(
           ({ closeToast }) => (
@@ -66,15 +75,22 @@ export default function Login() {
               className="cursor-pointer"
               onClick={() => {
                 closeToast();
-                if (payload.data?.claimId) {
-                  window.location.href = `/reclamos/${payload.data.claimId}`;
-                }
+                window.location.href = "https://www.tdpblog.com.ar";
               }}
             >
               <div className="font-bold text-lg mb-2">{payload.notification?.title}</div>
               <p className="text-sm">{payload.notification?.body}</p>
-              {payload.data?.customerName && (
-                <p className="text-xs mt-1">Cliente: {payload.data.customerName}</p>
+              {customerName && (
+                <p className="text-sm mt-1">Cliente: {customerName}</p>
+              )}
+              {claimDescription && (
+                <p className="text-sm mt-1">Descripción: {claimDescription}</p>
+              )}
+              {receivedBy && (
+                <p className="text-sm mt-1">Recibido por: {receivedBy}</p>
+              )}
+              {receivedAt && (
+                <p className="text-sm mt-1">Recibido en: {receivedAt}</p>
               )}
             </div>
           ),
