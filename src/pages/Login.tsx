@@ -59,8 +59,40 @@ export default function Login() {
       onMessage(messaging, (payload) => {
         console.log('Mensaje recibido en primer plano:', payload);
         
+        // Cospec Communications SVG Icon
+        const CospecIcon = () => (
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            width="40" 
+            height="40" 
+            viewBox="0 0 24 24" 
+            className="mr-3"
+          >
+            <path 
+              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" 
+              fill="#2ecc71"  // Vibrant green color
+            />
+            <path 
+              d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 8c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z" 
+              fill="#27ae60"  // Slightly darker green for depth
+            />
+            <circle 
+              cx="12" 
+              cy="12" 
+              r="2" 
+              fill="#2ecc71"  // Accent point in vibrant green
+            />
+          </svg>
+        );
+        
         // Obtener los datos del reclamo de la carga útil
-        const { claimId, customerName, claimDescription, receivedBy, receivedAt } = payload.data as {
+        const { 
+          claimId, 
+          customerName, 
+          claimDescription, 
+          receivedBy, 
+          receivedAt 
+        } = payload.data as {
           claimId?: string;
           customerName?: string;
           claimDescription?: string;
@@ -72,26 +104,55 @@ export default function Login() {
         toast.info(
           ({ closeToast }) => (
             <div 
-              className="cursor-pointer"
+              className="flex items-start cursor-pointer rounded-lg p-2 w-full"
               onClick={() => {
                 closeToast();
                 window.location.href = "https://www.tdpblog.com.ar";
               }}
             >
-              <div className="font-bold text-lg mb-2">{payload.notification?.title}</div>
-              <p className="text-sm">{payload.notification?.body}</p>
-              {customerName && (
-                <p className="text-sm mt-1">Cliente: {customerName}</p>
-              )}
-              {claimDescription && (
-                <p className="text-sm mt-1">Descripción: {claimDescription}</p>
-              )}
-              {receivedBy && (
-                <p className="text-sm mt-1">Recibido por: {receivedBy}</p>
-              )}
-              {receivedAt && (
-                <p className="text-sm mt-1">Recibido en: {receivedAt}</p>
-              )}
+              <div className="flex items-center">
+                <CospecIcon />
+                <div className="ml-3">
+                  <div className="flex items-center mb-1">
+                    <h3 className="text-lg font-bold text-gray-800 mr-2">
+                      Cospec Comunicaciones
+                    </h3>
+                    <span className="text-xs text-gray-500">
+                      {new Date().toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">
+                    {payload.notification?.title}
+                  </p>
+                  <p className="text-xs text-gray-600 mb-1">
+                    {payload.notification?.body}
+                  </p>
+                  {customerName && (
+                    <div className="text-xs text-gray-500 flex items-center mb-1">
+                      <span className="font-semibold mr-1">Cliente:</span>
+                      {customerName}
+                    </div>
+                  )}
+                  {claimDescription && (
+                    <div className="text-xs text-gray-500 flex items-center mb-1">
+                      <span className="font-semibold mr-1">Descripción:</span>
+                      {claimDescription}
+                    </div>
+                  )}
+                  {receivedBy && (
+                    <div className="text-xs text-gray-500 flex items-center mb-1">
+                      <span className="font-semibold mr-1">Recibido por:</span>
+                      {receivedBy}
+                    </div>
+                  )}
+                  {receivedAt && (
+                    <div className="text-xs text-gray-500 flex items-center">
+                      <span className="font-semibold mr-1">Recibido en:</span>
+                      {receivedAt}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           ),
           {
@@ -99,9 +160,9 @@ export default function Login() {
             closeOnClick: false,
             draggable: false,
             position: "bottom-right",
-            className: "bg-blue-500 text-white p-4 rounded-lg shadow-lg",
+            className: "bg-white shadow-xl rounded-lg border border-green-200 p-2",
             bodyClassName: "text-sm",
-            progressClassName: "bg-blue-700",
+            progressClassName: "bg-green-400",
           }
         );
       
@@ -350,7 +411,7 @@ export default function Login() {
                     value={selectedRole}
                     onChange={(e) => setSelectedRole(e.target.value as 'admin' | 'technician')}
                     className="input-field"
-                  >
+                    >
                     <option value="technician">Técnico</option>
                     <option value="admin">Administrador</option>
                   </select>
