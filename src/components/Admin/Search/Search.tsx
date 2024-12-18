@@ -1,6 +1,13 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Search as SearchIcon, X, Users, FileText, Wrench } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { PendingUser, Claim, Technician } from '@/lib/types/admin';
+import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
+import { getApp } from 'firebase/app';
+
+// Obtener la instancia de Firebase existente
+const app = getApp();
+const db = getFirestore(app);
 
 interface SearchResult {
     id: string;
@@ -8,221 +15,215 @@ interface SearchResult {
     title: string;
     subtitle?: string;
     section: 'users' | 'claims' | 'dashboard';
-    data: any;
+    data: PendingUser | Claim | Technician;
 }
 
-interface AdminSearchProps {
-    pendingUsers?: any[];
-    claims?: any[];
-    technicians?: any[];
-    onResultClick: (result: SearchResult) => void;
-    setActiveSection: (section: string) => void;
-}
-
-export const AdminSearch: React.FC<AdminSearchProps> = ({
-    pendingUsers = [],
-    claims = [],
-    technicians = [],
-    onResultClick,
-    setActiveSection
-}) => {
+export const AdminSearch: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [results, setResults] = useState<SearchResult[]>([]);
-    const [isSearching, setIsSearching] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [activeSection, setActiveSection] = useState('dashboard');
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleSearch = useCallback((term: string) => {
+    const handleSearch = useCallback(async (term: string) => {
         if (!term || term.length < 2) {
             setResults([]);
             return;
         }
 
-        setIsSearching(true);
-        const searchTerm = term.toLowerCase().trim();
+        setIsLoading(true);
         const searchResults: SearchResult[] = [];
 
-        // Buscar en usuarios pendientes
-        pendingUsers?.forEach(user => {
-            if (!user) return;
-            const matchesEmail = user.email?.toLowerCase()?.includes(searchTerm);
-            const matchesName = user.displayName?.toLowerCase()?.includes(searchTerm);
-
-            if (matchesEmail || matchesName) {
+        try {
+            // Buscar usuarios
+            const usersQuery = query(collection(db, 'users'), where('fullName', '>=', term), where('fullName', '<=', term + '\uf8ff'));
+            const usersSnapshot = await getDocs(usersQuery);
+            usersSnapshot.forEach(doc => {
+                const userData = doc.data() as PendingUser;
                 searchResults.push({
-                    id: user.id || String(Math.random()),
+                    id: doc.id,
                     type: 'user',
-                    title: user.displayName || 'Usuario sin nombre',
-                    subtitle: user.email || '',
+                    title: userData.fullName || userData.displayName || 'Usuario sin nombre',
+                    subtitle: userData.email,
                     section: 'users',
-                    data: user
+                    data: userData
                 });
-            }
-        });
+            });
 
-        // Buscar en reclamos
-        claims?.forEach(claim => {
-            if (!claim) return;
-            const matchesName = claim.name?.toLowerCase()?.includes(searchTerm);
-            const matchesPhone = claim.phone?.toLowerCase()?.includes(searchTerm);
-            const matchesAddress = claim.address?.toLowerCase()?.includes(searchTerm);
-            const matchesReason = claim.reason?.toLowerCase()?.includes(searchTerm);
-
-            if (matchesName || matchesPhone || matchesAddress || matchesReason) {
+            // Buscar reclamos
+            const claimsQuery = query(collection(db, 'claims'), where('name', '>=', term), where('name', '<=', term + '\uf8ff'));
+            const claimsSnapshot = await getDocs(claimsQuery);
+            claimsSnapshot.forEach(doc => {
+                const claimData = doc.data() as Claim;
                 searchResults.push({
-                    id: claim.id || String(Math.random()),
+                    id: doc.id,
                     type: 'claim',
-                    title: `${claim.name || 'Sin nombre'} - ${claim.phone || 'Sin teléfono'}`,
-                    subtitle: claim.address || 'Sin dirección',
+                    title: `${claimData.name || 'Sin nombre'} - ${claimData.phone || 'Sin teléfono'}`,
+                    subtitle: claimData.address || 'Sin dirección',
                     section: 'claims',
-                    data: claim
+                    data: claimData
                 });
-            }
-        });
+            });
 
-        // Buscar en técnicos
-        technicians?.forEach(tech => {
-            if (!tech) return;
-            if (tech.name?.toLowerCase()?.includes(searchTerm)) {
+            // Buscar técnicos
+            const techniciansQuery = query(collection(db, 'technicians'), where('name', '>=', term), where('name', '<=', term + '\uf8ff'));
+            const techniciansSnapshot = await getDocs(techniciansQuery);
+            techniciansSnapshot.forEach(doc => {
+                const techData = doc.data() as Technician;
                 searchResults.push({
-                    id: tech.id || String(Math.random()),
+                    id: doc.id,
                     type: 'technician',
-                    title: tech.name || 'Técnico sin nombre',
-                    subtitle: `Técnico ID: ${tech.id || ''}`,
+                    title: techData.name || 'Técnico sin nombre',
+                    subtitle: `Teléfono: ${techData.phone}`,
                     section: 'dashboard',
-                    data: tech
+                    data: techData
                 });
-            }
-        });
+            });
 
-        setResults(searchResults);
-        setIsSearching(false);
-    }, [pendingUsers, claims, technicians]);
+            setResults(searchResults);
+        } catch (error) {
+            console.error('Error searching:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            handleSearch(searchTerm);
+        }, 300);
+
+        return () => clearTimeout(timeoutId);
+    }, [searchTerm, handleSearch]);
 
     const handleResultClick = (result: SearchResult) => {
         setActiveSection(result.section);
-        onResultClick(result);
         setSearchTerm('');
         setResults([]);
         setIsSearchOpen(false);
+        console.log('Resultado seleccionado:', result);
     };
 
     const getResultIcon = (type: string) => {
         switch (type) {
-            case 'user':
-                return <Users className="w-5 h-5" />;
-            case 'claim':
-                return <FileText className="w-5 h-5" />;
-            case 'technician':
-                return <Wrench className="w-5 h-5" />;
-            default:
-                return null;
+            case 'user': return <Users className="w-5 h-5" />;
+            case 'claim': return <FileText className="w-5 h-5" />;
+            case 'technician': return <Wrench className="w-5 h-5" />;
+            default: return null;
         }
     };
 
     return (
-        <div className="relative">
-            {/* Desktop Search Bar */}
-            <div className="hidden md:flex items-center relative w-full max-w-2xl">
-                <SearchIcon className="absolute left-3 w-5 h-5 text-muted-foreground pointer-events-none" />
-                <input
-                    type="text"
-                    className="w-full pl-10 pr-10 py-2 h-10 bg-slate-700 border border-slate-500 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="Buscar usuarios, reclamos, técnicos..."
-                    value={searchTerm}
-                    onChange={(e) => {
-                        const value = e.target.value;
-                        setSearchTerm(value);
-                        handleSearch(value);
-                    }}
-                />
-                {searchTerm && (
-                    <button 
-                        onClick={() => {
-                            setSearchTerm('');
-                            setResults([]);
-                        }}
-                        className="absolute right-3 hover:bg-secondary rounded-full p-1"
+        <div className="p-4">
+            <h1 className="text-2xl font-bold mb-4">Panel de Administración</h1>
+            <div className="w-full max-w-2xl mx-auto relative">
+                {/* Desktop Search Bar */}
+                <div className="hidden md:flex items-center relative w-full">
+                    <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+                    <input
+                        type="text"
+                        className="w-full pl-10 pr-10 py-2 h-10 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder="Buscar usuarios, reclamos, técnicos..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        aria-label="Buscar usuarios, reclamos, técnicos"
+                    />
+                    {searchTerm && (
+                        <button 
+                            onClick={() => {
+                                setSearchTerm('');
+                                setResults([]);
+                            }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 hover:bg-secondary rounded-full p-1"
+                        >
+                            <X size={16} />
+                        </button>
+                    )}
+                </div>
+
+                {/* Mobile Search Button */}
+                <div className="md:hidden flex justify-center">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setIsSearchOpen(!isSearchOpen)}
+                        className="w-10 h-10 p-2"
                     >
-                        <X size={16} />
-                    </button>
-                )}
-            </div>
+                        <SearchIcon className="w-5 h-5" />
+                    </Button>
+                </div>
 
-            {/* Mobile Search Button and Expandable Search */}
-            <div className="md:hidden">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsSearchOpen(!isSearchOpen)}
-                    className="relative left-16"
-                >
-                    <SearchIcon className="w-5 h-5" />
-                </Button>
-
+                {/* Mobile Search Modal */}
                 {isSearchOpen && (
-                    <div className="absolute top-full right-0 mt-2 w-screen max-w-sm bg-background border rounded-md shadow-lg p-4 z-50 ">
-                        <div className="relative">
-                            <SearchIcon className="absolute left-3 w-5 h-5 text-muted-foreground pointer-events-none" />
-                            <input
-                                type="text"
-                                className="w-full pl-10 pr-10 py-2 h-10 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                                placeholder="Buscar..."
-                                value={searchTerm}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    setSearchTerm(value);
-                                    handleSearch(value);
-                                }}
-                                autoFocus
-                            />
-                            {searchTerm && (
+                    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 md:hidden">
+                        <div className="fixed inset-x-0 top-0 p-4 bg-background shadow-lg">
+                            <div className="relative">
+                                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+                                <input
+                                    type="text"
+                                    className="w-full pl-10 pr-10 py-2 h-10 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                    placeholder="Buscar..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    autoFocus
+                                />
                                 <button 
-                                    onClick={() => {
-                                        setSearchTerm('');
-                                        setResults([]);
-                                    }}
+                                    onClick={() => setIsSearchOpen(false)}
                                     className="absolute right-3 top-1/2 -translate-y-1/2 hover:bg-secondary rounded-full p-1"
                                 >
                                     <X size={16} />
                                 </button>
-                            )}
+                            </div>
                         </div>
+                    </div>
+                )}
+
+                {/* Search Results */}
+                {isLoading && (
+                    <div className="absolute top-full left-0 right-0 mt-1 p-4 bg-background border rounded-md shadow-lg text-center text-muted-foreground">
+                        Buscando...
+                    </div>
+                )}
+
+                {!isLoading && results.length > 0 && searchTerm && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-background border rounded-md shadow-lg max-h-[60vh] overflow-y-auto z-50">
+                        {results.map((result) => (
+                            <button
+                                key={`${result.type}-${result.id}`}
+                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary transition-colors"
+                                onClick={() => handleResultClick(result)}
+                            >
+                                <span className="text-muted-foreground">
+                                    {getResultIcon(result.type)}
+                                </span>
+                                <div className="flex-1 text-left">
+                                    <div className="font-medium">{result.title}</div>
+                                    {result.subtitle && (
+                                        <div className="text-sm text-muted-foreground">{result.subtitle}</div>
+                                    )}
+                                </div>
+                                <span className="text-sm text-muted-foreground">
+                                    {result.type === 'user' ? 'Usuario' :
+                                     result.type === 'claim' ? 'Reclamo' : 'Técnico'}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                {!isLoading && searchTerm && results.length === 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-1 p-4 bg-background border rounded-md shadow-lg text-center text-muted-foreground">
+                        No se encontraron resultados para "{searchTerm}"
                     </div>
                 )}
             </div>
 
-            {/* Search Results */}
-            {results.length > 0 && !isSearching && searchTerm && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-background border rounded-md shadow-lg max-h-[60vh] overflow-y-auto z-50">
-                    {results.map((result) => (
-                        <button
-                            key={`${result.type}-${result.id}`}
-                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary transition-colors"
-                            onClick={() => handleResultClick(result)}
-                        >
-                            <span className="text-muted-foreground">
-                                {getResultIcon(result.type)}
-                            </span>
-                            <div className="flex-1 text-left">
-                                <div className="font-medium">{result.title}</div>
-                                {result.subtitle && (
-                                    <div className="text-sm text-muted-foreground">{result.subtitle}</div>
-                                )}
-                            </div>
-                            <span className="text-sm text-muted-foreground">
-                                {result.type === 'user' ? 'Usuario' :
-                                 result.type === 'claim' ? 'Reclamo' : 'Técnico'}
-                            </span>
-                        </button>
-                    ))}
-                </div>
-            )}
-
-            {searchTerm && results.length === 0 && !isSearching && (
-                <div className="absolute top-full left-0 right-0 mt-1 p-4 bg-background border rounded-md shadow-lg text-center text-muted-foreground">
-                    No se encontraron resultados para "{searchTerm}"
-                </div>
-            )}
+            {/* Content based on active section */}
+            <div className="mt-4">
+                {activeSection === 'users' && <div>Sección de Usuarios</div>}
+                {activeSection === 'claims' && <div>Sección de Reclamos</div>}
+                {activeSection === 'dashboard' && <div>Dashboard Principal</div>}
+            </div>
         </div>
     );
 };
