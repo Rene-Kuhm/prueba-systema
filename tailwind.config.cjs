@@ -7,7 +7,11 @@ module.exports = {
     "src/pages/**/*.{js,ts,jsx,tsx}",
     "src/components/**/*.{js,ts,jsx,tsx}",
     "src/app/**/*.{js,ts,jsx,tsx}",
-    "./node_modules/react-toastify/**/*.{js,jsx,ts,tsx}"
+    "./node_modules/react-toastify/**/*.{js,jsx,ts,tsx}",
+    './pages/**/*.{ts,tsx}',
+    './components/**/*.{ts,tsx}',
+    './app/**/*.{ts,tsx}',
+    './src/**/*.{ts,tsx}',
   ],
   theme: {
     container: {

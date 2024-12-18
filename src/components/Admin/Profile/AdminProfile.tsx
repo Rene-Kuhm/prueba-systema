@@ -1,10 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { LogOut } from 'lucide-react';
+import { LogOut, Camera, User, Mail, Loader2, Check } from 'lucide-react';
 import { collection, doc, getDoc, updateDoc } from 'firebase/firestore';
 import uploadAvatar from '@/components/Admin/Profile/uploadAvatar.';
 import { db, auth, storage } from '@/lib/firebase';
 import { getDownloadURL, ref } from 'firebase/storage';
-import '@/components/Admin/Profile/AdminProfile.css';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { toast } from "react-toastify";
+import { cn } from "@/lib/utils";
 
 export interface AdminProfileProps {
     fullName: string;
@@ -33,43 +52,51 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({
         newPassword: '',
         avatar: ''
     });
-    const [showDropdown, setShowDropdown] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
     const [avatarPreview, setAvatarPreview] = useState<string>('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
 
     useEffect(() => {
-        const fetchUserData = async () => {
-            try {
-                const user = auth.currentUser;
-                if (user) {
-                    const userDocRef = doc(collection(db, 'users'), user.uid);
-                    const userDoc = await getDoc(userDocRef);
-                    if (userDoc.exists()) {
-                        const userData = userDoc.data();
-                        const avatarRef = ref(storage, `avatars/${user.uid}/avatar.jpg`);
-                        const avatarUrl = await getDownloadURL(avatarRef);
-                        setFormData({
-                            fullName: userData.fullName,
-                            email: userData.email,
-                            currentPassword: '',
-                            newPassword: '',
-                            avatar: avatarUrl
-                        });
-                        setAvatarPreview(avatarUrl);
-                    }
-                }
-            } catch (error) {
-                console.error('Error fetching user data:', error);
-            }
-        };
         fetchUserData();
     }, []);
+
+    const fetchUserData = async () => {
+        try {
+            setIsLoading(true);
+            const user = auth.currentUser;
+            if (user) {
+                const userDocRef = doc(collection(db, 'users'), user.uid);
+                const userDoc = await getDoc(userDocRef);
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    const avatarRef = ref(storage, `avatars/${user.uid}/avatar.jpg`);
+                    const avatarUrl = await getDownloadURL(avatarRef);
+                    setFormData({
+                        fullName: userData.fullName,
+                        email: userData.email,
+                        currentPassword: '',
+                        newPassword: '',
+                        avatar: avatarUrl
+                    });
+                    setAvatarPreview(avatarUrl);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching user data:', error);
+            toast.error('Error al cargar los datos del usuario');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            setIsUpdating(true);
             const user = auth.currentUser;
             if (!user) {
-                throw new Error("User not authenticated");
+                throw new Error("Usuario no autenticado");
             }
 
             let avatarUrl = formData.avatar as string;
@@ -78,7 +105,6 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({
                 avatarUrl = await uploadAvatar(formData.avatar) || avatarUrl;
             }
 
-            // Update the user's profile in Firestore
             const userDocRef = doc(collection(db, 'users'), user.uid);
             await updateDoc(userDocRef, {
                 fullName: formData.fullName,
@@ -95,12 +121,13 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({
                 avatar: avatarUrl
             }));
             setAvatarPreview(avatarUrl);
-            setShowDropdown(false);
-
-            alert('Profile updated successfully');
+            setIsOpen(false);
+            toast.success('Perfil actualizado exitosamente');
         } catch (error) {
             console.error('Error updating profile:', error);
-            alert('Error updating profile. Please try again.');
+            toast.error('Error al actualizar el perfil');
+        } finally {
+            setIsUpdating(false);
         }
     };
 
@@ -115,88 +142,137 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({
         }
     };
 
-    const handleLogout = () => {
-        onLogout();
-    };
-
-    const toggleDropdown = () => {
-        setShowDropdown(!showDropdown);
-    };
+    if (isLoading) {
+        return (
+            <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Cargando...</span>
+            </div>
+        );
+    }
 
     return (
-        <div className="admin-profile-container">
-            <button
-                className="profile-trigger"
-                onClick={toggleDropdown}
-            >
-                <img
-                    src={avatarPreview || '/default-avatar.png'}
-                    alt="Profile"
-                    className="profile-avatar"
-                />
-                <span className="profile-name">{formData.fullName}</span>
-            </button>
+        <Popover open={isOpen} onOpenChange={setIsOpen}>
+            <PopoverTrigger asChild>
+                <Button 
+                    variant="ghost" 
+                    className="h-10 w-10 rounded-full"
+                    role="button"
+                    aria-label="Menu de usuario"
+                >
+                    <Avatar className="h-10 w-10">
+                        <AvatarImage src={avatarPreview} alt={formData.fullName} />
+                        <AvatarFallback>
+                            {formData.fullName?.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                    </Avatar>
+                </Button>
+            </PopoverTrigger>
 
-            {showDropdown && (
-                <div className="profile-dropdown">
-                    <div className="profile-info">
-                        <div className="profile-header">
-                            <img
-                                src={avatarPreview || '/default-avatar.png'}
-                                alt="Profile"
-                                className="profile-avatar-large"
-                            />
-                            <div className="profile-details">
-                                <input
-                                    type="text"
+            <PopoverContent className="w-80 p-0" align="end">
+                <Card>
+                    <CardHeader className="space-y-1">
+                        <div className="flex items-center gap-4">
+                            <div className="relative">
+                                <Avatar className="h-16 w-16">
+                                    <AvatarImage src={avatarPreview} alt={formData.fullName} />
+                                    <AvatarFallback>
+                                        {formData.fullName?.slice(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <Label
+                                    htmlFor="avatar-input"
+                                    className={cn(
+                                        "absolute bottom-0 right-0 p-1 rounded-full",
+                                        "bg-primary hover:bg-primary/90 cursor-pointer",
+                                        "text-primary-foreground transition-colors"
+                                    )}
+                                >
+                                    <Camera className="h-4 w-4" />
+                                </Label>
+                                <Input
+                                    id="avatar-input"
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={handleAvatarChange}
+                                />
+                            </div>
+                            <div>
+                                <CardTitle>{formData.fullName}</CardTitle>
+                                <CardDescription>{formData.email}</CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+
+                    <CardContent>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="fullName">
+                                    <User className="h-4 w-4 inline mr-2" />
+                                    Nombre
+                                </Label>
+                                <Input
+                                    id="fullName"
                                     value={formData.fullName}
                                     onChange={(e) => setFormData({
                                         ...formData,
                                         fullName: e.target.value
                                     })}
-                                    className="profile-name-large"
                                 />
-                                <input
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="email">
+                                    <Mail className="h-4 w-4 inline mr-2" />
+                                    Email
+                                </Label>
+                                <Input
+                                    id="email"
                                     type="email"
                                     value={formData.email}
                                     onChange={(e) => setFormData({
                                         ...formData,
                                         email: e.target.value
                                     })}
-                                    className="profile-email"
                                 />
                             </div>
-                        </div>
 
-                        <div className="profile-actions">
-                            <label htmlFor="avatar-input" className="cursor-pointer edit-profile-btn">
-                                Update Avatar
-                            </label>
-                            <input
-                                id="avatar-input"
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={handleAvatarChange}
-                            />
-                            <button
-                                className="edit-profile-btn"
-                                onClick={handleSubmit}
+                            <Button 
+                                type="submit" 
+                                className="w-full"
+                                disabled={isUpdating}
                             >
-                                Save Changes
-                            </button>
-                            <button
-                                className="logout-btn"
-                                onClick={handleLogout}
-                            >
-                                <LogOut className="w-4 h-4" />
-                                Logout
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
+                                {isUpdating ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Actualizando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Check className="mr-2 h-4 w-4" />
+                                        Guardar Cambios
+                                    </>
+                                )}
+                            </Button>
+                        </form>
+                    </CardContent>
+
+                    <Separator />
+
+                    <CardFooter className="p-4">
+                        <Button 
+                            variant="destructive" 
+                            className="w-full"
+                            onClick={onLogout}
+                        >
+                            <LogOut className="mr-2 h-4 w-4" />
+                            Cerrar Sesión
+                        </Button>
+                    </CardFooter>
+                </Card>
+            </PopoverContent>
+        </Popover>
     );
 };
 

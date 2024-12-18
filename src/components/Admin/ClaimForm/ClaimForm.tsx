@@ -1,93 +1,106 @@
-import React, { useEffect, useState } from 'react'
-import { ClaimFormProps, Claim, ClaimFormTechnician } from '@/lib/types/admin'
-import '@/components/Admin/ClaimForm/ClaimForm.css'
+import React, { useEffect, useState } from 'react';
+import { FormProvider, useForm } from 'react-hook-form';
+import { ClaimFormProps, Claim, ClaimFormTechnician } from '@/lib/types/admin';
+import { collection, getDocs, addDoc, doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { toast } from 'react-toastify';
+import config from '../../../../config';
 import {
-  collection,
-  getDocs,
-  addDoc,
-  doc,
-  getDoc,
-  setDoc,
-} from 'firebase/firestore'
-import { db } from '@/lib/firebase'
-import { getMessaging, getToken } from 'firebase/messaging'
-import { toast } from 'react-toastify'
-import config from '../../../../config' // Ajusta la ruta según la estructura de tu proyecto
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Loader2, AlertCircle, CheckCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+
+// Definimos un creador de claim inicial
+const createInitialClaim = (): Omit<Claim, "id"> => ({
+  name: '',
+  phone: '',
+  address: '',
+  reason: '',
+  technicianId: '',
+  receivedBy: '',
+  receivedAt: format(new Date(), "dd/MM/yyyy HH:mm", { locale: es }),
+  status: 'pending',
+  title: '',
+  customer: '',
+  date: format(new Date(), "dd/MM/yyyy HH:mm", { locale: es }),
+  resolution: '',
+  notificationSent: false,
+  technicalDetails: '',
+  notes: ''
+});
 
 const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
-  const [technicians, setTechnicians] = useState<ClaimFormTechnician[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [selectedTechnicianId, setSelectedTechnicianId] = useState(
-    claim.technicianId || '',
-  )
-  const [alertMessage, setAlertMessage] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [techniciansWithNotifications, setTechniciansWithNotifications] =
-    useState<Set<string>>(new Set())
+  const [technicians, setTechnicians] = useState<ClaimFormTechnician[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedTechnicianId, setSelectedTechnicianId] = useState(claim?.technicianId || '');
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [techniciansWithNotifications, setTechniciansWithNotifications] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    fetchTechnicians()
-  }, [])
+  const methods = useForm({
+    defaultValues: claim,
+  });
+  
 
-  useEffect(() => {
-    if (claim.technicianId !== selectedTechnicianId) {
-      setSelectedTechnicianId(claim.technicianId || '')
-    }
-  }, [claim.technicianId])
 
-  // Initialize empty claim if not provided
   useEffect(() => {
     if (!claim) {
-      const now = new Date().toLocaleString('es-AR', {
-        dateStyle: 'short',
-        timeStyle: 'short',
-      })
-      onChange({
-        id: '',
-        name: '',
-        phone: '',
-        address: '',
-        reason: '',
-        technicianId: '',
-        receivedBy: '',
-        receivedAt: now,
-        status: 'pending',
-        title: '',
-        customer: '',
-        date: now,
-        resolution: '',
-      })
+      const initialClaim = createInitialClaim();
+      onChange(initialClaim);
     }
-  }, [])
+  }, []);
 
-  // Ensure form values are never undefined
-  const formValues = {
-    phone: claim?.phone || '',
-    name: claim?.name || '',
-    address: claim?.address || '',
-    reason: claim?.reason || '',
-    receivedBy: claim?.receivedBy || '',
-    receivedAt: claim?.receivedAt || new Date().toLocaleString('es-AR'),
-    technicianId: selectedTechnicianId,
-  }
+  useEffect(() => {
+    fetchTechnicians();
+  }, []);
+
+  useEffect(() => {
+    if (claim?.technicianId !== selectedTechnicianId) {
+      setSelectedTechnicianId(claim?.technicianId || '');
+    }
+  }, [claim?.technicianId]);
 
   const fetchTechnicians = async () => {
     try {
-      const technicianCollection = collection(db, 'technicians')
-      const technicianSnapshot = await getDocs(technicianCollection)
-
-      const technicianList: ClaimFormTechnician[] = []
+      const technicianCollection = collection(db, 'technicians');
+      const technicianSnapshot = await getDocs(technicianCollection);
+      const technicianList: ClaimFormTechnician[] = [];
 
       await Promise.all(
         technicianSnapshot.docs.map(async (techDoc) => {
-          const technicianData = techDoc.data()
+          const technicianData = techDoc.data();
+          const userDoc = await getDoc(doc(db, 'users', techDoc.id));
+          const userData = userDoc.data();
 
-          // Check corresponding user document
-          const userDoc = await getDoc(doc(db, 'users', techDoc.id))
-          const userData = userDoc.data()
-
-          // Filter technicians based on multiple conditions
           if (
             userData &&
             userData.role === 'technician' &&
@@ -99,65 +112,45 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
               name: technicianData.name || userData.fullName,
               phone: technicianData.phone || '',
               email: userData.email,
-            } as ClaimFormTechnician)
+            });
           }
-        }),
-      )
+        })
+      );
 
-      // Verificar qué técnicos tienen token FCM
-      const notificationStatus = new Set<string>()
+      const notificationStatus = new Set<string>();
       await Promise.all(
         technicianList.map(async (tech) => {
-          const userDoc = await getDoc(doc(db, 'users', tech.id))
-          const userData = userDoc.data()
+          const userDoc = await getDoc(doc(db, 'users', tech.id));
+          const userData = userDoc.data();
           if (userData?.fcmToken && userData?.active !== false) {
-            notificationStatus.add(tech.id)
+            notificationStatus.add(tech.id);
           }
-        }),
-      )
+        })
+      );
 
-      setTechniciansWithNotifications(notificationStatus)
-      setTechnicians(technicianList)
-      setLoading(false)
+      setTechniciansWithNotifications(notificationStatus);
+      setTechnicians(technicianList);
+      setLoading(false);
     } catch (err) {
-      console.error('Error fetching technicians:', err)
-      setError(
-        'No se pudieron cargar los técnicos. Por favor, intente de nuevo más tarde.',
-      )
-      setLoading(false)
+      console.error('Error fetching technicians:', err);
+      setError('Error al cargar los técnicos');
+      setLoading(false);
     }
-  }
+  };
 
-  const handleTechnicianChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newTechnicianId = e.target.value
-    setSelectedTechnicianId(newTechnicianId)
-    onChange({ ...claim, technicianId: newTechnicianId })
-
-    // Advertir si el técnico no tiene notificaciones configuradas
-    if (newTechnicianId && !techniciansWithNotifications.has(newTechnicianId)) {
-      toast.warning('Este técnico no recibirá notificaciones automáticas')
-    }
-  }
-
-  const sendNotification = async (
-    claimId: string,
-    technicianId: string,
-    claimDetails: Claim,
-  ) => {
+  const sendNotification = async (claimId: string, technicianId: string, claimDetails: Claim) => {
     try {
-      const technicianDoc = await getDoc(doc(db, 'users', technicianId))
-      const technicianData = technicianDoc.data()
+      const technicianDoc = await getDoc(doc(db, 'users', technicianId));
+      const technicianData = technicianDoc.data();
 
       if (!technicianData?.fcmToken) {
-        toast.warning('El técnico no tiene token de notificaciones configurado')
-        return false
+        toast.warning('El técnico no tiene notificaciones configuradas');
+        return false;
       }
 
       const response = await fetch(config.firebase.functionUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         mode: 'cors',
         body: JSON.stringify({
           notification: {
@@ -165,7 +158,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
             body: `Se te ha asignado un nuevo reclamo de ${claimDetails.name}`,
           },
           data: {
-            claimId: claimId,
+            claimId,
             customerName: claimDetails.name,
             customerAddress: claimDetails.address,
             customerPhone: claimDetails.phone,
@@ -173,36 +166,26 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
           },
           token: technicianData.fcmToken,
         }),
-      })
+      });
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Error al enviar la notificación')
-      }
+      if (!response.ok) throw new Error('Error al enviar la notificación');
 
-      const data = await response.json()
-
+      const data = await response.json();
       if (data.success) {
-        toast.success('Notificación enviada al técnico')
-        return true
-      } else {
-        throw new Error(
-          data.error || 'Error desconocido al enviar notificación',
-        )
+        toast.success('Notificación enviada al técnico');
+        return true;
       }
+      throw new Error(data.error || 'Error al enviar notificación');
     } catch (error) {
-      console.error('Error detallado al enviar la notificación:', error)
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : 'Error al enviar la notificación',
-      )
-      return false
+      console.error('Error al enviar la notificación:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al enviar la notificación');
+      return false;
     }
-  }
+  };
+
   const createClaim = async (claimData: Claim) => {
     try {
-      const now = new Date()
+      const now = new Date();
       const docRef = await addDoc(collection(db, 'claims'), {
         ...claimData,
         createdAt: now,
@@ -210,15 +193,14 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         status: 'pending',
         notificationSent: false,
         lastUpdate: now,
-        // Asegúrate de que las fechas sean objetos Date
         date: now,
-      })
+      });
 
       const notificationSent = await sendNotification(
         docRef.id,
         claimData.technicianId,
-        claimData,
-      )
+        claimData
+      );
 
       await setDoc(
         doc(db, 'claims', docRef.id),
@@ -226,263 +208,243 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
           notificationSent,
           lastNotificationAttempt: new Date(),
         },
-        { merge: true },
-      )
+        { merge: true }
+      );
 
-      return docRef.id
+      return docRef.id;
     } catch (e) {
-      console.error('Error adding claim: ', e)
-      throw e
+      console.error('Error adding claim: ', e);
+      throw e;
     }
-  }
-
-  const resetForm = () => {
-    onChange({
-      id: '',
-      name: '',
-      phone: '',
-      address: '',
-      reason: '',
-      technicianId: '',
-      receivedBy: '',
-      receivedAt: new Date().toLocaleString('es-AR', {
-        dateStyle: 'short',
-        timeStyle: 'short',
-      }),
-      status: 'pending',
-      title: '',
-      customer: '',
-      date: new Date().toLocaleString('es-AR', {
-        dateStyle: 'short',
-        timeStyle: 'short',
-      }),
-      resolution: '',
-    })
-    setSelectedTechnicianId('')
-    setAlertMessage(null)
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (
-      !claim.phone ||
-      !claim.name ||
-      !claim.address ||
-      !claim.reason ||
-      !selectedTechnicianId ||
-      !claim.receivedBy
-    ) {
-      setAlertMessage('Todos los campos son requeridos')
-      return
+    e.preventDefault();
+
+    if (!claim || !claim.phone || !claim.name || !claim.address || !claim.reason || 
+        !selectedTechnicianId || !claim.receivedBy) {
+      setAlertMessage('Todos los campos son requeridos');
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
-      const now = new Date()
+      const now = new Date();
       const updatedClaim: Claim = {
+        ...createInitialClaim(),
         ...claim,
-        receivedAt: now.toISOString(), // Usar ISO string para consistencia
-        technicianId: selectedTechnicianId,
         id: claim.id || `temp_${Date.now()}`,
-        status: claim.status || 'pending',
-        receivedBy: claim.receivedBy,
-        phone: claim.phone,
-        name: claim.name,
-        address: claim.address,
-        reason: claim.reason,
-        title: claim.title || '',
-        customer: claim.customer || '',
+        receivedAt: now.toISOString(),
         date: now.toISOString(),
-        resolution: claim.resolution || '',
-      }
+        technicianId: selectedTechnicianId,
+        status: 'pending',
+        notificationSent: false
+      };
 
-      const claimId = await createClaim(updatedClaim)
-      updatedClaim.id = claimId
-
-      await onSubmit()
-      setAlertMessage('Reclamo guardado con éxito')
-      resetForm() // Limpiamos el formulario después de guardar exitosamente
+      const claimId = await createClaim(updatedClaim);
+      await onSubmit();
+      setAlertMessage('Reclamo guardado con éxito');
+      resetForm();
     } catch (error) {
-      console.error('Error in handleSubmit:', error)
-      toast.error('Error al guardar el reclamo')
-      setAlertMessage('Error al guardar el reclamo')
+      console.error('Error al guardar:', error);
+      setAlertMessage('Error al guardar el reclamo');
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
+  };
+
+  const resetForm = () => {
+    const initialClaim = createInitialClaim();
+    onChange(initialClaim);
+    setSelectedTechnicianId('');
+    setAlertMessage(null);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
-  if (loading)
+  if (error) {
     return (
-      <div className='flex justify-center items-center h-64'>
-        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500'></div>
-      </div>
-    )
-
-  if (error)
-    return (
-      <div className='p-4 bg-red-50 border border-red-200 rounded-md text-red-700'>
-        {error}
-      </div>
-    )
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
-    <div className='claim-form-container'>
-      <h2 className='claim-form-title'>Cargar Nuevo Reclamo</h2>
-      {alertMessage && (
-        <div
-          className={`alert ${
-            alertMessage.includes('éxito')
-              ? 'bg-green-50 text-green-700 border-green-200'
-              : 'bg-red-50 text-red-700 border-red-200'
-          } mb-4`}
-        >
-          {alertMessage}
-          <button
-            onClick={() => setAlertMessage(null)}
-            className='ml-2 text-black hover:text-gray-700'
+    <Card className= "bg-slate-700 rounded-xl mb-8">
+      <CardHeader>
+        <CardTitle className='text-green-400'>Cargar Nuevo Reclamo</CardTitle>
+        <CardDescription className='text-white'>
+          Complete todos los campos requeridos para registrar un nuevo reclamo.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {alertMessage && (
+          <Alert
+            variant={alertMessage.includes('éxito') ? 'default' : 'destructive'}
+            className="mb-6"
           >
-            ×
-          </button>
-        </div>
-      )}
-      <form onSubmit={handleSubmit} className='space-y-6'>
-        <div className='claim-form-grid'>
-          <div className='input-container'>
-            <label className='form-label required-field'>Teléfono</label>
-            <input
-              type='text'
-              placeholder='Ej: +54 11 1234-5678'
-              value={formValues.phone}
-              onChange={(e) => onChange({ ...claim, phone: e.target.value })}
-              className='form-input'
-              required
-            />
-          </div>
-          <div className='input-container'>
-            <label className='form-label required-field'>Nombre</label>
-            <input
-              type='text'
-              placeholder='Nombre completo'
-              value={formValues.name}
-              onChange={(e) => onChange({ ...claim, name: e.target.value })}
-              className='form-input'
-              required
-            />
-          </div>
-          <div className='input-container'>
-            <label className='form-label required-field'>Dirección</label>
-            <input
-              type='text'
-              placeholder='Dirección completa'
-              value={formValues.address}
-              onChange={(e) => onChange({ ...claim, address: e.target.value })}
-              className='form-input'
-              required
-            />
-          </div>
-          <div className='input-container'>
-            <label className='form-label required-field'>
-              Técnico Asignado
-              <span className='ml-2 text-xs text-gray-400'>
-                ({techniciansWithNotifications.size} de {technicians.length} con
-                notificaciones)
-              </span>
-            </label>
-            <div className='relative'>
-              <select
-                value={selectedTechnicianId}
-                onChange={handleTechnicianChange}
-                className={`form-select ${
-                  selectedTechnicianId &&
-                  !techniciansWithNotifications.has(selectedTechnicianId)
-                    ? 'border-yellow-400'
-                    : ''
-                }`}
-                required
-              >
-                <option value=''>Seleccionar Técnico</option>
-                {technicians.map((technician) => {
-                  const hasNotifications = techniciansWithNotifications.has(
-                    technician.id,
-                  )
-                  return (
-                    <option
-                      key={technician.id}
-                      value={technician.id}
-                      className={`${
-                        hasNotifications ? 'text-green-700' : 'text-yellow-600'
-                      }`}
-                    >
-                      {technician.name} - {technician.phone}
-                      {!hasNotifications ? ' (Sin notificaciones)' : ' ✓'}
-                    </option>
-                  )
-                })}
-              </select>
-              {selectedTechnicianId &&
-                !techniciansWithNotifications.has(selectedTechnicianId) && (
-                  <div className='absolute -bottom-6 left-0 text-sm text-yellow-600'>
-                    Este técnico no recibirá notificaciones automáticas
-                  </div>
-                )}
-            </div>
-          </div>
-        </div>
-        <div className='input-container'>
-          <label className='form-label required-field'>
-            Motivo del Reclamo
-          </label>
-          <textarea
-            placeholder='Descripción detallada del reclamo'
-            value={formValues.reason}
-            onChange={(e) => onChange({ ...claim, reason: e.target.value })}
-            className='form-textarea'
-            required
-          />
-        </div>
-        <div className='claim-form-grid'>
-          <div className='input-container'>
-            <label className='form-label required-field'>Recibido por</label>
-            <input
-              type='text'
-              placeholder='Nombre del receptor'
-              value={formValues.receivedBy}
-              onChange={(e) =>
-                onChange({ ...claim, receivedBy: e.target.value })
-              }
-              className='form-input'
-              required
-            />
-          </div>
-          <div className='input-container'>
-            <label className='form-label'>Recibido en</label>
-            <input
-              type='text'
-              value={formValues.receivedAt}
-              className='form-input'
-              readOnly
-            />
-          </div>
-        </div>
-        <div className='flex justify-end mt-6'>
-          <button
-            type='submit'
-            className='submit-button'
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <div className='flex items-center'>
-                <div className='animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full'></div>
-                export default ClaimForm; Guardando...
-              </div>
+            {alertMessage.includes('éxito') ? (
+              <CheckCircle className="h-4 w-4" />
             ) : (
-              'Cargar Reclamo'
+              <AlertCircle className="h-4 w-4" />
             )}
-          </button>
-        </div>
-      </form>
-    </div>
-  )
-}
+            <AlertTitle>
+              {alertMessage.includes('éxito') ? 'Éxito' : 'Error'}
+            </AlertTitle>
+            <AlertDescription>{alertMessage}</AlertDescription>
+          </Alert>
+        )}
+      <FormProvider {...methods}>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormItem>
+              <FormLabel className="required-field text-green-400">Teléfono</FormLabel>
+              <FormControl>
+                <Input className='bg-slate-400'
+                  placeholder="Ej: +54 11 1234-5678"
+                  value={claim?.phone || ''}
+                  onChange={(e) => onChange({ ...claim, phone: e.target.value })}
+                  required
+                />
+              </FormControl>
+            </FormItem>
 
-export default ClaimForm
+            <FormItem>
+              <FormLabel className="required-field text-green-400">Nombre</FormLabel>
+              <FormControl>
+                <Input className='bg-slate-400 '
+                  placeholder="Nombre completo"
+                  value={claim?.name || ''}
+                  onChange={(e) => onChange({ ...claim, name: e.target.value })}
+                  required
+                />
+              </FormControl>
+            </FormItem>
+
+            <FormItem>
+              <FormLabel className="required-field text-green-400">Dirección</FormLabel>
+              <FormControl>
+                <Input className='bg-slate-400 '
+                  placeholder="Dirección completa"
+                  value={claim?.address || ''}
+                  onChange={(e) => onChange({ ...claim, address: e.target.value })}
+                  required
+                />
+              </FormControl>
+            </FormItem>
+
+            <FormItem>
+              <FormLabel className="required-field text-green-400">Técnico Asignado</FormLabel>
+              <Select
+                value={selectedTechnicianId}
+                onValueChange={(value) => {
+                  setSelectedTechnicianId(value);
+                  onChange({ ...claim, technicianId: value });
+                  if (value && !techniciansWithNotifications.has(value)) {
+                    toast.warning('Este técnico no recibirá notificaciones automáticas');
+                  }
+                }}
+              >
+                <FormControl>
+                  <SelectTrigger className='bg-slate-400 text-black'>
+                    <SelectValue placeholder="Seleccionar Técnico" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {technicians.map((technician) => {
+                    const hasNotifications = techniciansWithNotifications.has(technician.id);
+                    return (
+                      <SelectItem 
+                        key={technician.id} 
+                        value={technician.id}
+                        className={cn(
+                          "flex items-center justify-between",
+                          !hasNotifications && "text-yellow-600"
+                        )}
+                      >
+                        <span>{technician.name} - {technician.phone}</span>
+                        {hasNotifications ? (
+                          <Badge variant="default" className="ml-2">Con notificaciones</Badge>
+                        ) : (
+                          <Badge variant="outline" className="ml-2 text-yellow-600">Sin notificaciones</Badge>
+                        )}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              {selectedTechnicianId && !techniciansWithNotifications.has(selectedTechnicianId) && (
+                <FormDescription className="text-yellow-600">
+                  Este técnico no recibirá notificaciones automáticas
+                </FormDescription>
+              )}
+            </FormItem>
+          </div>
+
+          <FormItem>
+            <FormLabel className="required-field text-green-400">Motivo del Reclamo</FormLabel>
+            <FormControl>
+              <Textarea 
+                placeholder="Descripción detallada del reclamo"
+                value={claim?.reason || ''}
+                onChange={(e) => onChange({ ...claim, reason: e.target.value })}
+                className="min-h-[100px] bg-slate-400 text-black"
+                required
+              />
+            </FormControl>
+          </FormItem>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormItem>
+              <FormLabel className="required-field text-green-400">Recibido por</FormLabel>
+              <FormControl>
+                <Input className='bg-slate-400'
+                  placeholder="Nombre del receptor"
+                  value={claim?.receivedBy || ''}
+                  onChange={(e) => onChange({ ...claim, receivedBy: e.target.value })}
+                  required
+                />
+              </FormControl>
+            </FormItem>
+
+            <FormItem>
+              <FormLabel className="text-green-400">Fecha y Hora</FormLabel>
+              <FormControl>
+                <Input 
+                  value={format(new Date(), "dd/MM/yyyy HH:mm", { locale: es })}
+                  readOnly
+                  className="bg-muted"
+                />
+              </FormControl>
+            </FormItem>
+          </div>
+
+          <div className="flex justify-end mt-6">
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                'Cargar Reclamo'
+              )}
+            </Button>
+          </div>
+        </form>
+      </FormProvider>  
+      </CardContent>
+    </Card>
+  );
+};
+
+export default ClaimForm;

@@ -1,45 +1,128 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, LayoutDashboard, Users, FileText, X, LogOut } from 'lucide-react';
+import { Menu, LayoutDashboard, Users, FileText, X, LogOut, Settings } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { 
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 
 interface SidebarProps {
     activeSection: string;
     onSectionChange: (section: string) => void;
     onLogout?: () => void;
+    pendingClaims?: number;
+    pendingUsers?: number;
+}
+
+interface MenuItem {
+    id: string;
+    icon: React.ReactNode;
+    text: string;
+    badge?: number;
 }
 
 const SidebarItem = ({ 
     icon, 
     text, 
     active, 
-    onClick 
+    onClick,
+    badge,
+    showTooltip = false
 }: { 
     icon: React.ReactNode; 
     text: string; 
     active: boolean; 
-    onClick: () => void; 
-}) => (
-    <button
-        onClick={onClick}
-        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
-            ${active 
-                ? 'bg-primary text-primary-foreground' 
-                : 'hover:bg-secondary text-muted-foreground hover:text-foreground'
-            }`}
-    >
-        {icon}
-        <span className="font-medium">{text}</span>
-    </button>
-);
+    onClick: () => void;
+    badge?: number;
+    showTooltip?: boolean;
+}) => {
+    const ItemContent = (
+        <button
+            onClick={onClick}
+            className={cn(
+                "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                "hover:shadow-md hover:scale-[1.02]",
+                active 
+                    ? "bg-primary text-primary-foreground shadow-lg" 
+                    : "hover:bg-secondary text-muted-foreground hover:text-foreground"
+            )}
+        >
+            <span className="flex items-center gap-3">
+                {icon}
+                <span className="font-medium">{text}</span>
+            </span>
+            {badge !== undefined && badge > 0 && (
+                <Badge variant={active ? "outline" : "default"} className="ml-auto">
+                    {badge}
+                </Badge>
+            )}
+        </button>
+    );
 
-export const Sidebar = ({ activeSection, onSectionChange, onLogout }: SidebarProps) => {
+    if (showTooltip) {
+        return (
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        {ItemContent}
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                        <p>{text}</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        );
+    }
+
+    return ItemContent;
+};
+
+export const Sidebar = ({ 
+    activeSection, 
+    onSectionChange, 
+    onLogout,
+    pendingClaims = 0,
+    pendingUsers = 0
+}: SidebarProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
 
-    const menuItems = [
-        { id: 'dashboard', icon: <LayoutDashboard size={20} />, text: 'Dashboard' },
-        { id: 'users', icon: <Users size={20} />, text: 'Usuarios' },
-        { id: 'claims', icon: <FileText size={20} />, text: 'Reclamos' }
+    const menuItems: MenuItem[] = [
+        { 
+            id: 'dashboard', 
+            icon: <LayoutDashboard size={20} />, 
+            text: 'Dashboard'
+        },
+        { 
+            id: 'users', 
+            icon: <Users size={20} />, 
+            text: 'Usuarios',
+            badge: pendingUsers
+        },
+        { 
+            id: 'claims', 
+            icon: <FileText size={20} />, 
+            text: 'Reclamos',
+            badge: pendingClaims
+        },
+        {
+            id: 'settings',
+            icon: <Settings size={20} />,
+            text: 'Configuración'
+        }
     ];
 
     useEffect(() => {
@@ -60,81 +143,65 @@ export const Sidebar = ({ activeSection, onSectionChange, onLogout }: SidebarPro
         }
     };
 
-    const handleLogout = () => {
-        if (onLogout) {
-            onLogout();
-        }
-    };
+    const SidebarContent = () => (
+        <div className="flex flex-col h-full">
+            <SheetHeader className="px-6 py-4 border-b">
+                <SheetTitle className="text-lg font-bold">
+                    Cospec Comunicaciones
+                </SheetTitle>
+            </SheetHeader>
 
-    const toggleSidebar = () => setIsOpen(!isOpen);
+            <ScrollArea className="flex-1 px-4 py-6">
+                <nav className="space-y-2">
+                    {menuItems.map(item => (
+                        <SidebarItem
+                            key={item.id}
+                            icon={item.icon}
+                            text={item.text}
+                            active={activeSection === item.id}
+                            onClick={() => handleSectionChange(item.id)}
+                            badge={item.badge}
+                            showTooltip={!isOpen && !isMobile}
+                        />
+                    ))}
+                </nav>
+            </ScrollArea>
 
-    // Overlay for mobile
-    const Overlay = () => (
-        <div 
-            className={`fixed inset-0 bg-black/50 transition-opacity z-40
-                ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-            onClick={() => setIsOpen(false)}
-        />
+            <div className="p-4 mt-auto border-t">
+                <Button
+                    variant="destructive"
+                    className="w-full flex items-center gap-2 justify-center"
+                    onClick={onLogout}
+                >
+                    <LogOut size={20} />
+                    <span>Cerrar Sesión</span>
+                </Button>
+            </div>
+        </div>
     );
 
     return (
         <>
-            {/* Mobile Menu Button */}
-            <Button
-                variant="outline"
-                size="sm"
-                className="fixed top-4 left-4 z-50 md:hidden"
-                onClick={toggleSidebar}
-            >
-                {isOpen ? <X size={20} /> : <Menu size={20} />}
-            </Button>
-
-            {/* Overlay for mobile */}
-            {isMobile && <Overlay />}
-
-            {/* Sidebar */}
-            <aside className={`
-                fixed top-0 left-0 z-40 h-full w-64
-                bg-background border-r
-                transition-transform duration-300 ease-in-out
-                md:translate-x-0 md:static
-                flex flex-col
-                ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-            `}>
-                <div className="flex flex-col h-full">
-                    {/* Header */}
-                    <div className="p-6 border-b">
-                        <h1 className="text-lg font-semibold truncate">
-                            Cospec Comunicaciones
-                        </h1>
-                    </div>
-
-                    {/* Navigation */}
-                    <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-                        {menuItems.map(item => (
-                            <SidebarItem
-                                key={item.id}
-                                icon={item.icon}
-                                text={item.text}
-                                active={activeSection === item.id}
-                                onClick={() => handleSectionChange(item.id)}
-                            />
-                        ))}
-                    </nav>
-
-                    {/* Footer with Logout Button */}
-                    <div className="border-t p-4">
+            {isMobile ? (
+                <Sheet open={isOpen} onOpenChange={setIsOpen}>
+                    <SheetTrigger asChild>
                         <Button
-                            variant="destructive"
-                            className="w-full flex items-center gap-2 justify-start hover:bg-red-600/90"
-                            onClick={handleLogout}
+                            variant="outline"
+                            size="sm"
+                            className="fixed top-4 left-4 z-50 md:hidden"
                         >
-                            <LogOut size={20} />
-                            <span>Cerrar Sesión</span>
+                            <Menu size={20} />
                         </Button>
-                    </div>
-                </div>
-            </aside>
+                    </SheetTrigger>
+                    <SheetContent side="left" className="w-64 p-0">
+                        <SidebarContent />
+                    </SheetContent>
+                </Sheet>
+            ) : (
+                <aside className="h-screen w-64 border-r bg-background">
+                    <SidebarContent />
+                </aside>
+            )}
         </>
     );
 };

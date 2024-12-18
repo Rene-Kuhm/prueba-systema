@@ -1,18 +1,20 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ErrorState } from "@/components/Admin/States/ErrorState";
 import { LoadingState } from "@/components/Admin/States/LoadingState";
-import { Users, FileText } from "lucide-react";
+import { Users, FileText, Wrench, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { AdminLayout } from "@/components/Admin/Layout/AdminLayout";
 import { DashboardCard } from "@/components/Admin/Dashboard/DashboardCard";
 import { Header } from "@/components/Admin/Header";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { toast } from "react-toastify";
 import { PendingUsers } from "@/components/Admin/PendingUsers";
 import ClaimForm from "@/components/Admin/ClaimForm/ClaimForm";
-import { ClaimsTable } from "@/components/Admin/ClainTable/ClaimTable";
+import ClaimTable from "@/components/Admin/ClainTable/ClaimTable";
 import ClaimDetailsModal from "@/components/Admin/ClaimDetailsModal";
 import { Notification } from '@/lib/types/notifications';
-import { AdminState, Claim, PendingUser,  Technician } from '@/lib/types/admin'; // Import the Technician type
+import { AdminState, Claim, PendingUser, Technician } from '@/lib/types/admin';
 import { useAdmin, UseAdminReturn } from "@/hooks/useAdmin";
-import "@/styles/admin.css";
 
 const initialClaim: Claim = {
     id: '',
@@ -27,7 +29,10 @@ const initialClaim: Claim = {
     title: '',
     customer: '',
     date: new Date().toLocaleString('es-AR'),
-    resolution: ''
+    resolution: '',
+    technicalDetails: '',
+    notes: '',
+    notificationSent: false
 };
 
 const Admin = () => {
@@ -36,7 +41,7 @@ const Admin = () => {
         error,
         pendingUsers,
         claims,
-        technicians, // Add this line to destructure technicians
+        technicians,
         newClaim,
         selectedClaim,
         showModal,
@@ -52,10 +57,10 @@ const Admin = () => {
 
     const [activeSection, setActiveSection] = useState("dashboard");
     const [notifications, setNotifications] = useState<Notification[]>([]);
-    
+
     const handleMarkAsRead = (id: string) => {
-        setNotifications(prev => 
-            prev.map(notif => notif.id === id ? {...notif, read: true} : notif)
+        setNotifications(prev =>
+            prev.map(notif => notif.id === id ? { ...notif, read: true } : notif)
         );
     };
 
@@ -64,7 +69,7 @@ const Admin = () => {
     };
 
     const handleClearAllNotifications = () => {
-        setNotifications(prev => prev.map(notif => ({...notif, read: true})));
+        setNotifications(prev => prev.map(notif => ({ ...notif, read: true })));
     };
 
     const handleSubmitNewClaim = async () => {
@@ -80,28 +85,140 @@ const Admin = () => {
         return <ErrorState message={error} />;
     }
 
-    const renderDashboard = () => (
-        <div className="dashboard-grid">
-            <DashboardCard
-                title="Usuarios Pendientes"
-                value={pendingUsers.length}
-                icon={<Users className="w-6 h-6" />}
-                variant="users"
-            />
-            <DashboardCard
-                title="Reclamos Totales"
-                value={claims.length}
-                icon={<FileText className="w-6 h-6" />}
-                variant="claims"
-            />
-            <DashboardCard
-                title="Técnicos"
-                value={technicians.length} // Fix: use technicians.length instead of just length
-                icon={<Users className="w-6 h-6" />}
-                variant="techs"
-            />
-        </div>
-    );
+    const getData = async (): Promise<any[]> => {
+        try {
+            const querySnapshot = await getDocs(collection(db, "claims"));
+            const fetchedData = querySnapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+            return fetchedData;
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            toast.error("Error fetching data");
+            return [];
+        }
+    };
+
+    const calculateStatistics = () => {
+        const totalClaims = claims.length;
+        const activeClaims = claims.filter(claim =>
+            claim.status === 'pending' || claim.status === 'in_progress'
+        ).length;
+        const totalTechnicians = technicians.length;
+
+        // Monthly statistics
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+        const claimsThisMonth = claims.filter(claim => {
+            if (!claim.receivedAt) return false;
+            const claimDate = typeof claim.receivedAt === 'string' 
+                ? new Date(claim.receivedAt) 
+                : claim.receivedAt;
+            return claimDate.getMonth() === currentMonth && 
+                    claimDate.getFullYear() === currentYear;
+        }).length;
+
+        // Statistics by status
+        const pendingClaims = claims.filter(claim => claim.status === 'pending').length;
+        const inProgressClaims = claims.filter(claim => claim.status === 'in_progress').length;
+        const completedClaims = claims.filter(claim => claim.status === 'completed').length;
+
+        // Calculate active technicians (those with assigned claims)
+        const activeTechnicians = new Set(claims
+            .filter(claim => claim.status !== 'completed')
+            .map(claim => claim.technicianId)
+        ).size;
+
+        return {
+            totalClaims,
+            activeClaims,
+            totalTechnicians,
+            claimsThisMonth,
+            pendingClaims,
+            inProgressClaims,
+            completedClaims,
+            activeTechnicians
+        };
+    };
+
+    const renderDashboard = () => {
+        const stats = calculateStatistics();
+
+        return (
+            <div className="space-y-8 p-6">
+                <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+
+                <div className="space-y-6">
+                    {/* Main metrics */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <DashboardCard
+                            title="Total Claims"
+                            value={stats.totalClaims}
+                            icon={<FileText size={24} />}
+                            variant="claims"
+                        />
+                        <DashboardCard
+                            title="Active Claims"
+                            value={stats.activeClaims}
+                            icon={<AlertCircle size={24} />}
+                            variant="users"
+                        />
+                        <DashboardCard
+                            title="Total Technicians"
+                            value={stats.totalTechnicians}
+                            icon={<Wrench size={24} />}
+                            variant="techs"
+                        />
+                        <DashboardCard
+                            title="Active Technicians"
+                            value={stats.activeTechnicians}
+                            icon={<Users size={24} />}
+                            variant="techs"
+                        />
+                    </div>
+
+                    {/* Claim status */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <DashboardCard
+                            title="Pending Claims"
+                            value={stats.pendingClaims}
+                            icon={<Clock size={24} />}
+                            variant="claims"
+                        />
+                        <DashboardCard
+                            title="In Progress Claims"
+                            value={stats.inProgressClaims}
+                            icon={<AlertCircle size={24} />}
+                            variant="users"
+                        />
+                        <DashboardCard
+                            title="Completed Claims"
+                            value={stats.completedClaims}
+                            icon={<CheckCircle size={24} />}
+                            variant="techs"
+                        />
+                    </div>
+
+                    {/* Monthly metrics */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <DashboardCard
+                            title="Claims This Month"
+                            value={stats.claimsThisMonth}
+                            icon={<FileText size={24} />}
+                            variant="claims"
+                        />
+                        <DashboardCard
+                            title="Monthly Efficiency"
+                            value={Math.round((stats.completedClaims / stats.totalClaims) * 100)}
+                            icon={<CheckCircle size={24} />}
+                            variant="techs"
+                        />
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     const renderContent = () => {
         switch (activeSection) {
@@ -112,17 +229,21 @@ const Admin = () => {
                     <div className="claims-section">
                         <ClaimForm
                             claim={newClaim || initialClaim}
-                            technicians={technicians} // Use technicians directly
+                            technicians={technicians}
                             onSubmit={handleSubmitNewClaim}
                             onChange={handleNewClaimChange}
                         />
-                        <ClaimsTable
+                        <ClaimTable
                             claims={claims}
                             onExport={exportClaimsToExcel}
                             onDelete={async (claimId) => {
                                 if (claimId) {
                                     await deleteClaim(claimId);
                                 }
+                            }}
+                            onEdit={(claim: Claim) => {
+                                setShowModal(true);
+                                setSelectedClaim(claim);
                             }}
                             onShowDetails={(claim: Claim) => {
                                 setShowModal(true);
@@ -151,15 +272,15 @@ const Admin = () => {
             onMarkAsRead={handleMarkAsRead}
             onClearAllNotifications={handleClearAllNotifications}
         >
-        <Header onSignOut={handleSignOut} onExport={exportClaimsToExcel} />
-        <main className="main-content">{renderContent()}</main>
-        <ClaimDetailsModal
-            claim={selectedClaim}
-            isOpen={showModal}
-            onClose={() => setShowModal(false)}
-        />
+            <Header onSignOut={handleSignOut} onExport={getData} />
+            <main className="main-content">{renderContent()}</main>
+            <ClaimDetailsModal
+                claim={selectedClaim}
+                isOpen={showModal}
+                onClose={() => setShowModal(false)}
+            />
         </AdminLayout>
     );
-}
+};
 
 export default Admin;

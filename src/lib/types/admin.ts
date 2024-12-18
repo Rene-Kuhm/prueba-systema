@@ -10,20 +10,21 @@ export interface PendingUser {
 
 export interface Claim {
     id: string;
+    status: 'pending' | 'in_progress' | 'completed';
     phone: string;
     name: string;
     address: string;
-    reason: string;
-    status: 'pending' | 'assigned' | 'in_progress' | 'completed';
     technicianId: string;
+    reason: string;
     receivedBy: string;
-    receivedAt?: string;
-    title?: string;        // Agregado
-    customer?: string;     // Agregado
-    date?: string;        // Agregado
-    resolution?: string;   // Agregado
-    createdAt?: Date;
-    notificationSent?: boolean;
+    receivedAt: string;
+    technicalDetails: string;
+    resolution: string;
+    notes: string;
+    title: string;
+    customer: string;
+    date: string;
+    notificationSent: boolean;
 }
 
 export interface Technician {
@@ -85,3 +86,8 @@ export interface UpdateProfileData {
     avatar?: File | string;
     // Add any other relevant fields
 }
+
+export type AdminClaim = {
+    status: "pending" | "assigned" | "in_progress" | "completed";
+    // other properties
+};
