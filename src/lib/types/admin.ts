@@ -1,6 +1,5 @@
 export interface PendingUser {
     id: string;
-    // Add other user properties
     email: string;
     fullName: string;
     displayName: string;
@@ -91,3 +90,12 @@ export type AdminClaim = {
     status: "pending" | "assigned" | "in_progress" | "completed";
     // other properties
 };
+
+
+export interface SearchResult {
+    id: string;
+    title: string;           // Título para mostrar en la búsqueda
+    type: 'user' | 'claim' | 'technician';  // Tipo de resultado
+    section: string;         // Sección a la que pertenece ('users', 'claims', etc.)
+    data: PendingUser | Claim | { id: string; name: string }; // Datos completos del resultado
+}

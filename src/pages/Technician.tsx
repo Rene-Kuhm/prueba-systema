@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Mail, Phone } from 'lucide-react';
 import {
   Loader2,
   Menu,
@@ -206,18 +207,6 @@ const TechnicianPage: React.FC = () => {
                 <h1 className="text-2xl font-bold text-slate-100">TechPanel</h1>
               </div>
               <div className="hidden md:ml-6 md:flex md:items-center md:space-x-4">
-                <Button variant="outline" className="text-slate-300 hover:text-slate-100">
-                  <Home className="mr-2 h-4 w-4" />
-                  Inicio
-                </Button>
-                <Button variant="outline" className="text-slate-300 hover:text-slate-100">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Reclamos
-                </Button>
-                <Button variant="outline" className="text-slate-300 hover:text-slate-100">
-                  <Activity className="mr-2 h-4 w-4" />
-                  Estadísticas
-                </Button>
               </div>
             </div>
 
@@ -308,13 +297,41 @@ const TechnicianPage: React.FC = () => {
         {technician && (
           <Card className="bg-slate-800 border-slate-700 shadow-xl mb-8">
             <CardHeader className="border-b border-slate-700">
-              <h2 className="text-xl font-semibold text-slate-100">Estado del Técnico</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-slate-100">Estado del Técnico</h2>
+                <Badge variant="outline" className="text-slate-300">
+                  ID: {technician.id}
+                </Badge>
+              </div>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 bg-slate-700/50 rounded-lg">
-                    <span className="text-slate-200">Activo</span>
+                    <div>
+                      <p className="text-slate-300 text-sm uppercase tracking-wide">Nombre</p>
+                      <p className="text-slate-100 font-medium">{technician.name}</p>
+                    </div>
+                    <User size={24} className="text-slate-400" />
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-slate-700/50 rounded-lg">
+                    <div>
+                      <p className="text-slate-300 text-sm uppercase tracking-wide">Email</p>
+                      <p className="text-slate-100 font-medium">{technician.email}</p>
+                    </div>
+                    <Mail size={24} className="text-slate-400" />
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-slate-700/50 rounded-lg">
+                    <div>
+                      <p className="text-slate-300 text-sm uppercase tracking-wide">Teléfono</p>
+                      <p className="text-slate-100 font-medium">{technician.phone}</p>
+                    </div>
+                    <Phone size={24} className="text-slate-400" />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-slate-700/50 rounded-lg">
+                    <span className="text-slate-300">Activo</span>
                     <Switch
                       checked={technician.active}
                       onCheckedChange={(checked: boolean) => updateTechnicianStatus('active', checked)}
@@ -322,7 +339,7 @@ const TechnicianPage: React.FC = () => {
                     />
                   </div>
                   <div className="flex items-center justify-between p-4 bg-slate-700/50 rounded-lg">
-                    <span className="text-slate-200">Disponible</span>
+                    <span className="text-slate-300">Disponible</span>
                     <Switch
                       checked={technician.availableForAssignment}
                       onCheckedChange={(checked: boolean) => updateTechnicianStatus('availableForAssignment', checked)}
@@ -330,20 +347,19 @@ const TechnicianPage: React.FC = () => {
                     />
                   </div>
                 </div>
-                ```typescript
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-slate-700/50 rounded-lg">
-                    <p className="text-slate-400 text-sm">Asignaciones Actuales</p>
-                    <p className="text-2xl font-bold text-slate-100">{technician.currentAssignments}</p>
-                  </div>
-                  <div className="p-4 bg-slate-700/50 rounded-lg">
-                    <p className="text-slate-400 text-sm">Completadas</p>
-                    <p className="text-2xl font-bold text-slate-100">{technician.completedAssignments}</p>
-                  </div>
-                  <div className="col-span-2 p-4 bg-slate-700/50 rounded-lg">
-                    <p className="text-slate-400 text-sm">Total de Asignaciones</p>
-                    <p className="text-2xl font-bold text-slate-100">{technician.totalAssignments}</p>
-                  </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 bg-slate-700/50 rounded-lg text-center">
+                  <p className="text-slate-300 text-sm uppercase tracking-wide">Asignaciones Actuales</p>
+                  <p className="text-2xl font-bold text-slate-100">{technician.currentAssignments}</p>
+                </div>
+                <div className="p-4 bg-slate-700/50 rounded-lg text-center">
+                  <p className="text-slate-300 text-sm uppercase tracking-wide">Completadas</p>
+                  <p className="text-2xl font-bold text-slate-100">{technician.completedAssignments}</p>
+                </div>
+                <div className="p-4 bg-slate-700/50 rounded-lg text-center">
+                  <p className="text-slate-300 text-sm uppercase tracking-wide">Total Asignaciones</p>
+                  <p className="text-2xl font-bold text-slate-100">{technician.totalAssignments}</p>
                 </div>
               </div>
             </CardContent>
@@ -477,8 +493,8 @@ const TechnicianPage: React.FC = () => {
                 </Dialog.Portal>
               </Dialog.Root>
             </Card>
-            )}
-    </div>
+          )}
+        </div>
       </main >
     </div >
   );

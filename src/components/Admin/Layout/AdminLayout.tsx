@@ -10,13 +10,12 @@ import {
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { AdminSearch } from '@/components/Admin/Search/Search';
-import type { PendingUser, Claim, UpdateProfileData } from '@/lib/types/admin';
+import type { PendingUser, Claim, UpdateProfileData, SearchResult } from '@/lib/types/admin';
 import { Notifications } from '@/components/Admin/Notifications/Notifications';
 import { Notification } from '@/lib/types/notifications';
 import AdminProfile from '@/components/Admin/Profile/AdminProfile';
 import LogOut from '@/components/Admin/Logout/Logout';
 import Settings from '@/components/Admin/Settings/Settings';
-
 
 interface AdminLayoutProps {
     children: React.ReactNode;
@@ -190,7 +189,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                                         pendingUsers={pendingUsers}
                                         claims={claims}
                                         technicians={technicians}
-                                        onResultClick={(result) => {
+                                        onResultClick={(result: SearchResult) => {
                                             if (result.type === 'claim' && onSelectClaim) {
                                                 onSelectClaim(result.data as Claim);
                                             }
