@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Eye, Trash2, FileText, CheckCircle, Clock, AlertCircle, Edit2, MoreHorizontal, Phone, MapPin, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Eye, Trash2, CheckCircle, Clock, AlertCircle, Edit2, MoreHorizontal, Phone, MapPin, User } from 'lucide-react';
 import type { Claim } from '@/lib/types/admin';
 import {
   Table,
@@ -28,14 +28,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 
+const CLAIMS_STORAGE_KEY = 'stored_claims';
+
+interface ExtendedClaim extends Claim {
+  exported?: boolean;
+}
+
 interface ClaimsTableProps {
-    claims: Claim[];
+    claims: ExtendedClaim[];
     onDelete: (id: string) => Promise<void>;
-    onShowDetails: (claim: Claim) => void;
+    onShowDetails: (claim: ExtendedClaim) => void;
     onExport: () => void;
-    onEdit?: (claim: Claim) => void;
+    onEdit?: (claim: ExtendedClaim) => void;
 }
 
 const formatDateTime = (date: string | Date | undefined) => {
@@ -103,9 +110,9 @@ const MobileClaimCard = ({
     onEdit,
     onDelete
 }: { 
-    claim: Claim;
-    onShowDetails: (claim: Claim) => void;
-    onEdit?: (claim: Claim) => void;
+    claim: ExtendedClaim;
+    onShowDetails: (claim: ExtendedClaim) => void;
+    onEdit?: (claim: ExtendedClaim) => void;
     onDelete: (id: string) => Promise<void>;
 }) => (
     <Card className="mb-4">
@@ -157,6 +164,7 @@ const MobileClaimCard = ({
                     size="sm"
                     onClick={() => onDelete(claim.id)}
                     className="text-destructive hover:text-destructive"
+                    disabled={!claim.exported}
                 >
                     <Trash2 className="h-4 w-4 mr-1" />
                     Eliminar
@@ -167,18 +175,76 @@ const MobileClaimCard = ({
 );
 
 export function ClaimsTable({
-    claims,
+    claims: initialClaims,
     onDelete,
     onEdit,
-    onExport,
+    onExport: originalOnExport,
     onShowDetails
 }: ClaimsTableProps) {
+    const [claims, setClaims] = useState<ExtendedClaim[]>([]);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [claimToDelete, setClaimToDelete] = useState<string | null>(null);
+    const [showErrorDialog, setShowErrorDialog] = useState(false);
+
+    // Cargar claims del localStorage al iniciar
+    useEffect(() => {
+        try {
+            const storedClaims = localStorage.getItem(CLAIMS_STORAGE_KEY);
+            if (storedClaims) {
+                const parsedClaims = JSON.parse(storedClaims);
+                setClaims(parsedClaims);
+            } else {
+                setClaims(initialClaims);
+                if (initialClaims.length > 0) {
+                    localStorage.setItem(CLAIMS_STORAGE_KEY, JSON.stringify(initialClaims));
+                }
+            }
+        } catch (error) {
+            console.error('Error al cargar los reclamos:', error);
+            setClaims(initialClaims);
+        }
+    }, [initialClaims]);
+
+    // Actualizar localStorage cuando cambian los claims
+    useEffect(() => {
+        if (claims.length > 0) {
+            localStorage.setItem(CLAIMS_STORAGE_KEY, JSON.stringify(claims));
+        }
+    }, [claims]);
+
+    // Manejar la exportación desde ClaimForm
+    useEffect(() => {
+        if (originalOnExport) {
+            originalOnExport = () => {
+                const updatedClaims = claims.map(claim => ({
+                    ...claim,
+                    exported: true
+                }));
+                setClaims(updatedClaims);
+                localStorage.setItem(CLAIMS_STORAGE_KEY, JSON.stringify(updatedClaims));
+            };
+        }
+    }, [claims]);
 
     const handleDelete = async (claimId: string) => {
+        const claim = claims.find(c => c.id === claimId);
+        if (!claim?.exported) {
+            setShowErrorDialog(true);
+            return;
+        }
         setClaimToDelete(claimId);
         setShowDeleteDialog(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (claimToDelete) {
+            await onDelete(claimToDelete);
+            const updatedClaims = claims.filter(claim => claim.id !== claimToDelete);
+            setClaims(updatedClaims);
+            localStorage.setItem(CLAIMS_STORAGE_KEY, JSON.stringify(updatedClaims));
+            setShowDeleteDialog(false);
+            setClaimToDelete(null);
+        }
     };
 
     return (
@@ -186,7 +252,9 @@ export function ClaimsTable({
             <Card className="bg-slate-700 rounded-xl mb-8">
                 <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 pb-6">
                     <div>
-                        <CardTitle className="text-xl sm:text-2xl font-bold text-green-400">Gestión de Reclamos</CardTitle>
+                        <CardTitle className="text-xl sm:text-2xl font-bold text-green-400">
+                            Gestión de Reclamos
+                        </CardTitle>
                         <p className="text-muted-foreground text-sm mt-1 text-white">
                             {claims.length} reclamos en total
                         </p>
@@ -259,6 +327,7 @@ export function ClaimsTable({
                                                     <DropdownMenuItem
                                                         className="text-destructive"
                                                         onClick={() => handleDelete(claim.id)}
+                                                        disabled={!claim.exported}
                                                     >
                                                         <Trash2 className="mr-2 h-4 w-4" /> Eliminar
                                                     </DropdownMenuItem>
@@ -284,29 +353,23 @@ export function ClaimsTable({
             <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Confirmar Eliminación</DialogTitle>
+                        <DialogTitle>No se puede eliminar</DialogTitle>
                         <DialogDescription>
-                            ¿Estás seguro de que deseas eliminar este reclamo? Esta acción no se puede deshacer.
+                        Este reclamo no puede ser eliminado porque aún no ha sido exportado. Por favor, exporta el reclamo primero.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-                            Cancelar
+                            Entendido
                         </Button>
                         <Button 
                             variant="destructive" 
-                            onClick={async () => {
-                                if (claimToDelete) {
-                                    await onDelete(claimToDelete);
-                                    setShowDeleteDialog(false);
-                                    setClaimToDelete(null);
-                                }
-                            }}
+                            onClick={handleDeleteConfirm}
                         >
                             Eliminar
                         </Button>
                     </DialogFooter>
-                </DialogContent>
+                    </DialogContent>
             </Dialog>
         </div>
     );
