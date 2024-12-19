@@ -18,7 +18,7 @@ Este proyecto es una aplicación web moderna para la gestión de reclamos, dise�
 - **Bundler**: Vite
 - **Estilos**: CSS-in-JS y CSS modules
 - **Backend**: Firebase (Autenticación y Base de datos en tiempo real)
-- **Notificaciones**: OneSignal
+- **Notificaciones**: Ultramsg
 - **Comunicación**: API de WhatsApp
 
 ## 🏗 Estructura del proyecto
