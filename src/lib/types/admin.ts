@@ -9,24 +9,26 @@ export interface PendingUser {
 
 export interface Claim {
     id: string;
-    status: 'pending' | 'in_progress' | 'completed';
-    phone: string;
     name: string;
+    phone: string;
     address: string;
-    technicianId: string;
     reason: string;
+    technicianId: string;
     receivedBy: string;
     receivedAt: string;
-    technicalDetails: string;
-    resolution: string;
-    notes: string;
-    title: string;
-    customer: string;
-    date: string;
-    notificationSent: boolean;
+    status: 'pending' | 'in_progress' | 'completed';  // Definir estados específicos
+    resolution?: string;
     completedBy?: string;
     completedAt?: string;
+    date: string;
+    notificationSent: boolean;
+    title: string;
+    customer: string;
+    technicalDetails?: string;
+    notes?: string;
 }
+
+
 
 export interface Technician {
     id: string;
@@ -100,4 +102,29 @@ export interface SearchResult {
     type: 'user' | 'claim' | 'technician';  // Tipo de resultado
     section: string;         // Sección a la que pertenece ('users', 'claims', etc.)
     data: PendingUser | Claim | { id: string; name: string }; // Datos completos del resultado
+}
+
+export interface NewClaim {
+    id: string;
+    name: string;
+    phone: string;
+    address: string;
+    reason: string;
+    technicianId: string;
+    receivedBy: string;
+    receivedAt: string;
+    status: 'pending' | 'in_progress' | 'completed';
+    title: string;
+    description: string;
+    claimType: string;
+    claimAmount: number;
+    date: string;
+    notificationSent: boolean;
+    customer: string;
+    resolution?: string;
+    completedBy?: string;
+    completedAt?: string;
+    technicalDetails?: string;
+    notes?: string;
+    updatedAt: string;
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
-import { ClaimFormProps, Claim, ClaimFormTechnician } from '@/lib/types/admin';
-import { collection, getDocs, addDoc, doc, getDoc, setDoc } from 'firebase/firestore';
+import { ClaimFormProps, Claim, ClaimFormTechnician, NewClaim } from '@/lib/types/admin';
+import { collection, getDocs, addDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { toast } from 'react-toastify';
 import config from '../../../../config';
@@ -37,6 +37,7 @@ import { Loader2, AlertCircle, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { N } from 'node_modules/react-router/dist/development/route-data-DuV3tXo2.mjs';
 
 // WhatsApp Service
 interface WhatsAppMessage {
@@ -110,7 +111,8 @@ const sendWhatsAppMessage = async ({ to, body }: WhatsAppMessage) => {
 };
 
 // Definimos un creador de claim inicial
-const createInitialClaim = (): Omit<Claim, "id"> => ({
+const createInitialClaim = (): NewClaim => ({
+  id: '',
   name: '',
   phone: '',
   address: '',
@@ -125,7 +127,11 @@ const createInitialClaim = (): Omit<Claim, "id"> => ({
   resolution: '',
   notificationSent: false,
   technicalDetails: '',
-  notes: ''
+  notes: '',
+  description: '',
+  claimType: '',
+  claimAmount: 0,
+  updatedAt: new Date().toISOString()
 });
 
 const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
@@ -252,24 +258,30 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
     }
   };
 
-  const createClaim = async (claimData: Claim) => {
+  const createClaim = async (claimData: NewClaim) => {
     try {
       const now = new Date();
       const docRef = await addDoc(collection(db, 'claims'), {
         ...claimData,
         createdAt: now,
         receivedAt: now,
-        status: 'pending',
+        status: 'pending' as const,
         notificationSent: false,
         lastUpdate: now,
-        date: now,
+        date: format(now, "dd/MM/yyyy HH:mm", { locale: es }),
       });
+
+      await setDoc(
+        doc(db, 'claims', docRef.id),
+        { id: docRef.id },
+        { merge: true }
+      );
 
       // Enviar notificación por Firebase
       const notificationSent = await sendNotification(
         docRef.id,
         claimData.technicianId,
-        claimData
+        { ...claimData, id: docRef.id } as Claim
       );
 
       // Enviar WhatsApp al cliente
@@ -341,19 +353,19 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
 
     if (!claim || !claim.phone || !claim.name || !claim.address || !claim.reason || 
         !selectedTechnicianId || !claim.receivedBy) {
-      setAlertMessage('Todos los campos son requeridos');
-      return;
+        setAlertMessage('Todos los campos son requeridos');
+        return;
     }
 
     setIsSubmitting(true);
     try {
       const now = new Date();
-      const updatedClaim: Claim = {
-        ...createInitialClaim(),
+      const baseData = createInitialClaim();
+      const updatedClaim: NewClaim = {
+        ...baseData,
         ...claim,
-        id: claim.id || `temp_${Date.now()}`,
-        receivedAt: now.toISOString(),
-        date: now.toISOString(),
+        receivedAt: format(now, "dd/MM/yyyy HH:mm", { locale: es }),
+        date: format(now, "dd/MM/yyyy HH:mm", { locale: es }),
         technicianId: selectedTechnicianId,
         status: 'pending',
         notificationSent: false
