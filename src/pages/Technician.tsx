@@ -451,8 +451,65 @@ const TechnicianPage: React.FC = () => {
 
                       <ScrollArea.Root className="h-[calc(85vh-200px)] overflow-hidden">
                         <ScrollArea.Viewport className="h-full w-full pr-4">
-                          {/* El resto del contenido que te proporcioné */}
-                          {/* ... */}
+                          <div className="space-y-4">
+                            {/* Información del Cliente */}
+                            <div className="p-4 bg-slate-700/50 rounded-lg">
+                              <h3 className="text-slate-200 font-medium mb-3">Información del Cliente</h3>
+                              <div className="space-y-2">
+                                <div className="flex justify-between">
+                                  <span className="text-slate-400">Nombre:</span>
+                                  <span className="text-slate-200">{selectedClaim.name}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-slate-400">Teléfono:</span>
+                                  <span className="text-slate-200">{selectedClaim.phone}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-slate-400">Dirección:</span>
+                                  <span className="text-slate-200">{selectedClaim.address}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Detalles del Reclamo */}
+                            <div className="p-4 bg-slate-700/50 rounded-lg">
+                              <h3 className="text-slate-200 font-medium mb-3">Detalles del Reclamo</h3>
+                              <div className="space-y-2">
+                                <div className="flex justify-between">
+                                  <span className="text-slate-400">Estado:</span>
+                                  <span>{getStatusBadge(selectedClaim.status)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-slate-400">Fecha de recepción:</span>
+                                  <span className="text-slate-200">{formatDate(selectedClaim.receivedAt)}</span>
+                                </div>
+                                <div>
+                                  <span className="text-slate-400 block mb-2">Motivo del reclamo:</span>
+                                  <p className="text-slate-200 bg-slate-700/70 p-2 rounded">{selectedClaim.reason}</p>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Resolución del Reclamo */}
+                            <div className="p-4 bg-slate-700/50 rounded-lg">
+                              <h3 className="text-slate-200 font-medium mb-3">Resolución</h3>
+                              <Textarea
+                                value={resolution}
+                                onChange={handleResolutionChange}
+                                placeholder="Describe la resolución del reclamo..."
+                                className="min-h-[100px] w-full bg-slate-700 text-slate-200 border-slate-600"
+                                disabled={selectedClaim.status === 'completed'}
+                              />
+                              {selectedClaim.status === 'completed' && (
+                                <div className="mt-4">
+                                  <span className="text-slate-400 block mb-2">Completado por:</span>
+                                  <span className="text-slate-200">{selectedClaim.completedBy}</span>
+                                  <span className="text-slate-400 block mt-2 mb-1">Fecha de completado:</span>
+                                  <span className="text-slate-200">{formatDate(selectedClaim.completedAt)}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </ScrollArea.Viewport>
                         <ScrollArea.Scrollbar
                           className="flex select-none touch-none p-0.5 bg-slate-700/50 transition-colors duration-150 ease-out hover:bg-slate-700 rounded-full"

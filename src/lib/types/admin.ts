@@ -24,6 +24,8 @@ export interface Claim {
     customer: string;
     date: string;
     notificationSent: boolean;
+    completedBy?: string;
+    completedAt?: string;
 }
 
 export interface Technician {
