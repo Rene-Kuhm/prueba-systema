@@ -6,7 +6,7 @@
   "proxy": "https://us-central1-cospecreclamos.cloudfunctions.net",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && cp -r public/favicon.ico dist/",
     "preview": "vite preview"
   },
   "dependencies": {
