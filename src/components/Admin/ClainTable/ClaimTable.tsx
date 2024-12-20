@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, Trash2, CheckCircle, Clock, AlertCircle, Edit2, MoreHorizontal, Phone, MapPin, User, Archive } from 'lucide-react';
+import { Eye, Trash2, CheckCircle, Clock, AlertCircle, Edit2, MoreHorizontal, Phone, MapPin, User, Archive, RefreshCw } from 'lucide-react';
 import type { Claim, NewClaim } from '@/lib/types/admin';
 import { toast } from 'react-toastify';
 import { collection, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { archiveClaim, restoreClaim } from '@/lib/firebase/claims';
 import {
   Table,
   TableBody,
@@ -135,13 +136,15 @@ const MobileClaimCard = ({
     onShowDetails,
     onEdit,
     onDelete,
-    onArchive
+    onArchive,
+    onRestore
 }: { 
     claim: ExtendedClaim;
     onShowDetails: (claim: ExtendedClaim) => void;
     onEdit?: (claim: ExtendedClaim) => void;
     onDelete: (id: string) => Promise<void>;
     onArchive: (id: string) => Promise<void>;
+    onRestore: (id: string) => Promise<void>;
 }) => (
     <Card className="mb-4">
         <CardContent className="p-4">
@@ -207,15 +210,25 @@ const MobileClaimCard = ({
                     </Button>
                 )}
                 {claim.isArchived && (
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onDelete(claim.id)}
-                        className="text-destructive hover:text-destructive"
-                    >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Eliminar
-                    </Button>
+                    <>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onRestore(claim.id)}
+                        >
+                            <RefreshCw className="h-4 w-4 mr-1" />
+                            Restaurar
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onDelete(claim.id)}
+                            className="text-destructive hover:text-destructive"
+                        >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Eliminar
+                        </Button>
+                    </>
                 )}
             </div>
         </CardContent>
@@ -235,8 +248,7 @@ export function ClaimsTable({
     const [showArchived, setShowArchived] = useState(false);
 
     useEffect(() => {
-        const processedClaims = initialClaims;
-        setClaims(processedClaims);
+        setClaims(initialClaims);
     }, [initialClaims]);
 
     const filteredClaims = claims.filter(claim => 
@@ -245,11 +257,7 @@ export function ClaimsTable({
 
     const handleArchive = async (claimId: string) => {
         try {
-            const claimRef = doc(db, 'claims', claimId);
-            await updateDoc(claimRef, {
-                isArchived: true,
-                archivedAt: new Date().toISOString()
-            });
+            await archiveClaim(claimId);
             
             setClaims(prevClaims => 
                 prevClaims.map(claim => 
@@ -263,6 +271,29 @@ export function ClaimsTable({
         } catch (error) {
             console.error('Error al archivar:', error);
             toast.error('Error al archivar el reclamo');
+        }
+    };
+
+    const handleRestore = async (claimId: string) => {
+        try {
+            await restoreClaim(claimId);
+            
+            setClaims(prevClaims => 
+                prevClaims.map(claim => 
+                    claim.id === claimId 
+                        ? { 
+                            ...claim, 
+                            isArchived: false, 
+                            archivedAt: undefined  // Cambiamos null por undefined
+                          } 
+                        : claim
+                )
+            );
+            
+            toast.success('Reclamo restaurado exitosamente');
+        } catch (error) {
+            console.error('Error al restaurar:', error);
+            toast.error('Error al restaurar el reclamo');
         }
     };
 
@@ -324,6 +355,7 @@ export function ClaimsTable({
                                 onEdit={onEdit}
                                 onDelete={handleDelete}
                                 onArchive={handleArchive}
+                                onRestore={handleRestore}
                             />
                         ))}
                         {filteredClaims.length === 0 && (
@@ -393,12 +425,17 @@ export function ClaimsTable({
                                                         </DropdownMenuItem>
                                                     )}
                                                     {claim.isArchived && (
-                                                        <DropdownMenuItem
-                                                            className="text-destructive"
-                                                            onClick={() => handleDelete(claim.id)}
-                                                        >
-                                                            <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-                                                        </DropdownMenuItem>
+                                                        <>
+                                                            <DropdownMenuItem onClick={() => handleRestore(claim.id)}>
+                                                                <RefreshCw className="mr-2 h-4 w-4" /> Restaurar
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                className="text-destructive"
+                                                                onClick={() => handleDelete(claim.id)}
+                                                            >
+                                                                <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                                                            </DropdownMenuItem>
+                                                        </>
                                                     )}
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
