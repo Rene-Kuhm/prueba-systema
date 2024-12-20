@@ -5,7 +5,7 @@ import { Users, FileText, Wrench, Clock, CheckCircle, AlertCircle } from "lucide
 import { AdminLayout } from "@/components/Admin/Layout/AdminLayout";
 import { DashboardCard } from "@/components/Admin/Dashboard/DashboardCard";
 import { Header } from "@/components/Admin/Header";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { toast } from "react-toastify";
 import { PendingUsers } from "@/components/Admin/PendingUsers";
@@ -15,6 +15,15 @@ import ClaimDetailsModal from "@/components/Admin/ClaimDetailsModal";
 import { Notification } from '@/lib/types/notifications';
 import { AdminState, Claim, PendingUser, Technician } from '@/lib/types/admin';
 import { useAdmin, UseAdminReturn } from "@/hooks/useAdmin";
+
+// Definición de tipos
+interface ExtendedClaim extends Claim {
+    description: string;
+    claimType: string;
+    claimAmount: number;
+    updatedAt: string;
+    technicianName?: string;
+}
 
 const initialClaim: Claim = {
     id: '',
@@ -77,6 +86,28 @@ const Admin = () => {
         await addNewClaim(claimWithId);
     };
 
+    const handleDelete = async (id: string) => {
+        try {
+            await deleteDoc(doc(db, 'claims', id));
+            toast.success('Reclamo eliminado exitosamente');
+            // Actualizar la lista de reclamos después de eliminar
+            await getData();
+        } catch (error) {
+            console.error('Error al eliminar el reclamo:', error);
+            toast.error('Error al eliminar el reclamo');
+        }
+    };
+
+    const handleShowDetails = (claim: ExtendedClaim) => {
+        setSelectedClaim(claim);
+        setShowModal(true);
+    };
+
+    const handleEdit = (claim: ExtendedClaim) => {
+        setSelectedClaim(claim);
+        setShowModal(true);
+    };
+
     if (loading) {
         return <LoadingState />;
     }
@@ -107,7 +138,6 @@ const Admin = () => {
         ).length;
         const totalTechnicians = technicians.length;
 
-        // Monthly statistics
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
         const claimsThisMonth = claims.filter(claim => {
@@ -116,15 +146,13 @@ const Admin = () => {
                 ? new Date(claim.receivedAt) 
                 : claim.receivedAt;
             return claimDate.getMonth() === currentMonth && 
-                    claimDate.getFullYear() === currentYear;
+                   claimDate.getFullYear() === currentYear;
         }).length;
 
-        // Statistics by status
         const pendingClaims = claims.filter(claim => claim.status === 'pending').length;
         const inProgressClaims = claims.filter(claim => claim.status === 'in_progress').length;
         const completedClaims = claims.filter(claim => claim.status === 'completed').length;
 
-        // Calculate active technicians (those with assigned claims)
         const activeTechnicians = new Set(claims
             .filter(claim => claim.status !== 'completed')
             .map(claim => claim.technicianId)
@@ -150,7 +178,6 @@ const Admin = () => {
                 <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
 
                 <div className="space-y-6">
-                    {/* Main metrics */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <DashboardCard
                             title="Total Claims"
@@ -178,7 +205,6 @@ const Admin = () => {
                         />
                     </div>
 
-                    {/* Claim status */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <DashboardCard
                             title="Pending Claims"
@@ -200,7 +226,6 @@ const Admin = () => {
                         />
                     </div>
 
-                    {/* Monthly metrics */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <DashboardCard
                             title="Claims This Month"
@@ -220,6 +245,17 @@ const Admin = () => {
         );
     };
 
+    const transformClaims = (claims: Claim[]): ExtendedClaim[] => {
+        return claims.map(claim => ({
+            ...claim,
+            description: claim.reason || '',
+            claimType: '',
+            claimAmount: 0,
+            updatedAt: new Date().toISOString(),
+            technicianName: technicians.find(t => t.id === claim.technicianId)?.name
+        }));
+    };
+
     const renderContent = () => {
         switch (activeSection) {
             case "users":
@@ -234,21 +270,10 @@ const Admin = () => {
                             onChange={handleNewClaimChange}
                         />
                         <ClaimTable
-                            claims={claims}
-                            onExport={exportClaimsToExcel}
-                            onDelete={async (claimId) => {
-                                if (claimId) {
-                                    await deleteClaim(claimId);
-                                }
-                            }}
-                            onEdit={(claim: Claim) => {
-                                setShowModal(true);
-                                setSelectedClaim(claim);
-                            }}
-                            onShowDetails={(claim: Claim) => {
-                                setShowModal(true);
-                                setSelectedClaim(claim);
-                            }}
+                            claims={transformClaims(claims)}
+                            onDelete={handleDelete}
+                            onShowDetails={handleShowDetails}
+                            onEdit={handleEdit}
                         />
                     </div>
                 );
