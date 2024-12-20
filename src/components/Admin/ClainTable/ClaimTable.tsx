@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Eye, Trash2, CheckCircle, Clock, AlertCircle, Edit2, MoreHorizontal, Phone, MapPin, User, Archive, RefreshCw } from 'lucide-react';
 import type { Claim, NewClaim } from '@/lib/types/admin';
 import { toast } from 'react-toastify';
-import { collection, doc, updateDoc } from 'firebase/firestore';
+import { collection, doc, updateDoc, addDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { archiveClaim, restoreClaim } from '@/lib/firebase/claims';
 import {
   Table,
   TableBody,
@@ -41,10 +40,12 @@ interface ExtendedClaim extends NewClaim {
 }
 
 interface ClaimsTableProps {
-    claims: ExtendedClaim[];
-    onDelete: (id: string) => Promise<void>;
+    claims?: ExtendedClaim[];
     onShowDetails: (claim: ExtendedClaim) => void;
     onEdit?: (claim: ExtendedClaim) => void;
+    onDelete: (id: string) => Promise<void>;
+    onArchive?: (id: string) => Promise<void>;
+    onRestore?: (id: string) => Promise<void>;
 }
 
 const formatDateTime = (date: string | Date | undefined) => {
@@ -236,20 +237,36 @@ const MobileClaimCard = ({
 );
 
 export function ClaimsTable({
-    claims: initialClaims,
-    onDelete,
+    claims: initialClaims = [],
+    onShowDetails,
     onEdit,
-    onShowDetails
+    onDelete,
+    onArchive: externalOnArchive,
+    onRestore: externalOnRestore
 }: ClaimsTableProps) {
-    const [claims, setClaims] = useState<ExtendedClaim[]>([]);
+    const [claims, setClaims] = useState<ExtendedClaim[]>(initialClaims);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [claimToDelete, setClaimToDelete] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
 
     useEffect(() => {
-        setClaims(initialClaims);
-    }, [initialClaims]);
+        const fetchClaims = async () => {
+            try {
+                const snapshot = await getDocs(collection(db, 'claims'));
+                const fetchedClaims = snapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                })) as ExtendedClaim[];
+                setClaims(fetchedClaims);
+            } catch (error) {
+                console.error('Error al obtener los reclamos:', error);
+                toast.error('Error al obtener los reclamos');
+            }
+        };
+
+        fetchClaims();
+    }, []);
 
     const filteredClaims = claims.filter(claim => 
         showArchived ? claim.isArchived : !claim.isArchived
@@ -257,7 +274,14 @@ export function ClaimsTable({
 
     const handleArchive = async (claimId: string) => {
         try {
-            await archiveClaim(claimId);
+            if (externalOnArchive) {
+                await externalOnArchive(claimId);
+            } else {
+                await updateDoc(doc(db, 'claims', claimId), { 
+                    isArchived: true, 
+                    archivedAt: new Date().toISOString()
+                });
+            }
             
             setClaims(prevClaims => 
                 prevClaims.map(claim => 
@@ -276,7 +300,14 @@ export function ClaimsTable({
 
     const handleRestore = async (claimId: string) => {
         try {
-            await restoreClaim(claimId);
+            if (externalOnRestore) {
+                await externalOnRestore(claimId);
+            } else {
+                await updateDoc(doc(db, 'claims', claimId), {
+                    isArchived: false,
+                    archivedAt: undefined
+                });
+            }
             
             setClaims(prevClaims => 
                 prevClaims.map(claim => 
@@ -284,7 +315,7 @@ export function ClaimsTable({
                         ? { 
                             ...claim, 
                             isArchived: false, 
-                            archivedAt: undefined  // Cambiamos null por undefined
+                            archivedAt: undefined 
                           } 
                         : claim
                 )
@@ -311,7 +342,8 @@ export function ClaimsTable({
         if (claimToDelete) {
             try {
                 setIsDeleting(true);
-                await onDelete(claimToDelete);
+                await deleteDoc(doc(db, 'claims', claimToDelete));
+                setClaims(prevClaims => prevClaims.filter(claim => claim.id !== claimToDelete));
                 setShowDeleteDialog(false);
                 setClaimToDelete(null);
                 toast.success('Reclamo eliminado exitosamente');
