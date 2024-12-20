@@ -54,47 +54,29 @@ const formatDateTime = (date: string | Date | undefined) => {
     try {
         let dateObj: Date;
         
-        // Si es un objeto Date, usarlo directamente
-        if (date instanceof Date) {
+        if (typeof date === 'string') {
+            // Intenta crear una fecha desde el string
+            dateObj = new Date(date);
+        } else if (date instanceof Date) {
             dateObj = date;
-        } else if (typeof date === 'string') {
-            // Si es un timestamp de Firestore (formato ISO)
-            if (date.includes('T') || date.includes('Z')) {
-                dateObj = new Date(date);
-            }
-            // Si es formato dd/mm/yyyy hh:mm
-            else if (date.includes('/')) {
-                const [datePart, timePart = ''] = date.split(' ');
-                const [day, month, year] = datePart.split('/').map(Number);
-                const [hours = 0, minutes = 0] = timePart.split(':').map(Number);
-                
-                dateObj = new Date(year, month - 1, day, hours, minutes);
-            }
-            // Cualquier otro formato de fecha
-            else {
-                dateObj = new Date(date);
-            }
         } else {
             return '';
         }
 
-        // Verificar si la fecha es válida
+        // Verifica si la fecha es válida
         if (isNaN(dateObj.getTime())) {
             console.warn('Fecha inválida:', date);
             return '';
         }
 
-        // Formatear la fecha
-        const formatter = new Intl.DateTimeFormat('es-AR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-        });
+        // Formatea la fecha manualmente para asegurar el formato correcto
+        const day = dateObj.getDate().toString().padStart(2, '0');
+        const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+        const year = dateObj.getFullYear();
+        const hours = dateObj.getHours().toString().padStart(2, '0');
+        const minutes = dateObj.getMinutes().toString().padStart(2, '0');
 
-        return formatter.format(dateObj);
+        return `${day}/${month}/${year} ${hours}:${minutes}`;
     } catch (error) {
         console.error('Error formateando fecha:', error, 'Valor recibido:', date);
         return '';
