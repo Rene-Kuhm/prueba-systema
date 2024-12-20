@@ -50,7 +50,7 @@ interface ClaimsTableProps {
 
 const formatDateTime = (date: string | Date | undefined) => {
     if (!date) {
-        return formatDateTime(new Date());
+        return ''; // Retorna una cadena vacía si la fecha es undefined o null
     }
     
     try {
@@ -64,7 +64,8 @@ const formatDateTime = (date: string | Date | undefined) => {
                     const time = parts.slice(3).join(':') || '00:00';
                     dateObj = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${time}`);
                 } else {
-                    dateObj = new Date();
+                    console.warn('Formato de fecha inválido:', date);
+                    return ''; // Retorna una cadena vacía si el formato es inválido
                 }
             } else {
                 dateObj = new Date(date);
@@ -74,8 +75,8 @@ const formatDateTime = (date: string | Date | undefined) => {
         }
 
         if (isNaN(dateObj.getTime())) {
-            console.warn('Fecha inválida, usando fecha actual:', date);
-            return formatDateTime(new Date());
+            console.warn('Fecha inválida:', date);
+            return ''; // Retorna una cadena vacía si la fecha es inválida
         }
 
         return new Intl.DateTimeFormat('es-AR', {
@@ -89,7 +90,7 @@ const formatDateTime = (date: string | Date | undefined) => {
         }).format(dateObj);
     } catch (error) {
         console.error('Error formateando fecha:', error);
-        return formatDateTime(new Date());
+        return ''; // Retorna una cadena vacía si ocurre un error
     }
 };
 
