@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, Trash2, CheckCircle, Clock, AlertCircle, Edit2, MoreHorizontal, Phone, MapPin, User } from 'lucide-react';
+import { Eye, Trash2, CheckCircle, Clock, AlertCircle, Edit2, MoreHorizontal, Phone, MapPin, User, Archive } from 'lucide-react';
 import type { Claim, NewClaim } from '@/lib/types/admin';
 import { toast } from 'react-toastify';
+import { collection, doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import {
   Table,
   TableBody,
@@ -32,7 +34,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 interface ExtendedClaim extends NewClaim {
-  technicianName?: string;
+    technicianName?: string;
+    isArchived?: boolean;
+    archivedAt?: string;
 }
 
 interface ClaimsTableProps {
@@ -51,7 +55,6 @@ const formatDateTime = (date: string | Date | undefined) => {
         let dateObj: Date;
         
         if (typeof date === 'string') {
-            // Manejo de diferentes formatos de fecha
             if (date.includes('/')) {
                 const parts = date.split(/[/ :]/).map(part => part.trim());
                 if (parts.length >= 3) {
@@ -86,15 +89,6 @@ const formatDateTime = (date: string | Date | undefined) => {
         console.error('Error formateando fecha:', error);
         return formatDateTime(new Date());
     }
-};
-
-const ensureDateTime = (claim: ExtendedClaim): ExtendedClaim => {
-    const now = new Date();
-    return {
-        ...claim,
-        receivedAt: claim.receivedAt || claim.date || now.toISOString(),
-        date: claim.date || claim.receivedAt || now.toISOString()
-    };
 };
 
 const getStatusConfig = (status: string) => {
@@ -140,12 +134,14 @@ const MobileClaimCard = ({
     claim,
     onShowDetails,
     onEdit,
-    onDelete
+    onDelete,
+    onArchive
 }: { 
     claim: ExtendedClaim;
     onShowDetails: (claim: ExtendedClaim) => void;
     onEdit?: (claim: ExtendedClaim) => void;
     onDelete: (id: string) => Promise<void>;
+    onArchive: (id: string) => Promise<void>;
 }) => (
     <Card className="mb-4">
         <CardContent className="p-4">
@@ -156,7 +152,12 @@ const MobileClaimCard = ({
                         {formatDateTime(claim.receivedAt || claim.date)}
                     </p>
                 </div>
-                <StatusBadge status={claim.status} />
+                <div className="flex flex-col gap-2">
+                    <StatusBadge status={claim.status} />
+                    {claim.isArchived && (
+                        <Badge variant="secondary">Archivado</Badge>
+                    )}
+                </div>
             </div>
 
             <div className="space-y-2 mb-4">
@@ -185,7 +186,7 @@ const MobileClaimCard = ({
                     <Eye className="h-4 w-4 mr-1" />
                     Ver
                 </Button>
-                {onEdit && (
+                {!claim.isArchived && onEdit && (
                     <Button
                         variant="outline"
                         size="sm"
@@ -195,15 +196,27 @@ const MobileClaimCard = ({
                         Editar
                     </Button>
                 )}
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onDelete(claim.id)}
-                    className="text-destructive hover:text-destructive"
-                >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Eliminar
-                </Button>
+                {!claim.isArchived && (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onArchive(claim.id)}
+                    >
+                        <Archive className="h-4 w-4 mr-1" />
+                        Archivar
+                    </Button>
+                )}
+                {claim.isArchived && (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onDelete(claim.id)}
+                        className="text-destructive hover:text-destructive"
+                    >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Eliminar
+                    </Button>
+                )}
             </div>
         </CardContent>
     </Card>
@@ -219,20 +232,48 @@ export function ClaimsTable({
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [claimToDelete, setClaimToDelete] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [showArchived, setShowArchived] = useState(false);
 
     useEffect(() => {
-        const processedClaims = initialClaims.map(claim => ensureDateTime(claim));
+        const processedClaims = initialClaims;
         setClaims(processedClaims);
     }, [initialClaims]);
 
-    const handleDelete = async (claimId: string) => {
+    const filteredClaims = claims.filter(claim => 
+        showArchived ? claim.isArchived : !claim.isArchived
+    );
+
+    const handleArchive = async (claimId: string) => {
         try {
-            setClaimToDelete(claimId);
-            setShowDeleteDialog(true);
+            const claimRef = doc(db, 'claims', claimId);
+            await updateDoc(claimRef, {
+                isArchived: true,
+                archivedAt: new Date().toISOString()
+            });
+            
+            setClaims(prevClaims => 
+                prevClaims.map(claim => 
+                    claim.id === claimId 
+                        ? { ...claim, isArchived: true, archivedAt: new Date().toISOString() } 
+                        : claim
+                )
+            );
+            
+            toast.success('Reclamo archivado exitosamente');
         } catch (error) {
-            console.error('Error al preparar eliminación:', error);
-            toast.error('Error al preparar la eliminación del reclamo');
+            console.error('Error al archivar:', error);
+            toast.error('Error al archivar el reclamo');
         }
+    };
+
+    const handleDelete = async (claimId: string) => {
+        const claim = claims.find(c => c.id === claimId);
+        if (!claim?.isArchived) {
+            toast.warning('Debe archivar el reclamo antes de eliminarlo');
+            return;
+        }
+        setClaimToDelete(claimId);
+        setShowDeleteDialog(true);
     };
 
     const handleDeleteConfirm = async () => {
@@ -261,25 +302,33 @@ export function ClaimsTable({
                             Gestión de Reclamos
                         </CardTitle>
                         <p className="text-muted-foreground text-sm mt-1 text-white">
-                            {claims.length} reclamos en total
+                            {filteredClaims.length} reclamos {showArchived ? 'archivados' : 'activos'}
                         </p>
                     </div>
+                    <Button
+                        variant="outline"
+                        onClick={() => setShowArchived(!showArchived)}
+                        className="text-white"
+                    >
+                        {showArchived ? 'Ver Activos' : 'Ver Archivados'}
+                    </Button>
                 </CardHeader>
                 <CardContent>
                     {/* Vista móvil */}
                     <div className="block md:hidden space-y-4">
-                        {claims.map((claim) => (
+                        {filteredClaims.map((claim) => (
                             <MobileClaimCard
                                 key={claim.id}
                                 claim={claim}
                                 onShowDetails={onShowDetails}
                                 onEdit={onEdit}
                                 onDelete={handleDelete}
+                                onArchive={handleArchive}
                             />
                         ))}
-                        {claims.length === 0 && (
+                        {filteredClaims.length === 0 && (
                             <div className="text-center py-8 text-muted-foreground">
-                                No hay reclamos disponibles
+                                No hay reclamos {showArchived ? 'archivados' : 'activos'}
                             </div>
                         )}
                     </div>
@@ -300,9 +349,16 @@ export function ClaimsTable({
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {claims.map((claim) => (
+                                {filteredClaims.map((claim) => (
                                     <TableRow key={claim.id}>
-                                        <TableCell><StatusBadge status={claim.status} /></TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col gap-1">
+                                                <StatusBadge status={claim.status} />
+                                                {claim.isArchived && (
+                                                    <Badge variant="secondary">Archivado</Badge>
+                                                )}
+                                            </div>
+                                        </TableCell>
                                         <TableCell className="font-medium">{claim.name}</TableCell>
                                         <TableCell>{claim.phone}</TableCell>
                                         <TableCell className="hidden lg:table-cell max-w-[200px] truncate">
@@ -326,26 +382,33 @@ export function ClaimsTable({
                                                     <DropdownMenuItem onClick={() => onShowDetails(claim)}>
                                                         <Eye className="mr-2 h-4 w-4" /> Ver detalles
                                                     </DropdownMenuItem>
-                                                    {onEdit && (
+                                                    {!claim.isArchived && onEdit && (
                                                         <DropdownMenuItem onClick={() => onEdit(claim)}>
                                                             <Edit2 className="mr-2 h-4 w-4" /> Editar
                                                         </DropdownMenuItem>
                                                     )}
-                                                    <DropdownMenuItem
-                                                        className="text-destructive"
-                                                        onClick={() => handleDelete(claim.id)}
-                                                    >
-                                                        <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-                                                    </DropdownMenuItem>
+                                                    {!claim.isArchived && (
+                                                        <DropdownMenuItem onClick={() => handleArchive(claim.id)}>
+                                                            <Archive className="mr-2 h-4 w-4" /> Archivar
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    {claim.isArchived && (
+                                                        <DropdownMenuItem
+                                                            className="text-destructive"
+                                                            onClick={() => handleDelete(claim.id)}
+                                                        >
+                                                            <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                                                        </DropdownMenuItem>
+                                                    )}
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
                                     </TableRow>
                                 ))}
-                                {claims.length === 0 && (
+                                {filteredClaims.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={8} className="h-24 text-center">
-                                            No hay reclamos disponibles
+                                            No hay reclamos {showArchived ? 'archivados' : 'activos'}
                                         </TableCell>
                                     </TableRow>
                                 )}

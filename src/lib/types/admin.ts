@@ -26,6 +26,9 @@ export interface Claim {
     customer: string;
     technicalDetails?: string;
     notes?: string;
+    // otros campos
+    isArchived?: boolean;
+    archivedAt?: string;
 }
 
 
