@@ -54,33 +54,49 @@ const formatDateTime = (date: string | Date | undefined) => {
     try {
         let dateObj: Date;
         
-        if (typeof date === 'string') {
-            if (date.includes('/')) {
-                const [day, month, year, ...timeParts] = date.split(/[/ :]/).map(part => part.trim());
-                const time = timeParts.join(':') || '00:00';
-                dateObj = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${time}`);
-            } else {
+        // Si es un objeto Date, usarlo directamente
+        if (date instanceof Date) {
+            dateObj = date;
+        } else if (typeof date === 'string') {
+            // Si es un timestamp de Firestore (formato ISO)
+            if (date.includes('T') || date.includes('Z')) {
+                dateObj = new Date(date);
+            }
+            // Si es formato dd/mm/yyyy hh:mm
+            else if (date.includes('/')) {
+                const [datePart, timePart = ''] = date.split(' ');
+                const [day, month, year] = datePart.split('/').map(Number);
+                const [hours = 0, minutes = 0] = timePart.split(':').map(Number);
+                
+                dateObj = new Date(year, month - 1, day, hours, minutes);
+            }
+            // Cualquier otro formato de fecha
+            else {
                 dateObj = new Date(date);
             }
         } else {
-            dateObj = date;
-        }
-
-        if (!dateObj || !(dateObj instanceof Date) || isNaN(dateObj.getTime())) {
             return '';
         }
 
-        return new Intl.DateTimeFormat('es-AR', {
+        // Verificar si la fecha es válida
+        if (isNaN(dateObj.getTime())) {
+            console.warn('Fecha inválida:', date);
+            return '';
+        }
+
+        // Formatear la fecha
+        const formatter = new Intl.DateTimeFormat('es-AR', {
             day: '2-digit',
             month: '2-digit',
             year: 'numeric',
             hour: '2-digit',
             minute: '2-digit',
             hour12: false,
-            timeZone: 'America/Argentina/Buenos_Aires'
-        }).format(dateObj);
+        });
+
+        return formatter.format(dateObj);
     } catch (error) {
-        console.error('Error formateando fecha:', error);
+        console.error('Error formateando fecha:', error, 'Valor recibido:', date);
         return '';
     }
 };
