@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, Trash2, CheckCircle, Clock, AlertCircle, Edit2, MoreHorizontal, Phone, MapPin, User } from 'lucide-react';
-import type { Claim } from '@/lib/types/admin';
+import type { Claim, NewClaim } from '@/lib/types/admin';
+import { toast } from 'react-toastify';
 import {
   Table,
   TableBody,
@@ -28,41 +29,72 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 
-const CLAIMS_STORAGE_KEY = 'stored_claims';
-
-interface ExtendedClaim extends Claim {
-  exported?: boolean;
+interface ExtendedClaim extends NewClaim {
+  technicianName?: string;
 }
 
 interface ClaimsTableProps {
     claims: ExtendedClaim[];
     onDelete: (id: string) => Promise<void>;
     onShowDetails: (claim: ExtendedClaim) => void;
-    onExport: () => void;
     onEdit?: (claim: ExtendedClaim) => void;
 }
 
 const formatDateTime = (date: string | Date | undefined) => {
-    if (!date) return 'Fecha no disponible';
+    if (!date) {
+        return formatDateTime(new Date());
+    }
+    
     try {
-        const dateObj = date instanceof Date ? date : new Date(date);
-        if (isNaN(dateObj.getTime())) {
-            return 'Fecha inválida';
+        let dateObj: Date;
+        
+        if (typeof date === 'string') {
+            // Manejo de diferentes formatos de fecha
+            if (date.includes('/')) {
+                const parts = date.split(/[/ :]/).map(part => part.trim());
+                if (parts.length >= 3) {
+                    const [day, month, year] = parts;
+                    const time = parts.slice(3).join(':') || '00:00';
+                    dateObj = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${time}`);
+                } else {
+                    dateObj = new Date();
+                }
+            } else {
+                dateObj = new Date(date);
+            }
+        } else {
+            dateObj = date;
         }
+
+        if (isNaN(dateObj.getTime())) {
+            console.warn('Fecha inválida, usando fecha actual:', date);
+            return formatDateTime(new Date());
+        }
+
         return new Intl.DateTimeFormat('es-AR', {
             day: '2-digit',
             month: '2-digit',
             year: 'numeric',
             hour: '2-digit',
             minute: '2-digit',
-            hour12: false
+            hour12: false,
+            timeZone: 'America/Argentina/Buenos_Aires'
         }).format(dateObj);
     } catch (error) {
-        return 'Fecha inválida';
+        console.error('Error formateando fecha:', error);
+        return formatDateTime(new Date());
     }
+};
+
+const ensureDateTime = (claim: ExtendedClaim): ExtendedClaim => {
+    const now = new Date();
+    return {
+        ...claim,
+        receivedAt: claim.receivedAt || claim.date || now.toISOString(),
+        date: claim.date || claim.receivedAt || now.toISOString()
+    };
 };
 
 const getStatusConfig = (status: string) => {
@@ -120,7 +152,9 @@ const MobileClaimCard = ({
             <div className="flex justify-between items-start mb-3">
                 <div>
                     <h3 className="font-medium">{claim.name}</h3>
-                    <p className="text-muted-foreground text-sm">{formatDateTime(claim.receivedAt)}</p>
+                    <p className="text-muted-foreground text-sm">
+                        {formatDateTime(claim.receivedAt || claim.date)}
+                    </p>
                 </div>
                 <StatusBadge status={claim.status} />
             </div>
@@ -136,7 +170,9 @@ const MobileClaimCard = ({
                 </div>
                 <div className="flex items-center text-sm text-muted-foreground">
                     <User className="h-4 w-4 mr-2 shrink-0" />
-                    <span className="truncate">{claim.technicianId}</span>
+                    <span className="truncate">
+                        {claim.technicianName || claim.technicianId}
+                    </span>
                 </div>
             </div>
 
@@ -164,7 +200,6 @@ const MobileClaimCard = ({
                     size="sm"
                     onClick={() => onDelete(claim.id)}
                     className="text-destructive hover:text-destructive"
-                    disabled={!claim.exported}
                 >
                     <Trash2 className="h-4 w-4 mr-1" />
                     Eliminar
@@ -178,72 +213,42 @@ export function ClaimsTable({
     claims: initialClaims,
     onDelete,
     onEdit,
-    onExport: originalOnExport,
     onShowDetails
 }: ClaimsTableProps) {
     const [claims, setClaims] = useState<ExtendedClaim[]>([]);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [claimToDelete, setClaimToDelete] = useState<string | null>(null);
-    const [showErrorDialog, setShowErrorDialog] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
-    // Cargar claims del localStorage al iniciar
     useEffect(() => {
-        try {
-            const storedClaims = localStorage.getItem(CLAIMS_STORAGE_KEY);
-            if (storedClaims) {
-                const parsedClaims = JSON.parse(storedClaims);
-                setClaims(parsedClaims);
-            } else {
-                setClaims(initialClaims);
-                if (initialClaims.length > 0) {
-                    localStorage.setItem(CLAIMS_STORAGE_KEY, JSON.stringify(initialClaims));
-                }
-            }
-        } catch (error) {
-            console.error('Error al cargar los reclamos:', error);
-            setClaims(initialClaims);
-        }
+        const processedClaims = initialClaims.map(claim => ensureDateTime(claim));
+        setClaims(processedClaims);
     }, [initialClaims]);
 
-    // Actualizar localStorage cuando cambian los claims
-    useEffect(() => {
-        if (claims.length > 0) {
-            localStorage.setItem(CLAIMS_STORAGE_KEY, JSON.stringify(claims));
-        }
-    }, [claims]);
-
-    // Manejar la exportación desde ClaimForm
-    useEffect(() => {
-        if (originalOnExport) {
-            originalOnExport = () => {
-                const updatedClaims = claims.map(claim => ({
-                    ...claim,
-                    exported: true
-                }));
-                setClaims(updatedClaims);
-                localStorage.setItem(CLAIMS_STORAGE_KEY, JSON.stringify(updatedClaims));
-            };
-        }
-    }, [claims]);
-
     const handleDelete = async (claimId: string) => {
-        const claim = claims.find(c => c.id === claimId);
-        if (!claim?.exported) {
-            setShowErrorDialog(true);
-            return;
+        try {
+            setClaimToDelete(claimId);
+            setShowDeleteDialog(true);
+        } catch (error) {
+            console.error('Error al preparar eliminación:', error);
+            toast.error('Error al preparar la eliminación del reclamo');
         }
-        setClaimToDelete(claimId);
-        setShowDeleteDialog(true);
     };
 
     const handleDeleteConfirm = async () => {
         if (claimToDelete) {
-            await onDelete(claimToDelete);
-            const updatedClaims = claims.filter(claim => claim.id !== claimToDelete);
-            setClaims(updatedClaims);
-            localStorage.setItem(CLAIMS_STORAGE_KEY, JSON.stringify(updatedClaims));
-            setShowDeleteDialog(false);
-            setClaimToDelete(null);
+            try {
+                setIsDeleting(true);
+                await onDelete(claimToDelete);
+                setShowDeleteDialog(false);
+                setClaimToDelete(null);
+                toast.success('Reclamo eliminado exitosamente');
+            } catch (error) {
+                console.error('Error al eliminar:', error);
+                toast.error('Error al eliminar el reclamo');
+            } finally {
+                setIsDeleting(false);
+            }
         }
     };
 
@@ -290,7 +295,7 @@ export function ClaimsTable({
                                     <TableHead className="hidden lg:table-cell text-green-400">Dirección</TableHead>
                                     <TableHead className="text-green-400">Técnico</TableHead>
                                     <TableHead className="hidden lg:table-cell text-green-400">Recibido por</TableHead>
-                                    <TableHead className="text-green-400">Fecha</TableHead>
+                                    <TableHead className="text-green-400">Fecha y Hora</TableHead>
                                     <TableHead className="text-right text-green-400">Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -303,9 +308,11 @@ export function ClaimsTable({
                                         <TableCell className="hidden lg:table-cell max-w-[200px] truncate">
                                             {claim.address}
                                         </TableCell>
-                                        <TableCell>{claim.technicianId}</TableCell>
+                                        <TableCell>{claim.technicianName || claim.technicianId}</TableCell>
                                         <TableCell className="hidden lg:table-cell">{claim.receivedBy}</TableCell>
-                                        <TableCell>{formatDateTime(claim.receivedAt)}</TableCell>
+                                        <TableCell>
+                                            {formatDateTime(claim.receivedAt || claim.date)}
+                                        </TableCell>
                                         <TableCell className="text-right">
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
@@ -327,7 +334,6 @@ export function ClaimsTable({
                                                     <DropdownMenuItem
                                                         className="text-destructive"
                                                         onClick={() => handleDelete(claim.id)}
-                                                        disabled={!claim.exported}
                                                     >
                                                         <Trash2 className="mr-2 h-4 w-4" /> Eliminar
                                                     </DropdownMenuItem>
@@ -349,27 +355,32 @@ export function ClaimsTable({
                 </CardContent>
             </Card>
 
-            {/* Delete Confirmation Dialog */}
+            {/* Diálogo de confirmación de eliminación */}
             <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>No se puede eliminar</DialogTitle>
+                        <DialogTitle>Confirmar eliminación</DialogTitle>
                         <DialogDescription>
-                        Este reclamo no puede ser eliminado porque aún no ha sido exportado. Por favor, exporta el reclamo primero.
+                            ¿Estás seguro de que deseas eliminar este reclamo? Esta acción no se puede deshacer.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-                            Entendido
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setShowDeleteDialog(false)}
+                            disabled={isDeleting}
+                        >
+                            Cancelar
                         </Button>
                         <Button 
                             variant="destructive" 
                             onClick={handleDeleteConfirm}
+                            disabled={isDeleting}
                         >
-                            Eliminar
+                            {isDeleting ? 'Eliminando...' : 'Eliminar'}
                         </Button>
                     </DialogFooter>
-                    </DialogContent>
+                </DialogContent>
             </Dialog>
         </div>
     );
