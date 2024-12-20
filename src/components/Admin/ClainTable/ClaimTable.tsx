@@ -49,24 +49,16 @@ interface ClaimsTableProps {
 }
 
 const formatDateTime = (date: string | Date | undefined) => {
-    if (!date) {
-        return ''; // Retorna una cadena vacía si la fecha es undefined o null
-    }
+    if (!date) return '';
     
     try {
         let dateObj: Date;
         
         if (typeof date === 'string') {
             if (date.includes('/')) {
-                const parts = date.split(/[/ :]/).map(part => part.trim());
-                if (parts.length >= 3) {
-                    const [day, month, year] = parts;
-                    const time = parts.slice(3).join(':') || '00:00';
-                    dateObj = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${time}`);
-                } else {
-                    console.warn('Formato de fecha inválido:', date);
-                    return ''; // Retorna una cadena vacía si el formato es inválido
-                }
+                const [day, month, year, ...timeParts] = date.split(/[/ :]/).map(part => part.trim());
+                const time = timeParts.join(':') || '00:00';
+                dateObj = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${time}`);
             } else {
                 dateObj = new Date(date);
             }
@@ -74,9 +66,8 @@ const formatDateTime = (date: string | Date | undefined) => {
             dateObj = date;
         }
 
-        if (isNaN(dateObj.getTime())) {
-            console.warn('Fecha inválida:', date);
-            return ''; // Retorna una cadena vacía si la fecha es inválida
+        if (!dateObj || !(dateObj instanceof Date) || isNaN(dateObj.getTime())) {
+            return '';
         }
 
         return new Intl.DateTimeFormat('es-AR', {
@@ -90,7 +81,7 @@ const formatDateTime = (date: string | Date | undefined) => {
         }).format(dateObj);
     } catch (error) {
         console.error('Error formateando fecha:', error);
-        return ''; // Retorna una cadena vacía si ocurre un error
+        return '';
     }
 };
 
