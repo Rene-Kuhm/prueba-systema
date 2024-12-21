@@ -4,6 +4,7 @@ import type { Claim, NewClaim } from '@/lib/types/admin';
 import { toast } from 'react-toastify';
 import { collection, doc, updateDoc, addDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { formatDateTime, getCurrentFormattedDateTime } from '@/lib/utils/date';
 import {
   Table,
   TableBody,
@@ -47,41 +48,6 @@ interface ClaimsTableProps {
     onArchive?: (id: string) => Promise<void>;
     onRestore?: (id: string) => Promise<void>;
 }
-
-const formatDateTime = (date: string | Date | undefined) => {
-    if (!date) return '';
-    
-    try {
-        let dateObj: Date;
-        
-        if (typeof date === 'string') {
-            // Intenta crear una fecha desde el string
-            dateObj = new Date(date);
-        } else if (date instanceof Date) {
-            dateObj = date;
-        } else {
-            return '';
-        }
-
-        // Verifica si la fecha es válida
-        if (isNaN(dateObj.getTime())) {
-            console.warn('Fecha inválida:', date);
-            return '';
-        }
-
-        // Formatea la fecha manualmente para asegurar el formato correcto
-        const day = dateObj.getDate().toString().padStart(2, '0');
-        const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-        const year = dateObj.getFullYear();
-        const hours = dateObj.getHours().toString().padStart(2, '0');
-        const minutes = dateObj.getMinutes().toString().padStart(2, '0');
-
-        return `${day}/${month}/${year} ${hours}:${minutes}`;
-    } catch (error) {
-        console.error('Error formateando fecha:', error, 'Valor recibido:', date);
-        return '';
-    }
-};
 
 const getStatusConfig = (status: string) => {
     const configs = {
@@ -269,14 +235,14 @@ export function ClaimsTable({
             } else {
                 await updateDoc(doc(db, 'claims', claimId), { 
                     isArchived: true, 
-                    archivedAt: new Date().toISOString()
+                    archivedAt: getCurrentFormattedDateTime()
                 });
             }
             
             setClaims(prevClaims => 
                 prevClaims.map(claim => 
                     claim.id === claimId 
-                        ? { ...claim, isArchived: true, archivedAt: new Date().toISOString() } 
+                        ? { ...claim, isArchived: true, archivedAt: getCurrentFormattedDateTime() } 
                         : claim
                 )
             );
@@ -387,8 +353,8 @@ export function ClaimsTable({
                         )}
                     </div>
 
-                    {/* Vista desktop */}
-                    <div className="hidden md:block rounded-md border">
+                       {/* Vista desktop */}
+                       <div className="hidden md:block rounded-md border">
                         <Table>
                             <TableHeader>
                                 <TableRow className="hover:bg-transparent">
