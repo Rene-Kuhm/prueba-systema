@@ -11,6 +11,7 @@ import { getAuth, signInAnonymously } from "firebase/auth";
 import { getToken, onMessage, type MessagePayload } from "firebase/messaging";
 import { messaging } from "./firebase"; 
 import { ToastContainer, toast } from "react-toastify";
+import { useAuthStore } from './stores/authStore';
 import "react-toastify/dist/ReactToastify.css";
 
 // Auth Action Component
@@ -27,6 +28,12 @@ const AuthAction: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  const { loadUserProfile } = useAuthStore();
+
+  useEffect(() => {
+    loadUserProfile();
+  }, [loadUserProfile]);
+
   useEffect(() => {
     // Set up Firebase messaging listener
     if (messaging) {
