@@ -15,6 +15,7 @@ export default defineConfig({
     },
   },
   server: {
+    open: true,
     headers: {
       'Service-Worker-Allowed': '/'
     },
@@ -31,5 +32,5 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     emptyOutDir: true,
-  },
+  }
 });
