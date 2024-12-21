@@ -40,30 +40,39 @@ export const useAuthStore = create<AuthState>()(
       clearError: () => set({ error: null }),
 
       loadUserProfile: async () => {
+        let unsubscribe: (() => void) | undefined;
+        
         try {
           set({ loading: true, error: null });
+          
           return new Promise<void>((resolve, reject) => {
-            const unsubscribe = onAuthStateChanged(auth, async (user) => {
-              if (user) {
-                const userDoc = await getDoc(doc(db, 'users', user.uid));
-                const userData = userDoc.data();
-                const savedRole = localStorage.getItem('userRole');
+            unsubscribe = onAuthStateChanged(auth, async (user) => {
+              try {
+                if (user) {
+                  const userDoc = await getDoc(doc(db, 'users', user.uid));
+                  const userData = userDoc.data();
+                  const savedRole = localStorage.getItem('userRole');
+                  
+                  set({ 
+                    userProfile: { 
+                      ...user, 
+                      ...userData,
+                      role: savedRole as 'admin' | 'technician' || userData?.role 
+                    } as User,
+                    loading: false 
+                  });
+                } else {
+                  set({ userProfile: null, loading: false });
+                  localStorage.removeItem('userRole');
+                }
                 
-                set({ 
-                  userProfile: { 
-                    ...user, 
-                    ...userData,
-                    role: savedRole as 'admin' | 'technician' || userData?.role 
-                  } as User,
-                  loading: false 
-                });
-              } else {
-                set({ userProfile: null, loading: false });
-                localStorage.removeItem('userRole');
+                resolve();
+              } catch (error) {
+                reject(error);
+              } finally {
+                if (unsubscribe) unsubscribe();
               }
-              unsubscribe();
-              resolve();
-            }, reject);
+            });
           });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al cargar perfil';
