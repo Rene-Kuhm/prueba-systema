@@ -13,6 +13,7 @@ import { messaging } from "./firebase";
 import { ToastContainer, toast } from "react-toastify";
 import { useAuthStore } from './stores/authStore';
 import "react-toastify/dist/ReactToastify.css";
+import { useAuthInitialization } from './hooks/useAuthInitialization';
 
 // Auth Action Component
 const AuthAction: React.FC = () => {
@@ -28,24 +29,7 @@ const AuthAction: React.FC = () => {
 };
 
 const App: React.FC = () => {
-  const { loadUserProfile } = useAuthStore();
-  const [authInitialized, setAuthInitialized] = useState(false);
-
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        await loadUserProfile();
-        setAuthInitialized(true);
-      } catch (error) {
-        console.error('Error loading user profile:', error);
-        setAuthInitialized(true); // Set to true even on error to prevent retries
-      }
-    };
-
-    if (!authInitialized) {
-      initializeAuth();
-    }
-  }, []); // Remove authInitialized and loadUserProfile from dependencies
+  const { isLoading } = useAuthInitialization();
 
   useEffect(() => {
     // Set up Firebase messaging listener
@@ -91,6 +75,10 @@ const App: React.FC = () => {
       console.error("Error requesting notification permission:", error);
     }
   };
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
 
   return (
     <Router>

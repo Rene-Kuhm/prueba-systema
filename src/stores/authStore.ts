@@ -31,7 +31,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       userProfile: null,
       loading: false,
       error: null,
@@ -40,6 +40,11 @@ export const useAuthStore = create<AuthState>()(
       clearError: () => set({ error: null }),
 
       loadUserProfile: async () => {
+        const currentState = get();
+        
+        // Prevent multiple simultaneous loads
+        if (currentState.loading) return;
+
         let unsubscribe: (() => void) | undefined;
         
         try {
@@ -62,13 +67,17 @@ export const useAuthStore = create<AuthState>()(
                     const userData = userDoc.data();
                     const savedRole = localStorage.getItem('userRole');
                     
-                    set({ 
-                      userProfile: { 
+                    set(state => {
+                      const newUserProfile = { 
                         ...user, 
                         ...userData,
                         role: savedRole as 'admin' | 'technician' || userData?.role 
-                      } as User,
-                      loading: false 
+                      } as User;
+
+                      if (JSON.stringify(state.userProfile) !== JSON.stringify(newUserProfile)) {
+                        return { userProfile: newUserProfile, loading: false };
+                      }
+                      return { ...state, loading: false };
                     });
                   } else {
                     set({ userProfile: null, loading: false });
