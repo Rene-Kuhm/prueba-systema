@@ -29,19 +29,22 @@ const AuthAction: React.FC = () => {
 
 const App: React.FC = () => {
   const { loadUserProfile } = useAuthStore();
+  const [authInitialized, setAuthInitialized] = useState(false);
 
   useEffect(() => {
-    // Call loadUserProfile only once when component mounts
     const initializeAuth = async () => {
       try {
-        await loadUserProfile();
+        if (!authInitialized) {
+          await loadUserProfile();
+          setAuthInitialized(true);
+        }
       } catch (error) {
         console.error('Error loading user profile:', error);
       }
     };
 
     initializeAuth();
-  }, []); // Empty dependency array
+  }, [loadUserProfile, authInitialized]);
 
   useEffect(() => {
     // Set up Firebase messaging listener

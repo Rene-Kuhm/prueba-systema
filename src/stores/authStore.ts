@@ -46,33 +46,42 @@ export const useAuthStore = create<AuthState>()(
           set({ loading: true, error: null });
           
           return new Promise<void>((resolve, reject) => {
+            // Prevent multiple listeners
+            if (unsubscribe) {
+              unsubscribe();
+            }
+
+            let isInitialAuth = true;
+
             unsubscribe = onAuthStateChanged(auth, async (user) => {
               try {
-                if (user) {
-                  const userDoc = await getDoc(doc(db, 'users', user.uid));
-                  const userData = userDoc.data();
-                  const savedRole = localStorage.getItem('userRole');
-                  
-                  set({ 
-                    userProfile: { 
-                      ...user, 
-                      ...userData,
-                      role: savedRole as 'admin' | 'technician' || userData?.role 
-                    } as User,
-                    loading: false 
-                  });
-                } else {
-                  set({ userProfile: null, loading: false });
-                  localStorage.removeItem('userRole');
+                // Only process if it's the initial auth or if user state actually changed
+                if (isInitialAuth || user?.uid) {
+                  if (user) {
+                    const userDoc = await getDoc(doc(db, 'users', user.uid));
+                    const userData = userDoc.data();
+                    const savedRole = localStorage.getItem('userRole');
+                    
+                    set({ 
+                      userProfile: { 
+                        ...user, 
+                        ...userData,
+                        role: savedRole as 'admin' | 'technician' || userData?.role 
+                      } as User,
+                      loading: false 
+                    });
+                  } else {
+                    set({ userProfile: null, loading: false });
+                    localStorage.removeItem('userRole');
+                  }
                 }
                 
+                isInitialAuth = false;
                 resolve();
               } catch (error) {
                 reject(error);
-              } finally {
-                if (unsubscribe) unsubscribe();
               }
-            });
+            }, reject);
           });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al cargar perfil';
