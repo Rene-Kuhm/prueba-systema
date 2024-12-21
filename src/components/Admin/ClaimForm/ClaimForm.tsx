@@ -37,7 +37,8 @@ import { Loader2, AlertCircle, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { N } from 'node_modules/react-router/dist/development/route-data-DuV3tXo2.mjs';
+// import { N } from 'node_modules/react-router/dist/development/route-data-DuV3tXo2.mjs';
+import { useCurrentTime } from '@/lib/hooks/useCurrentTime';
 
 // WhatsApp Service
 interface WhatsAppMessage {
@@ -408,6 +409,8 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
     );
   }
 
+  const currentTime = useCurrentTime();
+
   return (
     <Card className="bg-slate-700 rounded-xl mb-8">
       <CardHeader>
@@ -453,11 +456,9 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                 <FormLabel className="required-field text-green-400">Nombre</FormLabel>
                 <FormControl>
                   <Input
-                    className='bg-slate-400'
-                    placeholder="Nombre completo"
-                    value={claim?.name || ''}
-                    onChange={(e) => onChange({ ...claim, name: e.target.value })}
-                    required
+                    value={currentTime}
+                    readOnly
+                    className="bg-muted"
                   />
                 </FormControl>
               </FormItem>
