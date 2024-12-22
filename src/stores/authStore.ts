@@ -4,15 +4,14 @@ import {
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   signOut as firebaseSignOut,
-  onAuthStateChanged,
-  User as FirebaseUser,
   setPersistence,
-  browserLocalPersistence
+  browserLocalPersistence,
+  User as FirebaseUser
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { persist } from 'zustand/middleware';
 
-interface User extends FirebaseUser {
+interface User extends Omit<FirebaseUser, 'toJSON'> {
   role: 'admin' | 'technician';
   approved: boolean;
 }
@@ -25,79 +24,19 @@ interface AuthState {
   signIn: (email: string, password: string, role: 'admin' | 'technician') => Promise<void>;
   signUp: (email: string, password: string, fullName: string, role: 'admin' | 'technician') => Promise<void>;
   signOut: () => Promise<void>;
-  loadUserProfile: () => Promise<void>;
   clearError: () => void;
+  loadUserProfile: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       userProfile: null,
       loading: false,
       error: null,
       
       setUserProfile: (profile) => set({ userProfile: profile }),
       clearError: () => set({ error: null }),
-
-      loadUserProfile: async () => {
-        const currentState = get();
-        
-        // Prevent multiple simultaneous loads
-        if (currentState.loading) return;
-
-        let unsubscribe: (() => void) | undefined;
-        
-        try {
-          set({ loading: true, error: null });
-          
-          return new Promise<void>((resolve, reject) => {
-            // Prevent multiple listeners
-            if (unsubscribe) {
-              unsubscribe();
-            }
-
-            let isInitialAuth = true;
-
-            unsubscribe = onAuthStateChanged(auth, async (user) => {
-              try {
-                // Only process if it's the initial auth or if user state actually changed
-                if (isInitialAuth || user?.uid) {
-                  if (user) {
-                    const userDoc = await getDoc(doc(db, 'users', user.uid));
-                    const userData = userDoc.data();
-                    const savedRole = localStorage.getItem('userRole');
-                    
-                    set(state => {
-                      const newUserProfile = { 
-                        ...user, 
-                        ...userData,
-                        role: savedRole as 'admin' | 'technician' || userData?.role 
-                      } as User;
-
-                      if (JSON.stringify(state.userProfile) !== JSON.stringify(newUserProfile)) {
-                        return { userProfile: newUserProfile, loading: false };
-                      }
-                      return { ...state, loading: false };
-                    });
-                  } else {
-                    set({ userProfile: null, loading: false });
-                    localStorage.removeItem('userRole');
-                  }
-                }
-                
-                isInitialAuth = false;
-                resolve();
-              } catch (error) {
-                reject(error);
-              }
-            }, reject);
-          });
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Error al cargar perfil';
-          set({ error: errorMessage, loading: false });
-          throw error;
-        }
-      },
 
       signIn: async (email, password, role) => {
         try {
@@ -121,7 +60,7 @@ export const useAuthStore = create<AuthState>()(
           localStorage.setItem('userRole', role);
 
           set({ 
-            userProfile: { ...user, ...userData } as User,
+            userProfile: { ...user, ...userData, role } as unknown as User,
             loading: false,
             error: null 
           });
@@ -167,6 +106,17 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al cerrar sesión';
           set({ error: errorMessage, loading: false });
+          throw error;
+        }
+      },
+
+      loadUserProfile: async () => {
+        try {
+          const response = await fetch('/api/user/profile');
+          if (!response.ok) throw new Error('Failed to load user profile');
+          const user = await response.json();
+          set({ userProfile: user });
+        } catch (error) {
           throw error;
         }
       },

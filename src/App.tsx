@@ -13,7 +13,7 @@ import { messaging } from "./firebase";
 import { ToastContainer, toast } from "react-toastify";
 import { useAuthStore } from './stores/authStore';
 import "react-toastify/dist/ReactToastify.css";
-import { useAuthInitialization } from './hooks/useAuthInitialization';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // Auth Action Component
 const AuthAction: React.FC = () => {
@@ -28,8 +28,8 @@ const AuthAction: React.FC = () => {
   }
 };
 
-const App: React.FC = () => {
-  const { isLoading } = useAuthInitialization();
+const AppContent: React.FC = () => {
+  const { isLoading } = useAuth();
 
   useEffect(() => {
     // Set up Firebase messaging listener
@@ -127,6 +127,14 @@ const App: React.FC = () => {
         />
       </Routes>
     </Router>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };
 
