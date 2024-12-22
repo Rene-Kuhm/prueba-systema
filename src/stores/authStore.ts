@@ -14,6 +14,7 @@ import { persist } from 'zustand/middleware';
 interface User extends Omit<FirebaseUser, 'toJSON'> {
   role: 'admin' | 'technician';
   approved: boolean;
+  fullName?: string;
 }
 
 interface AuthState {
@@ -30,7 +31,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       userProfile: null,
       loading: false,
       error: null,
@@ -111,12 +112,57 @@ export const useAuthStore = create<AuthState>()(
       },
 
       loadUserProfile: async () => {
+        const currentState = get();
+        
+        if (currentState.userProfile || currentState.loading) {
+          return;
+        }
+
         try {
-          const response = await fetch('/api/user/profile');
-          if (!response.ok) throw new Error('Failed to load user profile');
-          const user = await response.json();
-          set({ userProfile: user });
+          set({ loading: true });
+          const user = auth.currentUser;
+          
+          if (!user) {
+            set({ loading: false });
+            return;
+          }
+
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          const userData = userDoc.data();
+
+          if (!userData) {
+            set({ loading: false });
+            return;
+          }
+
+          const userProfile: User = {
+            uid: user.uid,
+            email: user.email,
+            emailVerified: user.emailVerified,
+            isAnonymous: user.isAnonymous,
+            providerId: user.providerId,
+            displayName: user.displayName,
+            phoneNumber: user.phoneNumber,
+            photoURL: user.photoURL,
+            metadata: user.metadata,
+            providerData: user.providerData,
+            refreshToken: user.refreshToken,
+            tenantId: user.tenantId,
+            delete: user.delete.bind(user),
+            getIdToken: user.getIdToken.bind(user),
+            getIdTokenResult: user.getIdTokenResult.bind(user),
+            reload: user.reload.bind(user),
+            role: userData.role as 'admin' | 'technician',
+            approved: userData.approved as boolean,
+            fullName: userData.fullName
+          } as const;
+
+          set({ 
+            userProfile,
+            loading: false 
+          });
         } catch (error) {
+          set({ loading: false });
           throw error;
         }
       },

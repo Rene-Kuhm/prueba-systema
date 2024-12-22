@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, useSearchParams, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { UnauthorizedRoute } from './components/UnauthorizedRoute';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
@@ -14,6 +15,9 @@ import { ToastContainer, toast } from "react-toastify";
 import { useAuthStore } from './stores/authStore';
 import "react-toastify/dist/ReactToastify.css";
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import Dashboard from './pages/Dashboard';
+import AdminRoutes from './routes/AdminRoutes';
+import TechnicianRoutes from './routes/TechnicianRoutes';
 
 // Auth Action Component
 const AuthAction: React.FC = () => {
@@ -91,29 +95,38 @@ const AppContent: React.FC = () => {
       </button>
       
       <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/__/auth/action" element={<AuthAction />} />
+        {/* Public routes that require no auth */}
+        <Route element={<UnauthorizedRoute />}>
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+        </Route>
 
-        {/* Protected Routes */}
-        <Route
-          path="/admin"
+        {/* Protected routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Route>
+
+        <Route 
+          path="/admin/*" 
           element={
             <ProtectedRoute role="admin">
-              <Admin />
+              <AdminRoutes />
             </ProtectedRoute>
-          }
+          } 
         />
-        <Route
-          path="/technician"
+        
+        <Route 
+          path="/technician/*" 
           element={
             <ProtectedRoute role="technician">
-              <TechnicianPage />
+              <TechnicianRoutes />
             </ProtectedRoute>
-          }
+          } 
         />
+
+        <Route path="/__/auth/action" element={<AuthAction />} />
 
         {/* Fallback Route */}
         <Route
