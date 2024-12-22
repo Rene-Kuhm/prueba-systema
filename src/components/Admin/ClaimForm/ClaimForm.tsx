@@ -4,6 +4,7 @@ import { ClaimFormProps, Claim, ClaimFormTechnician, NewClaim } from '@/lib/type
 import { collection, getDocs, addDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { toast } from 'react-toastify';
+import { sendWhatsAppMessage } from '@/services/whatsappService';
 import { useCurrentTime } from '@/lib/hooks/useCurrentTime';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -55,7 +56,6 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
   const [selectedTechnicianId, setSelectedTechnicianId] = useState(claim?.technicianId || '');
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [techniciansWithNotifications, setTechniciansWithNotifications] = useState<Set<string>>(new Set());
 
   const methods = useForm({
     defaultValues: claim,
@@ -102,53 +102,6 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
     }
   }, [claim?.technicianId]);
 
-  // Función para enviar WhatsApp
-  const sendWhatsAppMessage = async ({ to, body }: WhatsAppMessage) => {
-    try {
-      const token = import.meta.env.VITE_ULTRAMSG_TOKEN;
-      const instance = import.meta.env.VITE_ULTRAMSG_INSTANCE;
-
-      if (!token || !instance) {
-        throw new Error('Faltan las credenciales de Ultramsg');
-      }
-
-      // Use proxy URL or serverless function URL instead of direct API call
-      const url = `/api/sendWhatsApp`; // Change this to your proxy endpoint
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          token,
-          instance,
-          to,
-          body,
-          priority: '1',
-          referenceId: ''
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Error ${response.status}: ${errorData}`);
-      }
-
-      const data = await response.json();
-      if (data.sent) {
-        toast.success('Mensaje de WhatsApp enviado correctamente');
-        return true;
-      } else {
-        throw new Error(data.message || 'Error al enviar mensaje de WhatsApp');
-      }
-    } catch (error) {
-      console.error('Error en sendWhatsAppMessage:', error);
-      toast.error('Error al enviar mensaje de WhatsApp');
-      return false;
-    }
-  };
-
   const fetchTechnicians = async () => {
     try {
       const technicianCollection = collection(db, 'technicians');
@@ -172,76 +125,12 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         })
       );
 
-      const notificationStatus = new Set<string>();
-      await Promise.all(
-        technicianList.map(async (tech) => {
-          const userDoc = await getDoc(doc(db, 'users', tech.id));
-          const userData = userDoc.data();
-          if (userData?.fcmToken && userData?.active !== false) {
-            notificationStatus.add(tech.id);
-          }
-        })
-      );
-
-      setTechniciansWithNotifications(notificationStatus);
       setTechnicians(technicianList);
       setLoading(false);
     } catch (err) {
       console.error('Error fetching technicians:', err);
       setError('Error al cargar los técnicos');
       setLoading(false);
-    }
-  };
-
-  const sendNotification = async (claimId: string, technicianId: string, claimDetails: Claim) => {
-    try {
-      const technicianDoc = await getDoc(doc(db, 'users', technicianId));
-      const technicianData = technicianDoc.data();
-
-      if (!technicianData?.fcmToken) {
-        toast.warning('El técnico no tiene notificaciones configuradas');
-        return false;
-      }
-
-      // Use relative path or full URL from environment variable
-      const notificationEndpoint = '/api/sendClaimNotification';
-      
-      const response = await fetch(notificationEndpoint, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          notification: {
-            title: 'Nuevo Reclamo Asignado',
-            body: `Se te ha asignado un nuevo reclamo de ${claimDetails.name}`,
-          },
-          data: {
-            claimId,
-            customerName: claimDetails.name,
-            customerAddress: claimDetails.address,
-            customerPhone: claimDetails.phone,
-            reason: claimDetails.reason,
-          },
-          token: technicianData.fcmToken,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Error ${response.status}: ${errorData}`);
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        toast.success('Notificación enviada al técnico');
-        return true;
-      }
-      throw new Error(data.error || 'Error al enviar notificación');
-    } catch (error) {
-      console.error('Error al enviar la notificación:', error);
-      toast.error(error instanceof Error ? error.message : 'Error al enviar la notificación');
-      return false;
     }
   };
 
@@ -253,31 +142,14 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         createdAt: now,
         receivedAt: currentTime,
         status: 'pending' as const,
-        notificationSent: false,
         lastUpdate: now,
         date: currentTime,
       });
 
       await setDoc(doc(db, 'claims', docRef.id), { id: docRef.id }, { merge: true });
 
-      // Enviar notificación por Firebase
-      const notificationSent = await sendNotification(
-        docRef.id,
-        claimData.technicianId,
-        { ...claimData, id: docRef.id } as Claim
-      );
-
       // Enviar WhatsApp al cliente y al técnico
       await sendMessagesToParticipants(docRef.id, claimData);
-
-      await setDoc(
-        doc(db, 'claims', docRef.id),
-        {
-          notificationSent,
-          lastNotificationAttempt: new Date(),
-        },
-        { merge: true }
-      );
 
       return docRef.id;
     } catch (e) {
@@ -303,7 +175,6 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         to: claimData.phone,
         body: messageToCustomer
       });
-      
       toast.success('WhatsApp enviado al cliente');
     } catch (whatsappError) {
       console.error('Error enviando WhatsApp al cliente:', whatsappError);
@@ -337,18 +208,13 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
           + `🕒 *Fecha y Hora:* ${currentTime}\n\n`
           + `Por favor, contacta al cliente para coordinar la visita.`;
 
-        console.log('Enviando WhatsApp al técnico:', technicianPhone); // Para debug
+        console.log('Enviando WhatsApp al técnico:', technicianPhone);
 
-        const sent = await sendWhatsAppMessage({
+        await sendWhatsAppMessage({
           to: technicianPhone,
           body: messageToTechnician
         });
-
-        if (sent) {
-          toast.success('WhatsApp enviado al técnico');
-        } else {
-          throw new Error('No se pudo enviar el mensaje al técnico');
-        }
+        toast.success('WhatsApp enviado al técnico');
       } catch (whatsappError) {
         console.error('Error enviando WhatsApp al técnico:', whatsappError);
         toast.warning('No se pudo enviar el WhatsApp al técnico');
@@ -492,9 +358,6 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                   onValueChange={(value) => {
                     setSelectedTechnicianId(value);
                     onChange({ ...claim, technicianId: value });
-                    if (value && !techniciansWithNotifications.has(value)) {
-                      toast.warning('Este técnico no recibirá notificaciones automáticas');
-                    }
                   }}
                 >
                   <FormControl>
@@ -503,33 +366,16 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {technicians.map((technician) => {
-                      const hasNotifications = techniciansWithNotifications.has(technician.id);
-                      return (
-                        <SelectItem 
-                          key={technician.id} 
-                          value={technician.id}
-                          className={cn(
-                            "flex items-center justify-between",
-                            !hasNotifications && "text-yellow-600"
-                          )}
-                        >
-                          <span>{technician.name} - {technician.phone}</span>
-                          {hasNotifications ? (
-                            <Badge variant="default" className="ml-2">Con notificaciones</Badge>
-                          ) : (
-                            <Badge variant="outline" className="ml-2 text-yellow-600">Sin notificaciones</Badge>
-                          )}
-                        </SelectItem>
-                      );
-                    })}
+                    {technicians.map((technician) => (
+                      <SelectItem 
+                        key={technician.id} 
+                        value={technician.id}
+                      >
+                        {technician.name} - {technician.phone}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                {selectedTechnicianId && !techniciansWithNotifications.has(selectedTechnicianId) && (
-                  <FormDescription className="text-yellow-600">
-                    Este técnico no recibirá notificaciones automáticas
-                  </FormDescription>
-                )}
               </FormItem>
             </div>
 
