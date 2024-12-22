@@ -11,13 +11,13 @@ export const useAuthInitialization = () => {
     let mounted = true;
 
     const initialize = async () => {
-      if (isInitialized) return;
+      if (!mounted || isInitialized) return;
 
       try {
         await loadUserProfile();
         if (mounted) {
-          setIsInitialized(true);
           setIsLoading(false);
+          setIsInitialized(true);
         }
       } catch (err) {
         if (mounted) {
@@ -28,12 +28,14 @@ export const useAuthInitialization = () => {
       }
     };
 
-    initialize();
+    if (!isInitialized) {
+      initialize();
+    }
 
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [isInitialized, loadUserProfile]);
 
   return { isInitialized, isLoading, error };
 };
