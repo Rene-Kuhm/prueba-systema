@@ -1,41 +1,38 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../stores/authStore';
 
 export const useAuthInitialization = () => {
+  const initializationAttempted = useRef(false);
   const { loadUserProfile } = useAuthStore();
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [state, setState] = useState({
+    isInitialized: false,
+    isLoading: true,
+    error: null as Error | null
+  });
 
   useEffect(() => {
-    let mounted = true;
-
-    const initialize = async () => {
-      if (!mounted || isInitialized) return;
-
-      try {
-        await loadUserProfile();
-        if (mounted) {
-          setIsLoading(false);
-          setIsInitialized(true);
-        }
-      } catch (err) {
-        if (mounted) {
-          setError(err instanceof Error ? err : new Error('Failed to initialize auth'));
-          setIsLoading(false);
-          setIsInitialized(true);
-        }
-      }
-    };
-
-    if (!isInitialized) {
-      initialize();
+    if (initializationAttempted.current) {
+      return;
     }
 
-    return () => {
-      mounted = false;
-    };
-  }, [isInitialized, loadUserProfile]);
+    initializationAttempted.current = true;
+    
+    loadUserProfile()
+      .then(() => {
+        setState({
+          isInitialized: true,
+          isLoading: false,
+          error: null
+        });
+      })
+      .catch((err) => {
+        setState({
+          isInitialized: true,
+          isLoading: false,
+          error: err instanceof Error ? err : new Error('Failed to initialize auth')
+        });
+      });
+  }, []); // Empty dependency array since we use ref for tracking
 
-  return { isInitialized, isLoading, error };
+  return state;
 };
