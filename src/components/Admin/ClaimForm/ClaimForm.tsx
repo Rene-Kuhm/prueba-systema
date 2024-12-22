@@ -112,33 +112,22 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         throw new Error('Faltan las credenciales de Ultramsg');
       }
 
-      const cleanPhone = to.replace(/[\s+\-()]/g, '');
-      let formattedPhone = cleanPhone;
+      // Llamada directa a la API
+      const url = `https://api.ultramsg.com/${instance}/messages/chat`;
       
-      if (formattedPhone.startsWith('0')) {
-        formattedPhone = formattedPhone.substring(1);
-      }
-      if (formattedPhone.includes('15')) {
-        formattedPhone = formattedPhone.replace('15', '');
-      }
-      if (!formattedPhone.startsWith('549')) {
-        formattedPhone = `549${formattedPhone}`;
-      }
-
-      // Usar la URL con el proxy configurado en vite.config.ts
-      const url = `/ultramsg-api/${instance}/messages/chat`;
-      const params = new URLSearchParams({
-        token,
-        to: formattedPhone,
-        body,
-        priority: '1',
-        referenceId: ''
-      });
+      const formData = new URLSearchParams();
+      formData.append('token', token);
+      formData.append('to', to);
+      formData.append('body', body);
+      formData.append('priority', '1');
+      formData.append('referenceId', '');
 
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params
+        headers: { 
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData
       });
 
       if (!response.ok) {
@@ -217,14 +206,12 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         return false;
       }
 
-      // Modificar para usar el proxy o agregar modo no-cors
-      const response = await fetch(config.firebase.functionUrl, {
+      // Usar la URL de la función con modo no-cors
+      const response = await fetch('/sendClaimNotification', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Origin': window.location.origin
         },
-        mode: 'cors', // Puedes cambiar a 'no-cors' si es necesario
         body: JSON.stringify({
           notification: {
             title: 'Nuevo Reclamo Asignado',
