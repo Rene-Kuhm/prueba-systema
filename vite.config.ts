@@ -25,6 +25,14 @@ export default defineConfig({
         target: 'https://us-central1-cospecreclamos.cloudfunctions.net',
         changeOrigin: true,
         secure: false
+      },
+      '/ultramsg-api': {
+        target: 'https://api.ultramsg.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ultramsg-api/, ''),
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+        },
       }
     }
   },

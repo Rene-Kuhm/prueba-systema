@@ -327,7 +327,7 @@ export function ClaimsTable({
                     <Button
                         variant="outline"
                         onClick={() => setShowArchived(!showArchived)}
-                        className="text-white"
+                        className="text-black"
                     >
                         {showArchived ? 'Ver Activos' : 'Ver Archivados'}
                     </Button>

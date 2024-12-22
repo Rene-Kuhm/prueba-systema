@@ -36,6 +36,7 @@ export interface Claim {
 export interface Technician {
     id: string;
     name: string;
+    status: 'active' | 'inactive';
     phone: string;
     email: string;
     active: boolean;

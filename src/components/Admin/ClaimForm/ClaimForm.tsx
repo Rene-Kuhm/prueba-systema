@@ -115,8 +115,8 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
       const cleanPhone = to.replace(/[\s+\-()]/g, '');
       let formattedPhone = cleanPhone;
       
-      if (cleanPhone.startsWith('0')) {
-        formattedPhone = cleanPhone.substring(1);
+      if (formattedPhone.startsWith('0')) {
+        formattedPhone = formattedPhone.substring(1);
       }
       if (formattedPhone.includes('15')) {
         formattedPhone = formattedPhone.replace('15', '');
@@ -125,7 +125,8 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         formattedPhone = `549${formattedPhone}`;
       }
 
-      const url = `https://api.ultramsg.com/${instance}/messages/chat`;
+      // Usar la URL con el proxy configurado en vite.config.ts
+      const url = `/ultramsg-api/${instance}/messages/chat`;
       const params = new URLSearchParams({
         token,
         to: formattedPhone,
@@ -140,14 +141,21 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         body: params
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.message || 'Error al enviar mensaje de WhatsApp');
+        const errorData = await response.text();
+        console.error('Error response:', errorData);
+        throw new Error(`Error ${response.status}: ${errorData}`);
       }
 
-      toast.success('Mensaje de WhatsApp enviado correctamente');
-      return data.sent;
+      const data = await response.json();
+      console.log('WhatsApp response:', data); // Para debug
+
+      if (data.sent) {
+        toast.success('Mensaje de WhatsApp enviado correctamente');
+        return true;
+      } else {
+        throw new Error(data.message || 'Error al enviar mensaje de WhatsApp');
+      }
     } catch (error) {
       console.error('Error en sendWhatsAppMessage:', error);
       toast.error('Error al enviar mensaje de WhatsApp');
@@ -209,10 +217,14 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         return false;
       }
 
+      // Modificar para usar el proxy o agregar modo no-cors
       const response = await fetch(config.firebase.functionUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        mode: 'cors',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Origin': window.location.origin
+        },
+        mode: 'cors', // Puedes cambiar a 'no-cors' si es necesario
         body: JSON.stringify({
           notification: {
             title: 'Nuevo Reclamo Asignado',
@@ -313,6 +325,19 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
     const technician = technicians.find(t => t.id === claimData.technicianId);
     if (technician?.phone) {
       try {
+        // Asegurarse de que el número del técnico tenga el formato correcto
+        let technicianPhone = technician.phone.replace(/[\s+\-()]/g, '');
+        
+        if (technicianPhone.startsWith('0')) {
+          technicianPhone = technicianPhone.substring(1);
+        }
+        if (technicianPhone.includes('15')) {
+          technicianPhone = technicianPhone.replace('15', '');
+        }
+        if (!technicianPhone.startsWith('549')) {
+          technicianPhone = `549${technicianPhone}`;
+        }
+
         const messageToTechnician = `🔧 *Nuevo Reclamo Asignado*\n\n`
           + `Se te ha asignado un nuevo reclamo:\n\n`
           + `👤 *Cliente:* ${claimData.name}\n`
@@ -323,16 +348,25 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
           + `🕒 *Fecha y Hora:* ${currentTime}\n\n`
           + `Por favor, contacta al cliente para coordinar la visita.`;
 
-        await sendWhatsAppMessage({
-          to: technician.phone,
+        console.log('Enviando WhatsApp al técnico:', technicianPhone); // Para debug
+
+        const sent = await sendWhatsAppMessage({
+          to: technicianPhone,
           body: messageToTechnician
         });
-        
-        toast.success('WhatsApp enviado al técnico');
+
+        if (sent) {
+          toast.success('WhatsApp enviado al técnico');
+        } else {
+          throw new Error('No se pudo enviar el mensaje al técnico');
+        }
       } catch (whatsappError) {
         console.error('Error enviando WhatsApp al técnico:', whatsappError);
         toast.warning('No se pudo enviar el WhatsApp al técnico');
       }
+    } else {
+      console.warn('El técnico no tiene número de teléfono registrado');
+      toast.warning('El técnico no tiene número de teléfono registrado');
     }
   };
 

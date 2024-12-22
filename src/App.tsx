@@ -52,31 +52,51 @@ const AppContent: React.FC = () => {
 
   const requestNotificationPermission = async () => {
     try {
-      if (!messaging) {
-        console.log("Firebase messaging is not initialized");
+      // Check if the browser supports notifications
+      if (!('Notification' in window)) {
+        toast.error('This browser does not support notifications');
+        return;
+      }
+
+      // Check if notification permissions are already granted
+      if (Notification.permission === 'granted') {
+        toast.info('Notifications are already enabled');
         return;
       }
 
       // Request notification permission
       const permission = await Notification.requestPermission();
-      if (permission !== 'granted') {
-        console.log('Notification permission denied');
-        return;
-      }
-      
-      // Then request FCM token
-      const token = await getToken(messaging, {
-        vapidKey: import.meta.env.VITE_FIREBASE_PUSH_PUBLIC_KEY 
-      });
-      
-      if (token) {
-        console.log("FCM Token:", token);
-        // Here you would typically send this token to your backend
+      console.log('Permission:', permission);
+
+      if (permission === 'granted') {
+        toast.success('Notifications enabled successfully!');
+        
+        if (!messaging) {
+          toast.error('Firebase messaging is not initialized');
+          return;
+        }
+
+        try {
+          const token = await getToken(messaging, {
+            vapidKey: import.meta.env.VITE_FIREBASE_PUSH_PUBLIC_KEY 
+          });
+          
+          if (token) {
+            console.log("FCM Token:", token);
+            // Here you would typically send this token to your backend
+          } else {
+            toast.error('Could not get notification token');
+          }
+        } catch (fcmError) {
+          console.error("FCM token error:", fcmError);
+          toast.error('Error setting up notifications');
+        }
       } else {
-        console.log("No registration token available");
+        toast.warning('Notification permission was denied');
       }
     } catch (error) {
       console.error("Error requesting notification permission:", error);
+      toast.error('Failed to enable notifications');
     }
   };
 

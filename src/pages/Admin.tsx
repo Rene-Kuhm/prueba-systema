@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { ErrorState } from "@/components/Admin/States/ErrorState";
 import { LoadingState } from "@/components/Admin/States/LoadingState";
-import { Users, FileText, Wrench, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { Users, FileText, Wrench, Calendar } from "lucide-react";
 import { AdminLayout } from "@/components/Admin/Layout/AdminLayout";
 import { DashboardCard } from "@/components/Admin/Dashboard/DashboardCard";
 import { Header } from "@/components/Admin/Header";
-import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { collection, getDocs, deleteDoc, doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { toast } from "react-toastify";
 import { PendingUsers } from "@/components/Admin/PendingUsers";
@@ -66,6 +66,76 @@ const Admin = () => {
 
     const [activeSection, setActiveSection] = useState("dashboard");
     const [notifications, setNotifications] = useState<Notification[]>([]);
+
+    // Nuevo estado para las métricas del dashboard
+    const [dashboardStats, setDashboardStats] = useState({
+        totalTechnicians: 0,
+        totalClaims: 0,
+        totalAdmins: 0,
+        monthClaims: 0,
+        yearClaims: 0
+    });
+
+    // Efecto para sincronizar datos con Firebase
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                // Obtener conteos de cada colección
+                const techsSnapshot = await getDocs(collection(db, "technicians"));
+                const claimsSnapshot = await getDocs(collection(db, "claims"));
+                const usersSnapshot = await getDocs(collection(db, "users"));
+
+                const now = new Date();
+                const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                const firstDayOfYear = new Date(now.getFullYear(), 0, 1);
+
+                // Filtrar reclamos por fecha
+                const claimDocs = claimsSnapshot.docs.map(doc => ({
+                    ...doc.data(),
+                    receivedAt: doc.data().receivedAt ? new Date(doc.data().receivedAt) : null
+                }));
+
+                const monthClaims = claimDocs.filter(claim => 
+                    claim.receivedAt && claim.receivedAt >= firstDayOfMonth
+                ).length;
+
+                const yearClaims = claimDocs.filter(claim => 
+                    claim.receivedAt && claim.receivedAt >= firstDayOfYear
+                ).length;
+
+                const adminUsers = usersSnapshot.docs.filter(doc => 
+                    doc.data().role === 'admin'
+                ).length;
+
+                setDashboardStats({
+                    totalTechnicians: techsSnapshot.size,
+                    totalClaims: claimsSnapshot.size,
+                    totalAdmins: adminUsers,
+                    monthClaims,
+                    yearClaims
+                });
+            } catch (error) {
+                console.error("Error fetching dashboard data:", error);
+                toast.error("Error al cargar datos del dashboard");
+            }
+        };
+
+        fetchDashboardData();
+
+        // Configurar listener para actualizaciones en tiempo real
+        const unsubscribeClaims = onSnapshot(collection(db, "claims"), (snapshot) => {
+            fetchDashboardData();
+        });
+
+        const unsubscribeTechs = onSnapshot(collection(db, "technicians"), (snapshot) => {
+            fetchDashboardData();
+        });
+
+        return () => {
+            unsubscribeClaims();
+            unsubscribeTechs();
+        };
+    }, []);
 
     const handleMarkAsRead = (id: string) => {
         setNotifications(prev =>
@@ -142,11 +212,11 @@ const Admin = () => {
         const currentYear = new Date().getFullYear();
         const claimsThisMonth = claims.filter(claim => {
             if (!claim.receivedAt) return false;
-            const claimDate = typeof claim.receivedAt === 'string' 
-                ? new Date(claim.receivedAt) 
+            const receivedDate = typeof claim.receivedAt === 'string'
+                ? new Date(claim.receivedAt)
                 : claim.receivedAt;
-            return claimDate.getMonth() === currentMonth && 
-                   claimDate.getFullYear() === currentYear;
+            return receivedDate.getMonth() === currentMonth &&
+                receivedDate.getFullYear() === currentYear;
         }).length;
 
         const pendingClaims = claims.filter(claim => claim.status === 'pending').length;
@@ -170,76 +240,42 @@ const Admin = () => {
         };
     };
 
+    // Modificar renderDashboard para usar dashboardStats
     const renderDashboard = () => {
-        const stats = calculateStatistics();
-
         return (
             <div className="space-y-8 p-6">
-                <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-
-                <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <DashboardCard
-                            title="Total Claims"
-                            value={stats.totalClaims}
-                            icon={<FileText size={24} />}
-                            variant="claims"
-                        />
-                        <DashboardCard
-                            title="Active Claims"
-                            value={stats.activeClaims}
-                            icon={<AlertCircle size={24} />}
-                            variant="users"
-                        />
-                        <DashboardCard
-                            title="Total Technicians"
-                            value={stats.totalTechnicians}
-                            icon={<Wrench size={24} />}
-                            variant="techs"
-                        />
-                        <DashboardCard
-                            title="Active Technicians"
-                            value={stats.activeTechnicians}
-                            icon={<Users size={24} />}
-                            variant="techs"
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <DashboardCard
-                            title="Pending Claims"
-                            value={stats.pendingClaims}
-                            icon={<Clock size={24} />}
-                            variant="claims"
-                        />
-                        <DashboardCard
-                            title="In Progress Claims"
-                            value={stats.inProgressClaims}
-                            icon={<AlertCircle size={24} />}
-                            variant="users"
-                        />
-                        <DashboardCard
-                            title="Completed Claims"
-                            value={stats.completedClaims}
-                            icon={<CheckCircle size={24} />}
-                            variant="techs"
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <DashboardCard
-                            title="Claims This Month"
-                            value={stats.claimsThisMonth}
-                            icon={<FileText size={24} />}
-                            variant="claims"
-                        />
-                        <DashboardCard
-                            title="Monthly Efficiency"
-                            value={Math.round((stats.completedClaims / stats.totalClaims) * 100)}
-                            icon={<CheckCircle size={24} />}
-                            variant="techs"
-                        />
-                    </div>
+                <h2 className="text-3xl font-bold">Dashboard</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <DashboardCard
+                        title="Total Técnicos"
+                        value={dashboardStats.totalTechnicians}
+                        icon={<Wrench size={24} />}
+                        variant="techs"
+                    />
+                    <DashboardCard
+                        title="Total Reclamos"
+                        value={dashboardStats.totalClaims}
+                        icon={<FileText size={24} />}
+                        variant="claims"
+                    />
+                    <DashboardCard
+                        title="Total Administradores"
+                        value={dashboardStats.totalAdmins}
+                        icon={<Users size={24} />}
+                        variant="users"
+                    />
+                    <DashboardCard
+                        title="Reclamos del Mes"
+                        value={dashboardStats.monthClaims}
+                        icon={<Calendar size={24} />}
+                        variant="claims"
+                    />
+                    <DashboardCard
+                        title="Reclamos del Año"
+                        value={dashboardStats.yearClaims}
+                        icon={<Calendar size={24} />}
+                        variant="claims"
+                    />
                 </div>
             </div>
         );

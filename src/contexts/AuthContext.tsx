@@ -1,17 +1,19 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuthStore } from '../stores/authStore';
 
-interface AuthContextType {
+export interface AuthContextType {
+  currentUser: User | null;
   isLoading: boolean;
   error: Error | null;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+export const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { setUserProfile } = useAuthStore();
@@ -20,9 +22,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const userDataCache = new Map();
 
-    const handleAuthStateChange = async (user: any) => {
+    const handleAuthStateChange = async (user: User | null) => {
       try {
         if (user) {
+          setCurrentUser(user);
           // Check cache first
           if (!userDataCache.has(user.uid)) {
             const userDoc = await getDoc(doc(db, 'users', user.uid));
@@ -39,6 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             role: savedRole || userData?.role
           });
         } else {
+          setCurrentUser(null);
           setUserProfile(null);
           localStorage.removeItem('userRole');
         }
@@ -62,7 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isLoading, error }}>
+    <AuthContext.Provider value={{ currentUser, isLoading, error }}>
       {children}
     </AuthContext.Provider>
   );

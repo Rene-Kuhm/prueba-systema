@@ -29,9 +29,13 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import { useAuth } from '@/contexts/AuthContext';
+import { messaging } from "@/lib/firebase";
+import { getToken } from "firebase/messaging";
 
 const TechnicianPage: React.FC = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth(); // Cambiamos user por currentUser
   const [claims, setClaims] = useState<Claim[]>([]);
   const [technician, setTechnician] = useState<Technician | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -110,13 +114,12 @@ const TechnicianPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const authUser = getAuth().currentUser;
-        if (!authUser) {
-          navigate('/');
+        if (!currentUser) {
+          navigate('/login');
           return;
         }
 
-        const technicianDoc = doc(db, 'users', authUser.uid);
+        const technicianDoc = doc(db, 'users', currentUser.uid);
         const technicianSnapshot = await getDoc(technicianDoc);
         const technicianData = technicianSnapshot.data();
 
@@ -131,6 +134,7 @@ const TechnicianPage: React.FC = () => {
             currentAssignments: technicianData.currentAssignments || 0,
             completedAssignments: technicianData.completedAssignments || 0,
             totalAssignments: technicianData.totalAssignments || 0,
+            status: technicianData.status || 'active' // Agregar status
           };
           setTechnician(technicianInfo);
         }
@@ -138,7 +142,7 @@ const TechnicianPage: React.FC = () => {
         const claimsCollection = collection(db, 'claims');
         const claimsSnapshot = await getDocs(claimsCollection);
         const claimsData = claimsSnapshot.docs
-          .filter(doc => doc.data().technicianId === authUser.uid)
+          .filter(doc => doc.data().technicianId === currentUser.uid)
           .map(doc => ({
             id: doc.id,
             ...doc.data(),
@@ -154,7 +158,7 @@ const TechnicianPage: React.FC = () => {
     };
 
     fetchData();
-  }, [navigate]);
+  }, [currentUser, navigate]);
 
   const handleLogout = async () => {
     try {
@@ -188,6 +192,59 @@ const TechnicianPage: React.FC = () => {
         return <Badge className="bg-green-600 text-green-100">Completado</Badge>;
       default:
         return <Badge className="bg-gray-600 text-gray-100">{status}</Badge>;
+    }
+  };
+
+  const enableNotifications = async () => {
+    try {
+      // Verificar autenticación
+      if (!currentUser?.uid) {
+        toast.error('Por favor, inicia sesión nuevamente');
+        navigate('/login');
+        return;
+      }
+
+      // Verificar si el navegador soporta notificaciones
+      if (!('Notification' in window)) {
+        toast.error('Tu navegador no soporta notificaciones');
+        return;
+      }
+
+      // Solicitar permiso de notificaciones
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        toast.error('Necesitamos permiso para enviar notificaciones');
+        return;
+      }
+
+      // Verificar si Firebase Messaging está disponible
+      if (!messaging) {
+        toast.error('El servicio de mensajería no está disponible');
+        return;
+      }
+
+      // Obtener el token FCM
+      const token = await getToken(messaging, {
+        vapidKey: import.meta.env.VITE_FIREBASE_PUSH_PUBLIC_KEY
+      });
+
+      if (!token) {
+        toast.error('No se pudo obtener el token de notificaciones');
+        return;
+      }
+
+      // Actualizar el documento del usuario con el token FCM
+      const userRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userRef, {
+        fcmToken: token,
+        active: true,
+        notificationsEnabled: true
+      });
+
+      toast.success('Notificaciones habilitadas correctamente');
+    } catch (error) {
+      console.error('Error al habilitar notificaciones:', error);
+      toast.error('Error al habilitar las notificaciones');
     }
   };
 
@@ -362,6 +419,12 @@ const TechnicianPage: React.FC = () => {
                   <p className="text-2xl font-bold text-slate-100">{technician.totalAssignments}</p>
                 </div>
               </div>
+              <Button 
+                onClick={enableNotifications}
+                className="bg-blue-500 hover:bg-blue-600 text-white"
+              >
+                Habilitar Notificaciones
+              </Button>
             </CardContent>
           </Card>
         )}
