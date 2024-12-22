@@ -112,33 +112,30 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         throw new Error('Faltan las credenciales de Ultramsg');
       }
 
-      // Llamada directa a la API
-      const url = `https://api.ultramsg.com/${instance}/messages/chat`;
-      
-      const formData = new URLSearchParams();
-      formData.append('token', token);
-      formData.append('to', to);
-      formData.append('body', body);
-      formData.append('priority', '1');
-      formData.append('referenceId', '');
+      // Use proxy URL or serverless function URL instead of direct API call
+      const url = `/api/sendWhatsApp`; // Change this to your proxy endpoint
 
       const response = await fetch(url, {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
         },
-        body: formData
+        body: JSON.stringify({
+          token,
+          instance,
+          to,
+          body,
+          priority: '1',
+          referenceId: ''
+        })
       });
 
       if (!response.ok) {
         const errorData = await response.text();
-        console.error('Error response:', errorData);
         throw new Error(`Error ${response.status}: ${errorData}`);
       }
 
       const data = await response.json();
-      console.log('WhatsApp response:', data); // Para debug
-
       if (data.sent) {
         toast.success('Mensaje de WhatsApp enviado correctamente');
         return true;
@@ -206,8 +203,10 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         return false;
       }
 
-      // Usar la URL de la función con modo no-cors
-      const response = await fetch('/sendClaimNotification', {
+      // Use relative path or full URL from environment variable
+      const notificationEndpoint = '/api/sendClaimNotification';
+      
+      const response = await fetch(notificationEndpoint, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -228,7 +227,10 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         }),
       });
 
-      if (!response.ok) throw new Error('Error al enviar la notificación');
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Error ${response.status}: ${errorData}`);
+      }
 
       const data = await response.json();
       if (data.success) {
