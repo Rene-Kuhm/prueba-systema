@@ -178,6 +178,30 @@ const Admin = () => {
         setShowModal(true);
     };
 
+    const handleExport = async (): Promise<any[]> => {
+        try {
+            const data = await getData();
+            // Convert data to CSV format
+            const csvContent = JSON.stringify(data, null, 2);
+            // Create blob and download
+            const blob = new Blob([csvContent], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `reclamos-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            toast.success('Datos exportados exitosamente');
+            return data; // Return the data array to match the expected return type
+        } catch (error) {
+            console.error('Error al exportar datos:', error);
+            toast.error('Error al exportar datos');
+            return []; // Return empty array in case of error
+        }
+    };
+
     if (loading) {
         return <LoadingState />;
     }
@@ -333,7 +357,12 @@ const Admin = () => {
             onMarkAsRead={handleMarkAsRead}
             onClearAllNotifications={handleClearAllNotifications}
         >
-            <Header onSignOut={handleSignOut} onExport={getData} />
+             <Header 
+            onSignOut={() => {/* tu lógica de cierre de sesión */}}
+            onExport={handleExport}
+            title="Panel de Administración"
+            description="Gestión de Reclamos"
+        />
             <main className="main-content">{renderContent()}</main>
             <ClaimDetailsModal
                 claim={selectedClaim}
