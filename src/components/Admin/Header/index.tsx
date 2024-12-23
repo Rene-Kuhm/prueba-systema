@@ -11,8 +11,6 @@ import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem,
     DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getDocs, collection } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -23,47 +21,22 @@ interface HeaderProps {
     description?: string;
 }
 
-interface CellStyle {
-    alignment?: {
-        horizontal?: 'left' | 'center' | 'right';
-        vertical?: 'top' | 'center' | 'bottom';
-        wrapText?: boolean;
-    };
-    font?: {
-        sz?: number;
-        bold?: boolean;
-        name?: string;
-    };
-    fill?: {
-        fgColor?: { rgb: string };
-    };
-    border?: {
-        top?: { style: string; };
-        bottom?: { style: string; };
-        left?: { style: string; };
-        right?: { style: string; };
-    };
-}
-
-// Función para validar fechas
+// Funciones auxiliares
 const isValidDate = (date: any): boolean => {
     if (!date) return false;
     const d = new Date(date);
     return d instanceof Date && !isNaN(d.getTime());
 };
 
-// Función para formatear fechas con manejo de errores
 const formatDate = (date: any): string => {
     if (!isValidDate(date)) return 'N/A';
     try {
         return format(new Date(date), 'dd/MM/yyyy HH:mm', { locale: es });
     } catch (error) {
-        console.error('Error formateando fecha:', error);
         return 'N/A';
     }
 };
 
-// Función para formatear el estado
 const formatStatus = (status: string = 'pending'): string => {
     const statusMap: { [key: string]: string } = {
         'pending': 'Pendiente',
@@ -74,110 +47,137 @@ const formatStatus = (status: string = 'pending'): string => {
     return statusMap[status] || status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
 };
 
-// Función para formatear los datos para exportación
-const formatDataForExport = (data: any[]) => {
-    return data.map(item => {
-        try {
-            return {
-                'ID Reclamo': item.id || 'Sin ID',
-                'Fecha': formatDate(item.receivedAt || item.date),
-                'Estado': formatStatus(item.status),
-                'Cliente': item.name || 'Sin nombre',
-                'Teléfono': item.phone || 'Sin teléfono',
-                'Dirección': item.address || 'Sin dirección',
-                'Técnico': item.technicianName || item.technicianId || 'Sin asignar',
-                'Motivo': item.reason || 'Sin motivo',
-                'Notas': item.notes || '',
-                'Resolución': item.resolution || 'Pendiente'
-            };
-        } catch (error) {
-            console.error('Error procesando item:', item, error);
-            return {
-                'ID Reclamo': 'Error',
-                'Fecha': 'N/A',
-                'Estado': 'Error',
-                'Cliente': 'Error en datos',
-                'Teléfono': 'N/A',
-                'Dirección': 'N/A',
-                'Técnico': 'N/A',
-                'Motivo': 'Error en procesamiento',
-                'Notas': '',
-                'Resolución': 'N/A'
-            };
+// Función principal para crear la hoja de cálculo con estilos
+const createStyledWorksheet = (data: any[]) => {
+    const ws = XLSX.utils.json_to_sheet([]);
+    
+    // Estilos base
+    const titleStyle = {
+        font: { sz: 16, bold: true, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: "9BBB59" } },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+            left: { style: 'thin', color: { rgb: '000000' } },
+            right: { style: 'thin', color: { rgb: '000000' } },
+            top: { style: 'thin', color: { rgb: '000000' } },
+            bottom: { style: 'thin', color: { rgb: '000000' } }
         }
+    };
+
+    const subtitleStyle = {
+        font: { sz: 12, bold: true },
+        fill: { fgColor: { rgb: "FFEB9C" } },
+        alignment: { horizontal: "center", vertical: "center" }
+    };
+
+    const headerStyle = {
+        font: { sz: 11, bold: true, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: "4472C4" } },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+        border: {
+            left: { style: 'thin', color: { rgb: '000000' } },
+            right: { style: 'thin', color: { rgb: '000000' } },
+            top: { style: 'thin', color: { rgb: '000000' } },
+            bottom: { style: 'thin', color: { rgb: '000000' } }
+        }
+    };
+
+    // Agregar encabezado corporativo
+    XLSX.utils.sheet_add_aoa(ws, [
+        ['COSPEC COMUNICACIONES'],
+        ['Reporte de Reclamos'],
+        [`Fecha de generación: ${formatDate(new Date())}`],
+        []
+    ], { origin: 'A1' });
+
+    // Preparar y agregar datos
+    const formattedData = data.map(item => ({
+        'ID Reclamo': item.id || 'N/A',
+        'Fecha': formatDate(item.receivedAt || item.date),
+        'Estado': formatStatus(item.status),
+        'Cliente': item.name || 'Sin nombre',
+        'Teléfono': item.phone || 'Sin teléfono',
+        'Dirección': item.address || 'Sin dirección',
+        'Técnico': item.technicianName || item.technicianId || 'Sin asignar',
+        'Motivo': item.reason || 'Sin motivo'
+    }));
+
+    XLSX.utils.sheet_add_json(ws, formattedData, {
+        origin: 'A5',
+        skipHeader: false
     });
-};
 
-// Función para crear y configurar la hoja de cálculo
-const createWorksheet = (data: any[]) => {
-    try {
-        const ws = XLSX.utils.json_to_sheet([]);
-        
-        // Agregar encabezado corporativo
-        XLSX.utils.sheet_add_aoa(ws, [
-            ['COSPEC COMUNICACIONES'],
-            ['Reporte de Reclamos'],
-            [`Fecha de generación: ${formatDate(new Date())}`],
-            [] // Línea en blanco
-        ]);
+    // Configurar anchos de columna
+    ws['!cols'] = [
+        { wch: 15 },  // ID
+        { wch: 20 },  // Fecha
+        { wch: 12 },  // Estado
+        { wch: 25 },  // Cliente
+        { wch: 15 },  // Teléfono
+        { wch: 35 },  // Dirección
+        { wch: 35 },  // Técnico
+        { wch: 40 }   // Motivo
+    ];
 
-        // Agregar datos
-        if (data.length > 0) {
-            XLSX.utils.sheet_add_json(ws, data, {
-                origin: 'A5',
-                skipHeader: false,
-            });
-        } else {
-            XLSX.utils.sheet_add_aoa(ws, [['No hay datos disponibles']], { origin: 'A5' });
-        }
+    // Configurar fusiones de celdas
+    ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 7 } },
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 7 } }
+    ];
 
-        // Configurar anchos de columna
-        ws['!cols'] = [
-            { wch: 12 },  // ID
-            { wch: 20 },  // Fecha
-            { wch: 15 },  // Estado
-            { wch: 25 },  // Cliente
-            { wch: 15 },  // Teléfono
-            { wch: 35 },  // Dirección
-            { wch: 25 },  // Técnico
-            { wch: 40 },  // Motivo
-            { wch: 30 },  // Notas
-            { wch: 30 },  // Resolución
-        ];
+    // Aplicar estilos a todas las celdas
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+    
+    for (let R = range.s.r; R <= range.e.r; R++) {
+        for (let C = range.s.c; C <= range.e.c; C++) {
+            const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+            if (!ws[cellRef]) continue;
 
-        // Aplicar estilos
-        const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-        
-        // Estilos
-        const titleStyle: CellStyle = {
-            font: { sz: 16, bold: true },
-            alignment: { horizontal: 'center' }
-        };
+            if (R === 0) {
+                ws[cellRef].s = titleStyle;
+            } else if (R === 1) {
+                ws[cellRef].s = subtitleStyle;
+            } else if (R === 4) {
+                ws[cellRef].s = headerStyle;
+            } else if (R > 4) {
+                const cellStyle: any = {
+                    font: { sz: 10 },
+                    alignment: { vertical: "center", wrapText: true },
+                    border: {
+                        left: { style: 'thin' },
+                        right: { style: 'thin' },
+                        top: { style: 'thin' },
+                        bottom: { style: 'thin' }
+                    }
+                };
 
-        const headerStyle: CellStyle = {
-            font: { sz: 12, bold: true },
-            alignment: { horizontal: 'center' },
-            fill: { fgColor: { rgb: 'E5E7EB' } }
-        };
+                // Estilos para estados
+                if (C === 2) {
+                    const status = ws[cellRef].v?.toString().toLowerCase();
+                    const statusColors: { [key: string]: string } = {
+                        'completado': '70AD47',
+                        'pendiente': 'ED7D31',
+                        'en proceso': '4472C4',
+                        'cancelado': 'FF0000'
+                    };
+                    cellStyle.font.color = { rgb: statusColors[status] || '000000' };
+                    cellStyle.font.bold = true;
+                }
 
-        // Aplicar estilos
-        for (let C = range.s.c; C <= range.e.c; ++C) {
-            const headerCell = XLSX.utils.encode_cell({ r: 4, c: C });
-            if (ws[headerCell]) {
-                ws[headerCell].s = headerStyle;
+                // Filas alternadas
+                if (R % 2 === 1) {
+                    cellStyle.fill = { fgColor: { rgb: 'F5F5F5' } };
+                }
+
+                ws[cellRef].s = cellStyle;
             }
         }
-
-        if (ws['A1']) ws['A1'].s = titleStyle;
-
-        return ws;
-    } catch (error) {
-        console.error('Error creando worksheet:', error);
-        throw error;
     }
+
+    return ws;
 };
 
-// Componente Header
 export const Header = ({ 
     onSignOut, 
     onExport,
@@ -193,10 +193,8 @@ export const Header = ({
                 throw new Error('Los datos recibidos no son válidos');
             }
 
-            const formattedData = formatDataForExport(data);
-            
             const wb = XLSX.utils.book_new();
-            const ws = createWorksheet(formattedData);
+            const ws = createStyledWorksheet(data);
             
             XLSX.utils.book_append_sheet(wb, ws, 'Reclamos');
             
@@ -205,7 +203,7 @@ export const Header = ({
             
             toast.success('Reporte exportado exitosamente');
         } catch (error) {
-            console.error('Error detallado al exportar:', error);
+            console.error('Error al exportar:', error);
             toast.error('Error al exportar los datos');
         }
     };
