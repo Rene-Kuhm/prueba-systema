@@ -33,8 +33,25 @@ const AuthAction: React.FC = () => {
   }
 };
 
+const registerServiceWorker = async () => {
+  if ('serviceWorker' in navigator) {
+    try {
+      const registration = await navigator.serviceWorker.register('/service-worker.js', {
+        scope: '/'
+      });
+      console.log('Service Worker registered with scope:', registration.scope);
+    } catch (error) {
+      console.error('Service Worker registration failed:', error);
+    }
+  }
+};
+
 const AppContent: React.FC = () => {
   const { isLoading } = useAuth();
+
+  useEffect(() => {
+    registerServiceWorker();
+  }, []);
 
   // Memoize notification request function
   const requestNotificationPermission = useCallback(
