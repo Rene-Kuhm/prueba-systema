@@ -13,10 +13,9 @@ import ClaimForm from "@/components/Admin/ClaimForm/ClaimForm";
 import ClaimTable from "@/components/Admin/ClainTable/ClaimTable";
 import ClaimDetailsModal from "@/components/Admin/ClaimDetailsModal";
 import { Notification } from '@/lib/types/notifications';
-import { AdminState, Claim, PendingUser, Technician } from '@/lib/types/admin';
-import { useAdmin, UseAdminReturn } from "@/hooks/useAdmin";
+import { Claim, AdminState } from '@/lib/types/admin';
+import { useAdmin } from "@/hooks/useAdmin";
 
-// Definición de tipos
 interface ExtendedClaim extends Claim {
     description: string;
     claimType: string;
@@ -58,16 +57,13 @@ const Admin = () => {
         approveUser,
         addNewClaim,
         deleteClaim,
-        exportClaimsToExcel,
         setNewClaim,
         setShowModal,
         setSelectedClaim,
-    }: UseAdminReturn = useAdmin();
+    } = useAdmin();
 
     const [activeSection, setActiveSection] = useState("dashboard");
     const [notifications, setNotifications] = useState<Notification[]>([]);
-
-    // Nuevo estado para las métricas del dashboard
     const [dashboardStats, setDashboardStats] = useState({
         totalTechnicians: 0,
         totalClaims: 0,
@@ -76,11 +72,9 @@ const Admin = () => {
         yearClaims: 0
     });
 
-    // Efecto para sincronizar datos con Firebase
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
-                // Obtener conteos de cada colección
                 const techsSnapshot = await getDocs(collection(db, "technicians"));
                 const claimsSnapshot = await getDocs(collection(db, "claims"));
                 const usersSnapshot = await getDocs(collection(db, "users"));
@@ -89,7 +83,6 @@ const Admin = () => {
                 const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
                 const firstDayOfYear = new Date(now.getFullYear(), 0, 1);
 
-                // Filtrar reclamos por fecha
                 const claimDocs = claimsSnapshot.docs.map(doc => ({
                     ...doc.data(),
                     receivedAt: doc.data().receivedAt ? new Date(doc.data().receivedAt) : null
@@ -122,12 +115,11 @@ const Admin = () => {
 
         fetchDashboardData();
 
-        // Configurar listener para actualizaciones en tiempo real
-        const unsubscribeClaims = onSnapshot(collection(db, "claims"), (snapshot) => {
+        const unsubscribeClaims = onSnapshot(collection(db, "claims"), () => {
             fetchDashboardData();
         });
 
-        const unsubscribeTechs = onSnapshot(collection(db, "technicians"), (snapshot) => {
+        const unsubscribeTechs = onSnapshot(collection(db, "technicians"), () => {
             fetchDashboardData();
         });
 
@@ -136,6 +128,19 @@ const Admin = () => {
             unsubscribeTechs();
         };
     }, []);
+
+    const handleExport = async () => {
+        try {
+            const querySnapshot = await getDocs(collection(db, 'claims'));
+            return querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+        } catch (error) {
+            console.error('Error:', error);
+            return [];
+        }
+    };
 
     const handleMarkAsRead = (id: string) => {
         setNotifications(prev =>
@@ -157,15 +162,7 @@ const Admin = () => {
     };
 
     const handleDelete = async (id: string) => {
-        try {
-            await deleteDoc(doc(db, 'claims', id));
-            toast.success('Reclamo eliminado exitosamente');
-            // Actualizar la lista de reclamos después de eliminar
-            await getData();
-        } catch (error) {
-            console.error('Error al eliminar el reclamo:', error);
-            toast.error('Error al eliminar el reclamo');
-        }
+        await deleteClaim(id);
     };
 
     const handleShowDetails = (claim: ExtendedClaim) => {
@@ -178,97 +175,23 @@ const Admin = () => {
         setShowModal(true);
     };
 
-    const handleExport = async (): Promise<any[]> => {
-        try {
-            const data = await getData();
-            // Convert data to CSV format
-            const csvContent = JSON.stringify(data, null, 2);
-            // Create blob and download
-            const blob = new Blob([csvContent], { type: 'application/json' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `reclamos-${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-            toast.success('Datos exportados exitosamente');
-            return data; // Return the data array to match the expected return type
-        } catch (error) {
-            console.error('Error al exportar datos:', error);
-            toast.error('Error al exportar datos');
-            return []; // Return empty array in case of error
-        }
+    if (loading) return <LoadingState />;
+    if (error) return <ErrorState message={error} />;
+
+    const transformClaims = (claims: Claim[]): ExtendedClaim[] => {
+        return claims.map(claim => ({
+            ...claim,
+            description: claim.reason || '',
+            claimType: '',
+            claimAmount: 0,
+            updatedAt: new Date().toISOString(),
+            technicianName: technicians.find(t => t.id === claim.technicianId)?.name
+        }));
     };
 
-    if (loading) {
-        return <LoadingState />;
-    }
-
-    if (error) {
-        return <ErrorState message={error} />;
-    }
-
-    const getData = async (): Promise<any[]> => {
-        try {
-            const querySnapshot = await getDocs(collection(db, "claims"));
-            const fetchedData = querySnapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-            }));
-            return fetchedData;
-        } catch (error) {
-            console.error("Error fetching data:", error);
-            toast.error("Error fetching data");
-            return [];
-        }
-    };
-
-    const calculateStatistics = () => {
-        const totalClaims = claims.length;
-        const activeClaims = claims.filter(claim =>
-            claim.status === 'pending' || claim.status === 'in_progress'
-        ).length;
-        const totalTechnicians = technicians.length;
-
-        const currentMonth = new Date().getMonth();
-        const currentYear = new Date().getFullYear();
-        const claimsThisMonth = claims.filter(claim => {
-            if (!claim.receivedAt) return false;
-            const receivedDate = typeof claim.receivedAt === 'string'
-                ? new Date(claim.receivedAt)
-                : claim.receivedAt;
-            return receivedDate.getMonth() === currentMonth &&
-                receivedDate.getFullYear() === currentYear;
-        }).length;
-
-        const pendingClaims = claims.filter(claim => claim.status === 'pending').length;
-        const inProgressClaims = claims.filter(claim => claim.status === 'in_progress').length;
-        const completedClaims = claims.filter(claim => claim.status === 'completed').length;
-
-        const activeTechnicians = new Set(claims
-            .filter(claim => claim.status !== 'completed')
-            .map(claim => claim.technicianId)
-        ).size;
-
-        return {
-            totalClaims,
-            activeClaims,
-            totalTechnicians,
-            claimsThisMonth,
-            pendingClaims,
-            inProgressClaims,
-            completedClaims,
-            activeTechnicians
-        };
-    };
-
-    // Modificar renderDashboard para usar dashboardStats
     const renderDashboard = () => {
         return (
             <div className="space-y-8 p-6">
-                <h2 className="text-3xl font-bold">Dashboard</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <DashboardCard
                         title="Total Técnicos"
@@ -303,17 +226,6 @@ const Admin = () => {
                 </div>
             </div>
         );
-    };
-
-    const transformClaims = (claims: Claim[]): ExtendedClaim[] => {
-        return claims.map(claim => ({
-            ...claim,
-            description: claim.reason || '',
-            claimType: '',
-            claimAmount: 0,
-            updatedAt: new Date().toISOString(),
-            technicianName: technicians.find(t => t.id === claim.technicianId)?.name
-        }));
     };
 
     const renderContent = () => {
@@ -357,13 +269,15 @@ const Admin = () => {
             onMarkAsRead={handleMarkAsRead}
             onClearAllNotifications={handleClearAllNotifications}
         >
-             <Header 
-            onSignOut={() => {/* tu lógica de cierre de sesión */}}
-            onExport={handleExport}
-            title="Panel de Administración"
-            description="Gestión de Reclamos"
-        />
-            <main className="main-content">{renderContent()}</main>
+            <Header 
+                onSignOut={handleSignOut}
+                onExport={handleExport}
+                title="Panel de Administración"
+                description="Gestión de Reclamos"
+            />
+            <main className="main-content">
+                {renderContent()}
+            </main>
             <ClaimDetailsModal
                 claim={selectedClaim}
                 isOpen={showModal}

@@ -45,7 +45,26 @@ interface CellStyle {
     };
 }
 
-const formatStatus = (status: string) => {
+// Función para validar fechas
+const isValidDate = (date: any): boolean => {
+    if (!date) return false;
+    const d = new Date(date);
+    return d instanceof Date && !isNaN(d.getTime());
+};
+
+// Función para formatear fechas con manejo de errores
+const formatDate = (date: any): string => {
+    if (!isValidDate(date)) return 'N/A';
+    try {
+        return format(new Date(date), 'dd/MM/yyyy HH:mm', { locale: es });
+    } catch (error) {
+        console.error('Error formateando fecha:', error);
+        return 'N/A';
+    }
+};
+
+// Función para formatear el estado
+const formatStatus = (status: string = 'pending'): string => {
     const statusMap: { [key: string]: string } = {
         'pending': 'Pendiente',
         'in_progress': 'En Proceso',
@@ -55,81 +74,110 @@ const formatStatus = (status: string) => {
     return statusMap[status] || status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
 };
 
+// Función para formatear los datos para exportación
 const formatDataForExport = (data: any[]) => {
-    return data.map(item => ({
-        'ID Reclamo': item.id,
-        'Fecha': item.date ? format(new Date(item.date), 'dd/MM/yyyy HH:mm', { locale: es }) : '',
-        'Estado': formatStatus(item.status),
-        'Cliente': item.name,
-        'Teléfono': item.phone,
-        'Dirección': item.address,
-        'Técnico': item.technicianName || item.technicianId,
-        'Motivo': item.reason,
-        'Notas': item.notes || '',
-    }));
-};
-
-const createWorksheet = (data: any[]) => {
-    const ws = XLSX.utils.json_to_sheet([]);
-    
-    // Agregar título
-    XLSX.utils.sheet_add_aoa(ws, [
-        ['COSPEC COMUNICACIONES'],
-        ['Reporte de Reclamos'],
-        [`Fecha de generación: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es })}`],
-        [] // Línea en blanco
-    ]);
-
-    // Agregar datos
-    XLSX.utils.sheet_add_json(ws, data, {
-        origin: 'A5',
-        skipHeader: false,
-    });
-
-    // Configurar anchos de columna
-    const columnWidths = [
-        { wch: 12 }, // ID
-        { wch: 20 }, // Fecha
-        { wch: 15 }, // Estado
-        { wch: 25 }, // Cliente
-        { wch: 15 }, // Teléfono
-        { wch: 35 }, // Dirección
-        { wch: 25 }, // Técnico
-        { wch: 40 }, // Motivo
-        { wch: 30 }, // Notas
-    ];
-    ws['!cols'] = columnWidths;
-
-    // Estilos básicos
-    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-    
-    // Estilo para el título
-    const titleStyle: CellStyle = {
-        font: { sz: 16, bold: true },
-        alignment: { horizontal: 'center' }
-    };
-
-    // Estilo para los encabezados
-    const headerStyle: CellStyle = {
-        font: { sz: 12, bold: true },
-        alignment: { horizontal: 'center' },
-        fill: { fgColor: { rgb: 'E5E7EB' } }
-    };
-
-    // Aplicar estilos
-    for (let C = range.s.c; C <= range.e.c; ++C) {
-        const headerCell = XLSX.utils.encode_cell({ r: 4, c: C });
-        if (ws[headerCell]) {
-            ws[headerCell].s = headerStyle;
+    return data.map(item => {
+        try {
+            return {
+                'ID Reclamo': item.id || 'Sin ID',
+                'Fecha': formatDate(item.receivedAt || item.date),
+                'Estado': formatStatus(item.status),
+                'Cliente': item.name || 'Sin nombre',
+                'Teléfono': item.phone || 'Sin teléfono',
+                'Dirección': item.address || 'Sin dirección',
+                'Técnico': item.technicianName || item.technicianId || 'Sin asignar',
+                'Motivo': item.reason || 'Sin motivo',
+                'Notas': item.notes || '',
+                'Resolución': item.resolution || 'Pendiente'
+            };
+        } catch (error) {
+            console.error('Error procesando item:', item, error);
+            return {
+                'ID Reclamo': 'Error',
+                'Fecha': 'N/A',
+                'Estado': 'Error',
+                'Cliente': 'Error en datos',
+                'Teléfono': 'N/A',
+                'Dirección': 'N/A',
+                'Técnico': 'N/A',
+                'Motivo': 'Error en procesamiento',
+                'Notas': '',
+                'Resolución': 'N/A'
+            };
         }
-    }
-
-    // Aplicar estilo al título
-    ws['A1'].s = titleStyle;
-
-    return ws;
+    });
 };
 
+// Función para crear y configurar la hoja de cálculo
+const createWorksheet = (data: any[]) => {
+    try {
+        const ws = XLSX.utils.json_to_sheet([]);
+        
+        // Agregar encabezado corporativo
+        XLSX.utils.sheet_add_aoa(ws, [
+            ['COSPEC COMUNICACIONES'],
+            ['Reporte de Reclamos'],
+            [`Fecha de generación: ${formatDate(new Date())}`],
+            [] // Línea en blanco
+        ]);
+
+        // Agregar datos
+        if (data.length > 0) {
+            XLSX.utils.sheet_add_json(ws, data, {
+                origin: 'A5',
+                skipHeader: false,
+            });
+        } else {
+            XLSX.utils.sheet_add_aoa(ws, [['No hay datos disponibles']], { origin: 'A5' });
+        }
+
+        // Configurar anchos de columna
+        ws['!cols'] = [
+            { wch: 12 },  // ID
+            { wch: 20 },  // Fecha
+            { wch: 15 },  // Estado
+            { wch: 25 },  // Cliente
+            { wch: 15 },  // Teléfono
+            { wch: 35 },  // Dirección
+            { wch: 25 },  // Técnico
+            { wch: 40 },  // Motivo
+            { wch: 30 },  // Notas
+            { wch: 30 },  // Resolución
+        ];
+
+        // Aplicar estilos
+        const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+        
+        // Estilos
+        const titleStyle: CellStyle = {
+            font: { sz: 16, bold: true },
+            alignment: { horizontal: 'center' }
+        };
+
+        const headerStyle: CellStyle = {
+            font: { sz: 12, bold: true },
+            alignment: { horizontal: 'center' },
+            fill: { fgColor: { rgb: 'E5E7EB' } }
+        };
+
+        // Aplicar estilos
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+            const headerCell = XLSX.utils.encode_cell({ r: 4, c: C });
+            if (ws[headerCell]) {
+                ws[headerCell].s = headerStyle;
+            }
+        }
+
+        if (ws['A1']) ws['A1'].s = titleStyle;
+
+        return ws;
+    } catch (error) {
+        console.error('Error creando worksheet:', error);
+        throw error;
+    }
+};
+
+// Componente Header
 export const Header = ({ 
     onSignOut, 
     onExport,
@@ -138,18 +186,26 @@ export const Header = ({
 }: HeaderProps): JSX.Element => {
     const handleExport = async () => {
         try {
+            toast.info('Preparando exportación...');
             const data = await onExport();
+            
+            if (!Array.isArray(data)) {
+                throw new Error('Los datos recibidos no son válidos');
+            }
+
             const formattedData = formatDataForExport(data);
             
             const wb = XLSX.utils.book_new();
             const ws = createWorksheet(formattedData);
             
             XLSX.utils.book_append_sheet(wb, ws, 'Reclamos');
-            XLSX.writeFile(wb, `COSPEC_Reclamos_${format(new Date(), 'dd-MM-yyyy')}.xlsx`);
+            
+            const fileName = `COSPEC_Reclamos_${format(new Date(), 'dd-MM-yyyy')}.xlsx`;
+            XLSX.writeFile(wb, fileName);
             
             toast.success('Reporte exportado exitosamente');
         } catch (error) {
-            console.error('Error al exportar:', error);
+            console.error('Error detallado al exportar:', error);
             toast.error('Error al exportar los datos');
         }
     };
