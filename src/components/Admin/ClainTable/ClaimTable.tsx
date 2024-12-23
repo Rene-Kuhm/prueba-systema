@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Eye, Trash2, CheckCircle, Clock, AlertCircle, Edit2, MoreHorizontal, Phone, MapPin, User, Archive, RefreshCw } from 'lucide-react';
 import type { Claim, NewClaim } from '@/lib/types/admin';
 import { toast } from 'react-toastify';
-import { collection, doc, updateDoc, addDoc, deleteDoc, getDocs } from 'firebase/firestore';
+import { collection, doc, updateDoc, addDoc, deleteDoc, getDocs, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatDateTime, getCurrentFormattedDateTime } from '@/lib/utils/date';
 import {
@@ -207,21 +207,20 @@ export function ClaimsTable({
     const [showArchived, setShowArchived] = useState(false);
 
     useEffect(() => {
-        const fetchClaims = async () => {
-            try {
-                const snapshot = await getDocs(collection(db, 'claims'));
-                const fetchedClaims = snapshot.docs.map((doc) => ({
-                    id: doc.id,
-                    ...doc.data(),
-                })) as ExtendedClaim[];
-                setClaims(fetchedClaims);
-            } catch (error) {
-                console.error('Error al obtener los reclamos:', error);
-                toast.error('Error al obtener los reclamos');
-            }
-        };
+        // Crear una suscripción en tiempo real a la colección de reclamos
+        const unsubscribe = onSnapshot(collection(db, 'claims'), (snapshot) => {
+            const fetchedClaims = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+            })) as ExtendedClaim[];
+            setClaims(fetchedClaims);
+        }, (error) => {
+            console.error('Error al obtener los reclamos:', error);
+            toast.error('Error al obtener los reclamos');
+        });
 
-        fetchClaims();
+        // Limpiar la suscripción cuando el componente se desmonte
+        return () => unsubscribe();
     }, []);
 
     const filteredClaims = claims.filter(claim => 
