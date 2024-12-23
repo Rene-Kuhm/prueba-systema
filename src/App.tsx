@@ -20,8 +20,8 @@ const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const AdminRoutes = React.lazy(() => import('./routes/AdminRoutes'));
 const TechnicianRoutes = React.lazy(() => import('./routes/TechnicianRoutes'));
 
-// Auth Action Component
-const AuthAction: React.FC = () => {
+// Memoize AuthAction component
+const AuthAction: React.FC = React.memo(() => {
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode');
 
@@ -31,9 +31,10 @@ const AuthAction: React.FC = () => {
     default:
       return <Navigate to="/" />;
   }
-};
+});
 
-const registerServiceWorker = async () => {
+// Memoize registerServiceWorker function
+const registerServiceWorker = useCallback(async () => {
   if ('serviceWorker' in navigator) {
     try {
       const registration = await navigator.serviceWorker.register('/service-worker.js', {
@@ -44,10 +45,33 @@ const registerServiceWorker = async () => {
       console.error('Service Worker registration failed:', error);
     }
   }
-};
+}, []);
+
+// Memoize 404 component
+const NotFound = React.memo(() => (
+  <div className="py-8 text-center">
+    <h1 className="text-2xl font-bold text-red-500">404 - Page Not Found</h1>
+    <p>The page you are looking for does not exist.</p>
+  </div>
+));
 
 const AppContent: React.FC = () => {
   const { isLoading } = useAuth();
+
+  // Memoize loading component
+  const LoadingSpinner = React.memo(() => (
+    <div className="flex items-center justify-center h-screen">Loading...</div>
+  ));
+
+  // Memoize notification button
+  const NotificationButton = React.memo(({ onClick }: { onClick: () => void }) => (
+    <button 
+      onClick={onClick}
+      className="fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg z-50"
+    >
+      Enable Notifications
+    </button>
+  ));
 
   useEffect(() => {
     registerServiceWorker();
@@ -126,20 +150,15 @@ const AppContent: React.FC = () => {
   }, []);
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return <LoadingSpinner />;
   }
 
   return (
     <Router>
       <ToastContainer limit={3} />
-      <button 
-        onClick={requestNotificationPermission}
-        className="fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg z-50"
-      >
-        Enable Notifications
-      </button>
+      <NotificationButton onClick={requestNotificationPermission} />
       
-      <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+      <Suspense fallback={<LoadingSpinner />}>
         <Routes>
           {/* Public routes */}
           <Route element={<UnauthorizedRoute />}>
@@ -175,30 +194,23 @@ const AppContent: React.FC = () => {
           <Route path="/__/auth/action" element={<AuthAction />} />
 
           {/* Fallback Route */}
-          <Route
-            path="*"
-            element={
-              <div className="py-8 text-center">
-                <h1 className="text-2xl font-bold text-red-500">404 - Page Not Found</h1>
-                <p>The page you are looking for does not exist.</p>
-              </div>
-            }
-          />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
     </Router>
   );
 };
 
-// Memoize the entire AppContent component
+// Component is already memoized
 const MemoizedAppContent = React.memo(AppContent);
 
-const App: React.FC = () => {
+// Memoize App component
+const App: React.FC = React.memo(() => {
   return (
     <AuthProvider>
       <MemoizedAppContent />
     </AuthProvider>
   );
-};
+});
 
 export default App;
