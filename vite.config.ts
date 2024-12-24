@@ -84,31 +84,47 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'firebase-vendor': [
-            '@firebase/app',
-            '@firebase/auth',
-            '@firebase/firestore',
-            '@firebase/messaging',
-            '@firebase/storage'
-          ],
-          'ui-vendor': [
-            '@radix-ui/react-dropdown-menu',
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-scroll-area',
-            '@radix-ui/react-switch',
-            '@radix-ui/react-label',
-            '@radix-ui/react-select',
-            '@radix-ui/react-separator',
-            '@radix-ui/react-avatar',
-            '@radix-ui/react-popover',
-            '@radix-ui/react-tabs',
-            '@radix-ui/react-alert-dialog',
-            '@radix-ui/react-menu'
-          ],
-          'utils': ['xlsx', 'lodash']
-        }
+        manualChunks(id) {
+          // Dynamic chunks for node_modules
+          if (id.includes('node_modules')) {
+            if (id.includes('xlsx')) {
+              return 'xlsx-vendor';
+            }
+            if (id.includes('lodash')) {
+              return 'lodash-vendor';
+            }
+            if (id.includes('@firebase')) {
+              if (id.includes('firestore')) {
+                return 'firebase-firestore';
+              }
+              if (id.includes('auth')) {
+                return 'firebase-auth';
+              }
+              if (id.includes('storage')) {
+                return 'firebase-storage';
+              }
+              return 'firebase-core';
+            }
+            if (id.includes('react')) {
+              return 'react-vendor';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'ui-vendor';
+            }
+            return 'vendor';
+          }
+        },
+        assetFileNames: 'assets/[hash][extname]',
+        chunkFileNames: 'assets/[hash].js',
+        entryFileNames: 'assets/[hash].js'
+      }
+    },
+    target: 'esnext',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true
       }
     },
     chunkSizeWarningLimit: 1000
