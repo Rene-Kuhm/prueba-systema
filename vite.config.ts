@@ -4,7 +4,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { VitePWA } from 'vite-plugin-pwa';
-import { splitVendorChunkPlugin } from 'vite';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -48,8 +47,7 @@ export default defineConfig({
           }
         ]
       }
-    }),
-    splitVendorChunkPlugin()
+    })
   ],
   resolve: {
     alias: {
@@ -88,7 +86,13 @@ export default defineConfig({
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
-          'firebase-vendor': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/messaging', 'firebase/storage'],
+          'firebase-vendor': [
+            '@firebase/app',
+            '@firebase/auth',
+            '@firebase/firestore',
+            '@firebase/messaging',
+            '@firebase/storage'
+          ],
           'ui-vendor': [
             '@radix-ui/react-dropdown-menu',
             '@radix-ui/react-dialog',
@@ -100,21 +104,10 @@ export default defineConfig({
             '@radix-ui/react-avatar',
             '@radix-ui/react-popover',
             '@radix-ui/react-tabs',
-            '@radix-ui/react-alert-dialog'
-          ],
-          'firebase-core': ['@firebase/app'],
-          'firebase-services': [
-            '@firebase/auth',
-            '@firebase/firestore',
-            '@firebase/storage'
-          ],
-          'xlsx': ['xlsx'],
-          'lodash': ['lodash'],
-          'ui-components': [
-            '@radix-ui/react-select',
-            '@radix-ui/react-scroll-area',
+            '@radix-ui/react-alert-dialog',
             '@radix-ui/react-menu'
-          ]
+          ],
+          'utils': ['xlsx', 'lodash']
         }
       }
     },
