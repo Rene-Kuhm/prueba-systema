@@ -13,21 +13,29 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'Tu Aplicación',
-        short_name: 'App',
-        description: 'Descripción de tu aplicación',
+        name: 'Telecom Complaints',
+        short_name: 'Complaints',
+        description: 'Sistema de gestión de reclamos',
         theme_color: '#ffffff',
+        background_color: '#ffffff',
+        display: 'standalone',
+        scope: '/',
+        start_url: '/',
+        orientation: 'portrait',
         icons: [
           {
             src: '/icons/icon-192x192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any maskable'
           },
           {
             src: '/icons/icon-512x512.png',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any maskable'
           }
         ]
       },
@@ -41,11 +49,19 @@ export default defineConfig({
               cacheName: 'api-cache',
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 // 24 horas
+                maxAgeSeconds: 60 * 60 * 24
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
               }
             }
           }
-        ]
+        ],
+        cleanupOutdatedCaches: true
+      },
+      devOptions: {
+        enabled: true,
+        type: 'module'
       }
     })
   ],
@@ -128,5 +144,12 @@ export default defineConfig({
       }
     },
     chunkSizeWarningLimit: 1000
+  },
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+    __REACT_DEVTOOLS_GLOBAL_HOOK__: '({ isDisabled: true })'
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom']
   }
 });
