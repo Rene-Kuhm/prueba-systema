@@ -11,10 +11,18 @@ const __dirname = dirname(__filename);
 export default defineConfig({
   plugins: [
     react({
-      jsxRuntime: 'classic'
+      jsxRuntime: 'automatic',
+      babel: {
+        plugins: [
+          ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }]
+        ]
+      }
     }),
     VitePWA({
-      registerType: 'autoUpdate',
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
+      registerType: 'prompt',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
         name: 'Telecom Complaints',
@@ -41,29 +49,10 @@ export default defineConfig({
           }
         ]
       },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/api\./i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          }
-        ],
-        cleanupOutdatedCaches: true
-      },
       devOptions: {
         enabled: true,
-        type: 'module'
+        type: 'module',
+        navigateFallback: 'index.html'
       }
     })
   ],
@@ -147,10 +136,14 @@ export default defineConfig({
         drop_debugger: true
       }
     },
-    chunkSizeWarningLimit: 1000
+    chunkSizeWarningLimit: 1000,
+    commonjsOptions: {
+      transformMixedEsModules: true
+    }
   },
   define: {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+    'global': 'globalThis'
   },
   optimizeDeps: {
     include: ['react', 'react-dom']
