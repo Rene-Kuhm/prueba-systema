@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, Suspense, useMemo, useRef } from 'react'
+import React, { useEffect, useCallback, Suspense, useMemo, useRef, lazy } from 'react'
 import {
   BrowserRouter as Router,
   Route,
@@ -17,13 +17,13 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import 'react-toastify/dist/ReactToastify.css'
 
 // Importaciones directas
-import Login from '@/pages/Login'
-import Signup from '@/pages/Signup'
-import ForgotPassword from '@/pages/ForgotPassword'
-import ResetPassword from '@/pages/ResetPassword'
-import Dashboard from '@/pages/Dashboard'
-import AdminRoutes from '@/routes/AdminRoutes'
-import TechnicianRoutes from '@/routes/TechnicianRoutes'
+const Login = lazy(() => import('@/pages/Login'))
+const Signup = lazy(() => import('@/pages/Signup'))
+const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'))
+const ResetPassword = lazy(() => import('@/pages/ResetPassword'))
+const Dashboard = lazy(() => import('@/pages/Dashboard'))
+const AdminRoutes = lazy(() => import('@/routes/AdminRoutes'))
+const TechnicianRoutes = lazy(() => import('@/routes/TechnicianRoutes'))
 
 // Types
 interface NotificationButtonProps {
