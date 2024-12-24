@@ -2,10 +2,10 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { ClaimFormProps, Claim, ClaimFormTechnician, NewClaim } from '@/lib/types/admin';
 import { collection, getDocs, addDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db } from '@/config/firebase';
 import { toast } from 'react-toastify';
-import { sendWhatsAppMessage } from '@/services/whatsappService';
-import { useCurrentTime } from '@/lib/hooks/useCurrentTime';
+import { sendWhatsAppMessage } from '@/config/services/whatsappService';
+import { useCurrentTime } from '@/hooks/useCurrentTime';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import config from '../../../../config';
@@ -49,7 +49,7 @@ interface WhatsAppMessage {
 }
 
 const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
-  const currentTime = useCurrentTime();
+  const { currentTime, formattedTime, isUsingLocalTime } = useCurrentTime();
   const [technicians, setTechnicians] = useState<ClaimFormTechnician[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,11 +70,11 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
     reason: '',
     technicianId: '',
     receivedBy: '',
-    receivedAt: currentTime,
+    receivedAt:formattedTime,
     status: 'pending',
     title: '',
     customer: '',
-    date: currentTime,
+    date: formattedTime,
     resolution: '',
     notificationSent: false,
     technicalDetails: '',
@@ -139,11 +139,11 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
       const now = new Date();
       const docRef = await addDoc(collection(db, 'claims'), {
         ...claimData,
-        createdAt: now,
-        receivedAt: currentTime,
+        createdAt: now.toISOString(),
+        receivedAt: now.toISOString(),
+        lastUpdate: now.toISOString(),
+        date: now.toISOString(),
         status: 'pending' as const,
-        lastUpdate: now,
-        date: currentTime,
       });
 
       await setDoc(doc(db, 'claims', docRef.id), { id: docRef.id }, { merge: true });
@@ -160,68 +160,57 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
 
   // Función auxiliar para enviar mensajes de WhatsApp
   const sendMessagesToParticipants = async (claimId: string, claimData: NewClaim) => {
+    const timestamp = formattedTime;
     // Enviar WhatsApp al cliente
-    try {
       const messageToCustomer = `🔔 *Reclamo Registrado*\n\n`
-        + `Hola ${claimData.name},\n\n`
-        + `Tu reclamo ha sido registrado exitosamente:\n\n`
-        + `📝 *Detalles:*\n`
-        + `- N° de Reclamo: ${claimId}\n`
-        + `- Dirección: ${claimData.address}\n`
-        + `- Motivo: ${claimData.reason}\n\n`
-        + `Te mantendremos informado sobre el estado de tu reclamo.`;
+      + `Hola ${claimData.name},\n\n`
+      + `Tu reclamo ha sido registrado exitosamente:\n\n`
+      + `📝 *Detalles:*\n`
+      + `- N° de Reclamo: ${claimId}\n`
+      + `- Dirección: ${claimData.address}\n`
+      + `- Motivo: ${claimData.reason}\n`
+      + `- Fecha y Hora: ${timestamp}\n\n`
+      + `Te mantendremos informado sobre el estado de tu reclamo.`;
 
-      await sendWhatsAppMessage({
-        to: claimData.phone,
-        body: messageToCustomer
-      });
-      toast.success('WhatsApp enviado al cliente');
-    } catch (whatsappError) {
-      console.error('Error enviando WhatsApp al cliente:', whatsappError);
-      toast.warning('No se pudo enviar el WhatsApp al cliente');
-    }
+      try {
+        await sendWhatsAppMessage({
+          to: claimData.phone,
+          body: messageToCustomer
+        });
+        toast.success('Notificación enviada al cliente');
+      } catch (error) {
+        console.error('Error enviando notificación:', error);
+        toast.error('No se pudo enviar la notificación al cliente');
+      }
 
     // Enviar WhatsApp al técnico
     const technician = technicians.find(t => t.id === claimData.technicianId);
     if (technician?.phone) {
+      const messageToTechnician = `🔧 *Nuevo Reclamo Asignado*\n\n`
+        + `Se te ha asignado un nuevo reclamo:\n\n`
+        + `👤 *Cliente:* ${claimData.name}\n`
+        + `📍 *Dirección:* ${claimData.address}\n`
+        + `📱 *Teléfono:* ${claimData.phone}\n`
+        + `📝 *Motivo:* ${claimData.reason}\n\n`
+        + `👨‍💼 *Recibido por:* ${claimData.receivedBy}\n`
+        + `🕒 *Fecha y Hora:* ${timestamp}\n\n`
+        + `Por favor, contacta al cliente para coordinar la visita.`;
+
       try {
-        // Asegurarse de que el número del técnico tenga el formato correcto
-        let technicianPhone = technician.phone.replace(/[\s+\-()]/g, '');
-        
-        if (technicianPhone.startsWith('0')) {
-          technicianPhone = technicianPhone.substring(1);
+        let techPhone = technician.phone.replace(/[\s+\-()]/g, '');
+        if (!techPhone.startsWith('549')) {
+          techPhone = `549${techPhone.replace(/^0|^15/, '')}`;
         }
-        if (technicianPhone.includes('15')) {
-          technicianPhone = technicianPhone.replace('15', '');
-        }
-        if (!technicianPhone.startsWith('549')) {
-          technicianPhone = `549${technicianPhone}`;
-        }
-
-        const messageToTechnician = `🔧 *Nuevo Reclamo Asignado*\n\n`
-          + `Se te ha asignado un nuevo reclamo:\n\n`
-          + `👤 *Cliente:* ${claimData.name}\n`
-          + `📍 *Dirección:* ${claimData.address}\n`
-          + `📱 *Teléfono:* ${claimData.phone}\n`
-          + `📝 *Motivo:* ${claimData.reason}\n\n`
-          + `👨‍💼 *Recibido por:* ${claimData.receivedBy}\n`
-          + `🕒 *Fecha y Hora:* ${currentTime}\n\n`
-          + `Por favor, contacta al cliente para coordinar la visita.`;
-
-        console.log('Enviando WhatsApp al técnico:', technicianPhone);
 
         await sendWhatsAppMessage({
-          to: technicianPhone,
+          to: techPhone,
           body: messageToTechnician
         });
-        toast.success('WhatsApp enviado al técnico');
-      } catch (whatsappError) {
-        console.error('Error enviando WhatsApp al técnico:', whatsappError);
-        toast.warning('No se pudo enviar el WhatsApp al técnico');
+        toast.success('Notificación enviada al técnico');
+      } catch (error) {
+        console.error('Error enviando notificación al técnico:', error);
+        toast.error('No se pudo notificar al técnico');
       }
-    } else {
-      console.warn('El técnico no tiene número de teléfono registrado');
-      toast.warning('El técnico no tiene número de teléfono registrado');
     }
   };
 
@@ -230,7 +219,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
 
     if (!claim || !claim.phone || !claim.name || !claim.address || !claim.reason || 
         !selectedTechnicianId || !claim.receivedBy) {
-        setAlertMessage('Todos los campos son requeridos');
+        setAlertMessage('Por favor, complete todos los campos requeridos');
         return;
     }
 
@@ -240,8 +229,8 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
       const updatedClaim: NewClaim = {
         ...baseData,
         ...claim,
-        receivedAt: currentTime,
-        date: currentTime,
+        receivedAt: formattedTime,
+        date: formattedTime,
         technicianId: selectedTechnicianId,
         status: 'pending',
         notificationSent: false
@@ -249,11 +238,11 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
 
       const claimId = await createClaim(updatedClaim);
       await onSubmit();
-      setAlertMessage('Reclamo guardado con éxito');
+      setAlertMessage('Reclamo registrado exitosamente');
       resetForm();
     } catch (error) {
       console.error('Error al guardar:', error);
-      setAlertMessage('Error al guardar el reclamo');
+      setAlertMessage('Error al registrar el reclamo');
     } finally {
       setIsSubmitting(false);
     }
@@ -410,11 +399,19 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                 <FormLabel className="text-green-400">Fecha y Hora</FormLabel>
                 <FormControl>
                   <Input 
-                    value={currentTime}
+                    value={formattedTime}
                     readOnly
-                    className="bg-muted"
+                    className={cn(
+                      "bg-muted",
+                      isUsingLocalTime && "text-yellow-600"
+                    )}
                   />
                 </FormControl>
+                {isUsingLocalTime && (
+                  <FormDescription className="text-yellow-600">
+                    Usando hora local del sistema
+                  </FormDescription>
+                )}
               </FormItem>
             </div>
 

@@ -1,216 +1,268 @@
-import React, { useEffect, useState, useCallback, Suspense } from 'react';
-import { BrowserRouter as Router, Route, Routes, useSearchParams, Navigate } from 'react-router-dom';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import { UnauthorizedRoute } from './components/UnauthorizedRoute';
-import { debounce } from 'lodash';
-import { getAuth, signInAnonymously } from "firebase/auth";
-import { getToken, onMessage, type MessagePayload } from "firebase/messaging";
-import { messaging } from "./firebase"; 
-import { ToastContainer, toast } from "react-toastify";
-import { useAuthStore } from './stores/authStore';
-import "react-toastify/dist/ReactToastify.css";
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import React, { useEffect, useCallback, Suspense, useMemo, useRef } from 'react'
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  useSearchParams,
+  Navigate,
+} from 'react-router-dom'
+import { getToken, onMessage } from 'firebase/messaging'
+import type { MessagePayload } from 'firebase/messaging'
+import { ProtectedRoute } from '@/components/common/auth/ProtectedRoute'
+import UnauthorizedRoute from '@/components/common/auth/UnauthorizedRoute' // Fixed import
+import { debounce } from 'lodash'
+import { messaging } from '@/config/firebase'
+import { ToastContainer, toast } from 'react-toastify'
+import { AuthProvider, useAuth } from '@/contexts/AuthContext'
+import 'react-toastify/dist/ReactToastify.css'
 
-// Lazy load components
-const Login = React.lazy(() => import('./pages/Login'));
-const Signup = React.lazy(() => import('./pages/Signup'));
-const ForgotPassword = React.lazy(() => import('./pages/ForgotPassword'));
-const ResetPassword = React.lazy(() => import('./pages/ResetPassword'));
-const Dashboard = React.lazy(() => import('./pages/Dashboard'));
-const AdminRoutes = React.lazy(() => import('./routes/AdminRoutes'));
-const TechnicianRoutes = React.lazy(() => import('./routes/TechnicianRoutes'));
+// Importaciones directas
+import Login from '@/pages/Login'
+import Signup from '@/pages/Signup'
+import ForgotPassword from '@/pages/ForgotPassword'
+import ResetPassword from '@/pages/ResetPassword'
+import Dashboard from '@/pages/Dashboard'
+import AdminRoutes from '@/routes/AdminRoutes'
+import TechnicianRoutes from '@/routes/TechnicianRoutes'
 
-// Memoize AuthAction component
-const AuthAction: React.FC = React.memo(() => {
-  const [searchParams] = useSearchParams();
-  const mode = searchParams.get('mode');
+// Types
+interface NotificationButtonProps {
+  onClick: () => void;
+}
+
+// Componentes
+const LoadingSpinner = () => (
+  <div className='min-h-screen flex items-center justify-center'>
+    <div className='animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500'></div>
+  </div>
+)
+
+const AuthAction: React.FC = () => {
+  const [searchParams] = useSearchParams()
+  const mode = searchParams.get('mode')
 
   switch (mode) {
     case 'resetPassword':
-      return <ResetPassword />;
+      return <ResetPassword />
     default:
-      return <Navigate to="/" />;
+      return <Navigate to='/' replace />
   }
-});
+}
 
-// Memoize registerServiceWorker function
-const registerServiceWorker = useCallback(async () => {
-  if ('serviceWorker' in navigator) {
+const NotFound: React.FC = () => (
+  <div className='min-h-screen flex items-center justify-center'>
+    <div className='text-center'>
+      <h1 className='text-4xl font-bold text-red-500 mb-4'>404</h1>
+      <p className='text-xl text-gray-600'>Página no encontrada</p>
+    </div>
+  </div>
+)
+
+const NotificationButton: React.FC<NotificationButtonProps> = React.memo(
+  ({ onClick }) => (
+    <button
+      onClick={onClick}
+      className='fixed bottom-4 right-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-colors'
+      type='button'
+    >
+      Activar Notificaciones
+    </button>
+  ),
+)
+
+const AppContent: React.FC = () => {
+  const { isLoading, currentUser } = useAuth()
+  const serviceWorkerRegistered = useRef(false)
+  const authLogged = useRef(false)
+
+  const registerSW = async () => {
+    // Only register SW in production or if explicitly enabled in development
+    if (process.env.NODE_ENV !== 'production' && !import.meta.env.VITE_ENABLE_SW) {
+      console.log('Service Worker disabled in development');
+      return;
+    }
+  
     try {
-      const registration = await navigator.serviceWorker.register('/service-worker.js', {
-        scope: '/'
-      });
-      console.log('Service Worker registered with scope:', registration.scope);
+      if ('serviceWorker' in navigator) {
+        // Unregister any existing service workers first
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map(registration => registration.unregister()));
+  
+        // Register new service worker
+        const registration = await navigator.serviceWorker.register('/service-worker.js', {
+          scope: '/',
+          type: 'classic'
+        });
+  
+        // Ensure the service worker is activated
+        if (registration.active) {
+          console.log('Service Worker already active');
+        } else {
+          registration.addEventListener('activate', () => {
+            console.log('Service Worker activated');
+          });
+        }
+      }
     } catch (error) {
       console.error('Service Worker registration failed:', error);
     }
-  }
-}, []);
-
-// Memoize 404 component
-const NotFound = React.memo(() => (
-  <div className="py-8 text-center">
-    <h1 className="text-2xl font-bold text-red-500">404 - Page Not Found</h1>
-    <p>The page you are looking for does not exist.</p>
-  </div>
-));
-
-const AppContent: React.FC = () => {
-  const { isLoading } = useAuth();
-
-  // Memoize loading component
-  const LoadingSpinner = React.memo(() => (
-    <div className="flex items-center justify-center h-screen">Loading...</div>
-  ));
-
-  // Memoize notification button
-  const NotificationButton = React.memo(({ onClick }: { onClick: () => void }) => (
-    <button 
-      onClick={onClick}
-      className="fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg z-50"
-    >
-      Enable Notifications
-    </button>
-  ));
+  };
 
   useEffect(() => {
-    registerServiceWorker();
+    registerSW();
   }, []);
 
-  // Memoize notification request function
-  const requestNotificationPermission = useCallback(
-    debounce(async () => {
-      try {
-        if (!('Notification' in window)) {
-          toast.error('This browser does not support notifications');
-          return;
-        }
-
-        // Check if notification permissions are already granted
-        if (Notification.permission === 'granted') {
-          toast.info('Notifications are already enabled');
-          return;
-        }
-
-        // Request notification permission
-        const permission = await Notification.requestPermission();
-        console.log('Permission:', permission);
-
-        if (permission === 'granted') {
-          toast.success('Notifications enabled successfully!');
-          
-          if (!messaging) {
-            toast.error('Firebase messaging is not initialized');
-            return;
-          }
-
-          try {
-            const token = await getToken(messaging, {
-              vapidKey: import.meta.env.VITE_FIREBASE_PUSH_PUBLIC_KEY 
-            });
-            
-            if (token) {
-              console.log("FCM Token:", token);
-              // Here you would typically send this token to your backend
-            } else {
-              toast.error('Could not get notification token');
-            }
-          } catch (fcmError) {
-            console.error("FCM token error:", fcmError);
-            toast.error('Error setting up notifications');
-          }
-        } else {
-          toast.warning('Notification permission was denied');
-        }
-      } catch (error) {
-        console.error("Error requesting notification permission:", error);
-        toast.error('Failed to enable notifications');
-      }
-    }, 500),
-    []
-  );
-
   useEffect(() => {
-    let unsubscribe: () => void;
-    
-    if (messaging) {
-      unsubscribe = onMessage(messaging, (payload: MessagePayload) => {
-        console.log("Received foreground message:", payload);
-        if (payload.notification?.title) {
-          toast(payload.notification.title);
-        }
-      });
+    if (!authLogged.current && (currentUser?.email || !isLoading)) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Estado de autenticación:', {
+          isLoading,
+          currentUser: currentUser?.email || null
+        })
+      }
+      authLogged.current = true
     }
+  }, [isLoading, currentUser])
 
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
+  // Memoize notification permission callback
+  const requestNotificationPermission = useMemo(
+    () =>
+      debounce(async () => {
+        try {
+          if (!('Notification' in window)) {
+            toast.error('Este navegador no soporta notificaciones')
+            return
+          }
+
+          const permission = await Notification.requestPermission()
+
+          if (permission === 'granted') {
+            if (!messaging) {
+              toast.error('Firebase messaging no está inicializado')
+              return
+            }
+
+            try {
+              const token = await getToken(messaging, {
+                vapidKey: import.meta.env.VITE_FIREBASE_PUSH_PUBLIC_KEY,
+              })
+
+              if (token) {
+                console.log('Token FCM:', token)
+                toast.success('¡Notificaciones activadas con éxito!')
+              } else {
+                toast.error('No se pudo obtener el token de notificación')
+              }
+            } catch (fcmError) {
+              console.error('Error de token FCM:', fcmError)
+              toast.error('Error al configurar las notificaciones')
+            }
+          } else {
+            toast.warning('Permiso de notificación denegado')
+          }
+        } catch (error) {
+          console.error('Error al solicitar permiso de notificación:', error)
+          toast.error('Error al activar las notificaciones')
+        }
+      }, 500),
+    [],
+  )
+
+  useEffect(() => {
+    if (!messaging) return
+
+    const unsubscribe = onMessage(messaging, (payload: MessagePayload) => {
+      console.log('Mensaje recibido en primer plano:', payload)
+      if (payload.notification?.title) {
+        toast(payload.notification.title)
       }
-    };
-  }, []);
+    })
 
+    return () => unsubscribe()
+  }, [])
+
+  // Renderizar el LoadingSpinner mientras se carga la autenticación
   if (isLoading) {
-    return <LoadingSpinner />;
+    return <LoadingSpinner />
   }
 
   return (
     <Router>
-      <ToastContainer limit={3} />
-      <NotificationButton onClick={requestNotificationPermission} />
-      
-      <Suspense fallback={<LoadingSpinner />}>
-        <Routes>
-          {/* Public routes */}
-          <Route element={<UnauthorizedRoute />}>
+      <div className='min-h-screen bg-gray-50'>
+        <ToastContainer
+          position='top-right'
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme='light'
+          limit={3}
+        />
+
+        <Suspense fallback={<LoadingSpinner />}>
+          <Routes>
+            {/* Ruta raíz siempre redirige a login */}
             <Route path="/" element={<Navigate to="/login" replace />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-          </Route>
 
-          {/* Protected routes with lazy loading */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-          </Route>
+            {/* Rutas públicas */}
+            <Route path="/login" element={
+              <UnauthorizedRoute>
+                <Login />
+              </UnauthorizedRoute>
+            } />
+            <Route path="/signup" element={
+              <UnauthorizedRoute>
+                <Signup />
+              </UnauthorizedRoute>
+            } />
+            <Route path="/forgot-password" element={
+              <UnauthorizedRoute>
+                <ForgotPassword />
+              </UnauthorizedRoute>
+            } />
 
-          <Route 
-            path="/admin/*" 
-            element={
+            {/* Rutas protegidas */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Navigate to={currentUser?.role ? `/${currentUser.role}` : '/login'} replace />
+              </ProtectedRoute>
+            } />
+
+            {/* Rutas específicas por rol */}
+            <Route path="/admin/*" element={
               <ProtectedRoute role="admin">
                 <AdminRoutes />
               </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/technician/*" 
-            element={
+            } />
+            <Route path="/technician/*" element={
               <ProtectedRoute role="technician">
                 <TechnicianRoutes />
               </ProtectedRoute>
-            } 
-          />
+            } />
 
-          <Route path="/__/auth/action" element={<AuthAction />} />
+            {/* Ruta 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
 
-          {/* Fallback Route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Suspense>
+        {Notification.permission !== 'granted' && currentUser && (
+          <NotificationButton onClick={requestNotificationPermission} />
+        )}
+      </div>
     </Router>
-  );
-};
+  )
+}
 
-// Component is already memoized
-const MemoizedAppContent = React.memo(AppContent);
-
-// Memoize App component
-const App: React.FC = React.memo(() => {
-  return (
+const App: React.FC = () => (
+  <Suspense fallback={<LoadingSpinner />}>
     <AuthProvider>
-      <MemoizedAppContent />
+      <AppContent />
     </AuthProvider>
-  );
-});
+  </Suspense>
+)
 
-export default App;
+export default App

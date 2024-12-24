@@ -1,5 +1,5 @@
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { auth } from "@/lib/firebase";
+import { auth } from "@/config/firebase";
 
 async function uploadAvatar(file: File): Promise<string | null> {
     if (!auth.currentUser) return null;

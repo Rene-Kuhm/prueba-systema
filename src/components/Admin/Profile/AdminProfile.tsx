@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LogOut, Camera, User, Mail, Loader2, Check } from 'lucide-react';
 import { collection, doc, getDoc, updateDoc } from 'firebase/firestore';
 import uploadAvatar from '@/components/Admin/Profile/uploadAvatar.';
-import { db, auth, storage } from '@/lib/firebase';
+import { db, auth, storage } from '@/config/firebase';
 import { getDownloadURL, ref } from 'firebase/storage';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

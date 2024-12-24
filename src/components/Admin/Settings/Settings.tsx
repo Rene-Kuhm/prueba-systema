@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { doc, updateDoc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
 import { getAuth, createUserWithEmailAndPassword, updatePassword } from 'firebase/auth';
-import { db, storage } from '@/lib/firebase';
+import { db, storage } from '@/config/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
   Card,

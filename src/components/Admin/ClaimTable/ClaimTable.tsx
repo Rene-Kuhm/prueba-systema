@@ -1,33 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, Trash2, CheckCircle, Clock, AlertCircle, Edit2, MoreHorizontal, Phone, MapPin, User, Archive, RefreshCw } from 'lucide-react';
+import { format, parseISO, isValid } from 'date-fns';
+import { es } from 'date-fns/locale';
 import type { Claim, NewClaim } from '@/lib/types/admin';
 import { toast } from 'react-toastify';
 import { collection, doc, updateDoc, addDoc, deleteDoc, getDocs, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { formatDateTime, getCurrentFormattedDateTime } from '@/lib/utils/date';
+import { db } from '@/config/firebase';
+import { formatDateTime, getCurrentFormattedDateTime, isValidDate } from '@/lib/utils/date';
+import { useCurrentTime } from '@/hooks/useCurrentTime';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +41,8 @@ interface ExtendedClaim extends NewClaim {
     technicianName?: string;
     isArchived?: boolean;
     archivedAt?: string;
+    createdAt?: string;
+    lastUpdate?: string;
 }
 
 interface ClaimsTableProps {
@@ -88,6 +93,25 @@ const StatusBadge = ({ status }: { status: string }) => {
     );
 };
 
+const formatClaimDateTime = (date: string | Date | undefined | null): string => {
+    if (!date) return '---';
+    
+    try {
+        const dateObj = typeof date === 'string' ? new Date(date) : date;
+        
+        if (!isValid(dateObj)) {
+            return '---';
+        }
+        
+        return format(dateObj, "dd/MM/yyyy 'a las' HH:mm:ss", {
+            locale: es
+        });
+    } catch (error) {
+        console.error('Error al formatear fecha:', error);
+        return '---';
+    }
+};
+
 const MobileClaimCard = ({ 
     claim,
     onShowDetails,
@@ -109,7 +133,7 @@ const MobileClaimCard = ({
                 <div>
                     <h3 className="font-medium">{claim.name}</h3>
                     <p className="text-muted-foreground text-sm">
-                        {formatDateTime(claim.receivedAt || claim.date)}
+                        {formatClaimDateTime(claim.receivedAt || claim.date)}
                     </p>
                 </div>
                 <div className="flex flex-col gap-2">
@@ -205,9 +229,9 @@ export function ClaimsTable({
     const [claimToDelete, setClaimToDelete] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
+    const { formattedTime, isUsingLocalTime, error: timeError } = useCurrentTime();
 
     useEffect(() => {
-        // Crear una suscripción en tiempo real a la colección de reclamos
         const unsubscribe = onSnapshot(collection(db, 'claims'), (snapshot) => {
             const fetchedClaims = snapshot.docs.map((doc) => ({
                 id: doc.id,
@@ -219,9 +243,14 @@ export function ClaimsTable({
             toast.error('Error al obtener los reclamos');
         });
 
-        // Limpiar la suscripción cuando el componente se desmonte
         return () => unsubscribe();
     }, []);
+
+    useEffect(() => {
+        if (timeError) {
+            toast.warn('Error al sincronizar la hora: ' + timeError);
+        }
+    }, [timeError]);
 
     const filteredClaims = claims.filter(claim => 
         showArchived ? claim.isArchived : !claim.isArchived
@@ -319,9 +348,18 @@ export function ClaimsTable({
                         <CardTitle className="text-xl sm:text-2xl font-bold text-green-400">
                             Gestión de Reclamos
                         </CardTitle>
-                        <p className="text-muted-foreground text-sm mt-1 text-white">
-                            {filteredClaims.length} reclamos {showArchived ? 'archivados' : 'activos'}
-                        </p>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                            <p className="text-muted-foreground text-sm text-white">
+                                {filteredClaims.length} reclamos {showArchived ? 'archivados' : 'activos'}
+                            </p>
+                            <span className="text-gray-400 sm:ml-2">•</span>
+                            <div className="text-sm text-gray-400">
+                                {formattedTime}
+                                {isUsingLocalTime && (
+                                    <span className="ml-1 text-xs text-gray-500">(hora local)</span>
+                                )}
+                            </div>
+                        </div>
                     </div>
                     <Button
                         variant="outline"
@@ -352,8 +390,8 @@ export function ClaimsTable({
                         )}
                     </div>
 
-                       {/* Vista desktop */}
-                       <div className="hidden md:block rounded-md border">
+                    {/* Vista desktop */}
+                    <div className="hidden md:block rounded-md border">
                         <Table>
                             <TableHeader>
                                 <TableRow className="hover:bg-transparent">
@@ -363,7 +401,12 @@ export function ClaimsTable({
                                     <TableHead className="hidden lg:table-cell text-green-400">Dirección</TableHead>
                                     <TableHead className="text-green-400">Técnico</TableHead>
                                     <TableHead className="hidden lg:table-cell text-green-400">Recibido por</TableHead>
-                                    <TableHead className="text-green-400">Fecha y Hora</TableHead>
+                                    <TableHead className="w-[180px] text-green-400 whitespace-nowrap">
+                                        <div className="flex items-center gap-1">
+                                            <Clock className="w-4 h-4" />
+                                            <span>Fecha y Hora de Registro</span>
+                                        </div>
+                                    </TableHead>
                                     <TableHead className="text-right text-green-400">Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -385,8 +428,15 @@ export function ClaimsTable({
                                         </TableCell>
                                         <TableCell>{claim.technicianName || claim.technicianId}</TableCell>
                                         <TableCell className="hidden lg:table-cell">{claim.receivedBy}</TableCell>
-                                        <TableCell>
-                                            {formatDateTime(claim.receivedAt || claim.date)}
+                                        <TableCell className="whitespace-nowrap">
+                                            <div className="font-medium">
+                                                {formatClaimDateTime(claim.createdAt || claim.receivedAt || claim.date)}
+                                            </div>
+                                            {claim.createdAt !== claim.lastUpdate && (
+                                                <div className="text-xs text-muted-foreground">
+                                                    Actualizado: {formatClaimDateTime(claim.lastUpdate)}
+                                                </div>
+                                            )}
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <DropdownMenu>

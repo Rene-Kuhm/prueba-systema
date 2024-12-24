@@ -1,7 +1,7 @@
 // src/services/adminService.ts
-import { db } from '../lib/firebase'
+import { db } from '../../config/firebase'
 import { collection, query, where, getDocs, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore'
-import type { PendingUser, Claim, Technician } from '../lib/types/admin'
+import type { PendingUser, Claim, Technician } from '../../lib/types/admin'
 import * as XLSX from 'xlsx'
 
 class AdminService {

@@ -1,81 +1,90 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { auth, db } from '@/lib/firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { auth, db } from '@/config/firebase';
+import { onAuthStateChanged, User, signOut as firebaseSignOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { useAuthStore } from '../stores/authStore';
 
-export interface AuthContextType {
-  currentUser: User | null;
-  isLoading: boolean;
-  error: Error | null;
+interface AuthUser {
+  uid: string;
+  email: string | null;
+  role: 'admin' | 'technician';
 }
 
-export const AuthContext = createContext<AuthContextType | null>(null);
+interface AuthContextType {
+  currentUser: AuthUser | null;
+  isLoading: boolean;
+  isInitialized: boolean;
+  error: string | null;
+  signOut: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType>({
+  currentUser: null,
+  isLoading: true,
+  isInitialized: false,
+  error: null,
+  signOut: async () => {}
+});
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const { setUserProfile } = useAuthStore();
-  const unsubscribeRef = useRef<(() => void) | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const signOut = async () => {
+    try {
+      await firebaseSignOut(auth);
+      setCurrentUser(null);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error al cerrar sesión';
+      setError(errorMessage);
+      throw error;
+    }
+  };
 
   useEffect(() => {
-    const userDataCache = new Map();
-
-    const handleAuthStateChange = async (user: User | null) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       try {
         if (user) {
-          setCurrentUser(user);
-          // Check cache first
-          if (!userDataCache.has(user.uid)) {
-            const userDoc = await getDoc(doc(db, 'users', user.uid));
-            const userData = userDoc.data();
-            userDataCache.set(user.uid, userData);
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          const userData = userDoc.data();
+
+          if (userData?.role === 'admin' || userData?.role === 'technician') {
+            setCurrentUser({
+              uid: user.uid,
+              email: user.email,
+              role: userData.role
+            });
+          } else {
+            await auth.signOut();
+            setCurrentUser(null);
+            setError('Usuario sin rol válido');
           }
-          
-          const userData = userDataCache.get(user.uid);
-          const savedRole = localStorage.getItem('userRole');
-          
-          setUserProfile({
-            ...user,
-            ...userData,
-            role: savedRole || userData?.role
-          });
         } else {
           setCurrentUser(null);
-          setUserProfile(null);
-          localStorage.removeItem('userRole');
         }
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error('Auth error'));
+      } catch (error) {
+        console.error('Auth error:', error);
+        setCurrentUser(null);
+        setError('Error de autenticación');
       } finally {
         setIsLoading(false);
+        setIsInitialized(true);
       }
-    };
+    });
 
-    // Set up auth listener
-    unsubscribeRef.current = onAuthStateChanged(auth, handleAuthStateChange);
-
-    // Cleanup
-    return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current();
-      }
-      userDataCache.clear();
-    };
+    return () => unsubscribe();
   }, []);
 
-  return (
-    <AuthContext.Provider value={{ currentUser, isLoading, error }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = { currentUser, isLoading, isInitialized, error, signOut };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth debe ser usado dentro de un AuthProvider');
   }
   return context;
 };

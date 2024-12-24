@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AdminState, Claim, PendingUser, Technician } from '../lib/types/admin';
-import { adminService } from '../services/adminService';
+import { adminService } from '../config/services/adminService';
 
 export interface UseAdminReturn {
     loading: boolean;

@@ -1,51 +1,42 @@
 import { useState, useEffect, useRef } from 'react';
-import { useAuthStore } from '../stores/authStore';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/config/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import type { UserProfile } from '@/stores/authStore';
+import { toast } from 'react-toastify';
 
 export const useAuthInitialization = () => {
-  const initializationAttempted = useRef(false);
-  const { loadUserProfile } = useAuthStore();
-  const [state, setState] = useState({
-    isInitialized: false,
-    isLoading: true,
-    error: null as Error | null
-  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const authCheckCompleted = useRef(false);
 
   useEffect(() => {
-    if (initializationAttempted.current) {
-      return;
-    }
+    let mounted = true;
+    
+    if (authCheckCompleted.current) return;
 
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      initializationAttempted.current = true;
-      
-      if (!user) {
-        setState({
-          isInitialized: true,
-          isLoading: false,
-          error: null
-        });
-        return;
-      }
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!mounted) return;
 
       try {
-        await loadUserProfile();
-        setState({
-          isInitialized: true,
-          isLoading: false,
-          error: null
-        });
-      } catch (err) {
-        setState({
-          isInitialized: true,
-          isLoading: false,
-          error: err instanceof Error ? err : new Error('Failed to initialize auth')
-        });
+        if (user && !authCheckCompleted.current) {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Auth state changed:', user.email);
+          }
+          authCheckCompleted.current = true;
+        }
+      } finally {
+        setIsLoading(false);
+        setIsInitialized(true);
       }
     });
 
-    return () => unsubscribe();
-  }, [loadUserProfile]);
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
+  }, []);
 
-  return state;
+  return { isLoading, isInitialized };
 };

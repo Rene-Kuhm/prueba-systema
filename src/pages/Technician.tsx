@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDocs, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { getAuth, signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import { db } from '@/lib/firebase';
+import { db } from '@/config/firebase';
 import { Claim, Technician } from '@/lib/types/admin';
 import { toast } from 'react-toastify';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/AuthContext';
-import { messaging } from "@/lib/firebase";
+import { messaging } from "@/config/firebase";
 import { getToken } from "firebase/messaging";
 
 const TechnicianPage: React.FC = () => {
@@ -511,6 +511,9 @@ const TechnicianPage: React.FC = () => {
                       <Dialog.Title className="text-xl font-semibold text-slate-100 mb-2">
                         Detalles del Reclamo
                       </Dialog.Title>
+                      <Dialog.Description className="text-slate-400 mb-4">
+                        Revisa y gestiona los detalles del reclamo seleccionado.
+                      </Dialog.Description>
 
                       <ScrollArea.Root className="h-[calc(85vh-200px)] overflow-hidden">
                         <ScrollArea.Viewport className="h-full w-full pr-4">

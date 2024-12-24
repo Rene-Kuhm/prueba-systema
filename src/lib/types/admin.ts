@@ -131,4 +131,6 @@ export interface NewClaim {
     technicalDetails?: string;
     notes?: string;
     updatedAt: string;
+    createdAt?: string;
+    lastUpdate?: string;
 }
