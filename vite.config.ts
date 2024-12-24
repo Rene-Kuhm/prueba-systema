@@ -147,7 +147,7 @@ export default defineConfig({
   },
   define: {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
-    __REACT_DEVTOOLS_GLOBAL_HOOK__: '({ isDisabled: true })'
+    '__REACT_DEVTOOLS_GLOBAL_HOOK__': JSON.stringify({ isDisabled: true })
   },
   optimizeDeps: {
     include: ['react', 'react-dom']
