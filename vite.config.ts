@@ -10,7 +10,9 @@ const __dirname = dirname(__filename);
 
 export default defineConfig({
   plugins: [
-    react(),
+    react({
+      jsxRuntime: 'classic'
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
@@ -68,6 +70,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      'react': 'react',
+      'react-dom': 'react-dom'
     },
   },
   server: {
@@ -146,8 +150,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000
   },
   define: {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
-    '__REACT_DEVTOOLS_GLOBAL_HOOK__': JSON.stringify({ isDisabled: true })
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
   },
   optimizeDeps: {
     include: ['react', 'react-dom']
