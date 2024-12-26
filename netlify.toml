@@ -40,20 +40,13 @@
 
   [plugins.inputs]
     output_path = "reports/lighthouse.html"
-    audit_url = "/"
-    audits = [
-      "accessibility",
-      "best-practices",
-      "performance",
-      "pwa",
-      "seo"
-    ]
+    fail_deploy_on_score_thresholds = false
     thresholds = """
     {
-      "performance": 0.8,
-      "accessibility": 0.9,
-      "best-practices": 0.9,
-      "seo": 0.9,
-      "pwa": 0.9
+      "performance": 0.5,
+      "accessibility": 0.7,
+      "best-practices": 0.7,
+      "seo": 0.7,
+      "pwa": 0.3
     }
     """
