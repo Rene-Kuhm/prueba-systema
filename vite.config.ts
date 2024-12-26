@@ -7,7 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-    },
+    }
   },
   build: {
     sourcemap: true,
@@ -17,42 +17,51 @@ export default defineConfig({
       },
       output: {
         manualChunks: {
-          // React y dependencias principales
+          // React core
           'vendor-react': ['react', 'react-dom'],
           
-          // Firebase y sus módulos
-          'vendor-firebase-core': ['firebase/app'],
-          'vendor-firebase-firestore': ['firebase/firestore'],
-          'vendor-firebase-auth': ['firebase/auth'],
-          'vendor-firebase-webchannel': ['@firebase/webchannel-wrapper'],
+          // Firebase - modificado para evitar el error de webchannel-wrapper
+          'vendor-firebase': ['firebase/app', 'firebase/firestore', 'firebase/auth'],
           
           // XLSX
           'vendor-xlsx': ['xlsx'],
 
-          // Utilidades y otras dependencias comunes
+          // Utilidades
           'vendor-utils': [
             'react-router-dom',
-            'react-hook-form',
-            // Agrega aquí otras dependencias comunes que uses
-          ],
+            'react-hook-form'
+          ]
         },
-        // Optimizar nombres de archivos para mejor caching
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
-        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
+        assetFileNames: ({name}) => {
+          if (/\.(gif|jpe?g|png|svg)$/.test(name ?? '')) {
+            return 'assets/images/[name]-[hash][extname]'
+          }
+          if (/\.css$/.test(name ?? '')) {
+            return 'assets/css/[name]-[hash][extname]'
+          }
+          return 'assets/[name]-[hash][extname]'
+        }
       }
     },
-    // Optimizaciones adicionales
     target: 'es2018',
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true,
-        drop_debugger: true
+        drop_console: process.env.NODE_ENV === 'production',
+        drop_debugger: process.env.NODE_ENV === 'production'
       }
     }
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'firebase/app', 'firebase/firestore', 'firebase/auth', 'xlsx']
+    include: [
+      'react',
+      'react-dom',
+      'firebase/app',
+      'firebase/firestore',
+      'firebase/auth'
+    ],
+    exclude: ['@firebase/webchannel-wrapper'] // Excluimos este paquete problemático
   }
 })
