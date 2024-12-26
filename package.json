@@ -6,7 +6,7 @@
   "proxy": "https://us-central1-cospecreclamos.cloudfunctions.net",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && npm run generate-icons",
+    "build": "vite build",
     "preview": "vite preview",
     "generate-icons": "node scripts/generate-icons.js"
   },
