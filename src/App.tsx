@@ -16,29 +16,11 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import 'react-toastify/dist/ReactToastify.css'
 import Login from '@/pages/Login'
 import Signup from '@/pages/Signup'
-import { lazyLoad } from '@/utils/lazyLoad';
+import ForgotPassword from '@/pages/ForgotPassword'
+import AdminRoutes from '@/routes/AdminRoutes'
+import TechnicianRoutes from '@/routes/TechnicianRoutes'
 
-// Modificar los lazy imports con error handling
-const DefaultErrorComponent = () => (
-  <div className="p-4 text-center">
-    <h2 className="text-xl text-red-500">Error al cargar el componente</h2>
-  </div>
-);
-
-const ForgotPassword = lazyLoad<Record<string, never>>(
-  () => import('@/pages/ForgotPassword'),
-  DefaultErrorComponent
-);
-
-const AdminRoutes = lazyLoad<Record<string, never>>(
-  () => import('@/routes/AdminRoutes'),
-  DefaultErrorComponent
-);
-
-const TechnicianRoutes = lazyLoad<Record<string, never>>(
-  () => import('@/routes/TechnicianRoutes'),
-  DefaultErrorComponent
-);
+// Remove lazy imports and error handling
 
 // Types
 interface NotificationButtonProps {
@@ -114,24 +96,13 @@ const ErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   return <>{children}</>;
 };
 
-// Agregar precarga de componentes
-const preloadComponents = () => {
-  const routes = [
-    import('@/pages/ForgotPassword')
-  ];
-  
-  Promise.all(routes).catch(err => 
-    console.error('Error preloading components:', err)
-  );
-};
+// Remove preloadComponents function
 
 const AppContent: React.FC = () => {
   const { isLoading, currentUser } = useAuth()
   const authLogged = useRef(false)
 
-  useEffect(() => {
-    preloadComponents();
-  }, []);
+  // Remove useEffect for preloadComponents
 
   const registerSW = async () => {
     // Only register SW in production or if explicitly enabled in development
