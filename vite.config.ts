@@ -109,7 +109,7 @@ export default defineConfig(({ mode }) => ({
     target: 'es2015',
     outDir: 'dist',
     emptyOutDir: true,
-    sourcemap: mode === 'development',
+    sourcemap: true,
     minify: mode === 'production' ? 'terser' : false,
     rollupOptions: {
       external: ['sharp'],
@@ -145,10 +145,6 @@ export default defineConfig(({ mode }) => ({
     exclude: ['sharp']
   },
   esbuild: {
-    logOverride: { 
-      'this-is-undefined-in-esm': 'silent'
-    },
-    legalComments: 'none',
-    drop: ['console', 'debugger']
+    jsx: 'automatic',
   }
 }));
