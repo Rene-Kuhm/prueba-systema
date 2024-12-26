@@ -8,6 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export default defineConfig(({ mode }) => ({
+  base: './',  // Change this line
   plugins: [
     react({
       jsxImportSource: 'react',
@@ -108,8 +109,10 @@ export default defineConfig(({ mode }) => ({
     target: 'es2015',
     outDir: 'dist',
     emptyOutDir: true,
-    sourcemap: true,
-    minify: mode === 'production' ? 'terser' : false,
+    sourcemap: false,
+    minify: 'terser',
+    assetsDir: 'assets',
+    copyPublicDir: true,
     rollupOptions: {
       external: ['sharp'],
       output: {
