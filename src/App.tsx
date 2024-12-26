@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, Suspense } from 'react'
+import React, { useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
 import {
   BrowserRouter as Router,
@@ -36,11 +36,7 @@ const LoadingSpinner = () => (
   </div>
 )
 
-const LoadingFallback = () => (
-  <div className='flex items-center justify-center min-h-screen'>
-    <div className='w-12 h-12 border-t-2 border-b-2 border-blue-500 rounded-full animate-spin'></div>
-  </div>
-)
+
 
 const NotFound: React.FC = () => (
   <div className='flex items-center justify-center min-h-screen'>
@@ -246,7 +242,7 @@ const AppContent: React.FC = () => {
             theme='light'
             limit={3}
           />
-          <Suspense fallback={<LoadingFallback />}>
+          
             <Routes>
               {/* Ruta raíz siempre redirige a login */}
               <Route path="/" element={<Navigate to="/login" replace />} />
@@ -283,16 +279,13 @@ const AppContent: React.FC = () => {
               } />
              <Route path="/technician/*" element={
               <ProtectedRoute role="technician">
-                <Suspense fallback={<LoadingFallback />}>
                   <TechnicianRoutes />
-                </Suspense>
               </ProtectedRoute>
             } />
 
               {/* Ruta 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </Suspense>
 
           {/* Modificar la condición del botón de notificaciones */}
           {Notification.permission !== 'granted' && currentUser && !isLoading && (
