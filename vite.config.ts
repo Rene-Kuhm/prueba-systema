@@ -112,6 +112,7 @@ export default defineConfig(({ mode }) => ({
     sourcemap: mode === 'development',
     minify: mode === 'production' ? 'terser' : false,
     rollupOptions: {
+      external: ['sharp'],
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
