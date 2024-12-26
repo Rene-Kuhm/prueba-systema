@@ -129,10 +129,10 @@ const MobileClaimCard = ({
 }) => (
     <Card className="mb-4">
         <CardContent className="p-4">
-            <div className="flex justify-between items-start mb-3">
+            <div className="flex items-start justify-between mb-3">
                 <div>
                     <h3 className="font-medium">{claim.name}</h3>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                         {formatClaimDateTime(claim.receivedAt || claim.date)}
                     </p>
                 </div>
@@ -144,30 +144,30 @@ const MobileClaimCard = ({
                 </div>
             </div>
 
-            <div className="space-y-2 mb-4">
+            <div className="mb-4 space-y-2">
                 <div className="flex items-center text-sm text-muted-foreground">
-                    <Phone className="h-4 w-4 mr-2 shrink-0" />
+                    <Phone className="w-4 h-4 mr-2 shrink-0" />
                     <span className="truncate">{claim.phone}</span>
                 </div>
                 <div className="flex items-center text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4 mr-2 shrink-0" />
+                    <MapPin className="w-4 h-4 mr-2 shrink-0" />
                     <span className="truncate">{claim.address}</span>
                 </div>
                 <div className="flex items-center text-sm text-muted-foreground">
-                    <User className="h-4 w-4 mr-2 shrink-0" />
+                    <User className="w-4 h-4 mr-2 shrink-0" />
                     <span className="truncate">
                         {claim.technicianName || claim.technicianId}
                     </span>
                 </div>
             </div>
 
-            <div className="border-t pt-3 flex justify-end gap-2">
+            <div className="flex justify-end gap-2 pt-3 border-t">
                 <Button
                     variant="outline"
                     size="sm"
                     onClick={() => onShowDetails(claim)}
                 >
-                    <Eye className="h-4 w-4 mr-1" />
+                    <Eye className="w-4 h-4 mr-1" />
                     Ver
                 </Button>
                 {!claim.isArchived && onEdit && (
@@ -176,7 +176,7 @@ const MobileClaimCard = ({
                         size="sm"
                         onClick={() => onEdit(claim)}
                     >
-                        <Edit2 className="h-4 w-4 mr-1" />
+                        <Edit2 className="w-4 h-4 mr-1" />
                         Editar
                     </Button>
                 )}
@@ -186,7 +186,7 @@ const MobileClaimCard = ({
                         size="sm"
                         onClick={() => onArchive(claim.id)}
                     >
-                        <Archive className="h-4 w-4 mr-1" />
+                        <Archive className="w-4 h-4 mr-1" />
                         Archivar
                     </Button>
                 )}
@@ -197,7 +197,7 @@ const MobileClaimCard = ({
                             size="sm"
                             onClick={() => onRestore(claim.id)}
                         >
-                            <RefreshCw className="h-4 w-4 mr-1" />
+                            <RefreshCw className="w-4 h-4 mr-1" />
                             Restaurar
                         </Button>
                         <Button
@@ -206,7 +206,7 @@ const MobileClaimCard = ({
                             onClick={() => onDelete(claim.id)}
                             className="text-destructive hover:text-destructive"
                         >
-                            <Trash2 className="h-4 w-4 mr-1" />
+                            <Trash2 className="w-4 h-4 mr-1" />
                             Eliminar
                         </Button>
                     </>
@@ -348,14 +348,14 @@ export function ClaimsTable({
 
     return (
         <div className="space-y-4">
-            <Card className="bg-slate-700 rounded-xl mb-8">
-                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 pb-6">
+            <Card className="mb-8 bg-slate-700 rounded-xl">
+                <CardHeader className="flex flex-col items-start justify-between pb-6 space-y-2 sm:flex-row sm:items-center sm:space-y-0">
                     <div>
-                        <CardTitle className="text-xl sm:text-2xl font-bold text-green-400">
+                        <CardTitle className="text-xl font-bold text-green-400 sm:text-2xl">
                             Gestión de Reclamos
                         </CardTitle>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                            <p className="text-muted-foreground text-sm text-white">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                            <p className="text-sm text-white text-muted-foreground">
                                 {filteredClaims.length} reclamos {showArchived ? 'archivados' : 'activos'}
                             </p>
                             <span className="text-gray-400 sm:ml-2">•</span>
@@ -370,14 +370,14 @@ export function ClaimsTable({
                     <Button
                         variant="outline"
                         onClick={() => setShowArchived(!showArchived)}
-                        className="text-black"
+                        className="text-white"
                     >
                         {showArchived ? 'Ver Activos' : 'Ver Archivados'}
                     </Button>
                 </CardHeader>
                 <CardContent>
                     {/* Vista móvil */}
-                    <div className="block md:hidden space-y-4">
+                    <div className="block space-y-4 md:hidden">
                         {filteredClaims.map((claim) => (
                             <MobileClaimCard
                                 key={claim.id}
@@ -390,23 +390,23 @@ export function ClaimsTable({
                             />
                         ))}
                         {filteredClaims.length === 0 && (
-                            <div className="text-center py-8 text-muted-foreground">
+                            <div className="py-8 text-center text-muted-foreground">
                                 No hay reclamos {showArchived ? 'archivados' : 'activos'}
                             </div>
                         )}
                     </div>
 
                     {/* Vista desktop */}
-                    <div className="hidden md:block rounded-md border">
+                    <div className="hidden border rounded-md md:block">
                         <Table>
                             <TableHeader>
                                 <TableRow className="hover:bg-transparent">
                                     <TableHead className="w-[120px] text-green-400">Estado</TableHead>
                                     <TableHead className="text-green-400">Cliente</TableHead>
                                     <TableHead className="text-green-400">Teléfono</TableHead>
-                                    <TableHead className="hidden lg:table-cell text-green-400">Dirección</TableHead>
+                                    <TableHead className="hidden text-green-400 lg:table-cell">Dirección</TableHead>
                                     <TableHead className="text-green-400">Técnico</TableHead>
-                                    <TableHead className="hidden lg:table-cell text-green-400">Recibido por</TableHead>
+                                    <TableHead className="hidden text-green-400 lg:table-cell">Recibido por</TableHead>
                                     <TableHead className="w-[180px] text-green-400 whitespace-nowrap">
                                         <div className="flex items-center gap-1">
                                             <Clock className="w-4 h-4" />
@@ -447,36 +447,36 @@ export function ClaimsTable({
                                         <TableCell className="text-right">
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
-                                                    <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    <Button variant="outline" size="sm" className="w-8 h-8 p-0">
+                                                        <MoreHorizontal className="w-4 h-4" />
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem onClick={() => onShowDetails(claim)}>
-                                                        <Eye className="mr-2 h-4 w-4" /> Ver detalles
+                                                        <Eye className="w-4 h-4 mr-2" /> Ver detalles
                                                     </DropdownMenuItem>
                                                     {!claim.isArchived && onEdit && (
                                                         <DropdownMenuItem onClick={() => onEdit(claim)}>
-                                                            <Edit2 className="mr-2 h-4 w-4" /> Editar
+                                                            <Edit2 className="w-4 h-4 mr-2" /> Editar
                                                         </DropdownMenuItem>
                                                     )}
                                                     {!claim.isArchived && (
                                                         <DropdownMenuItem onClick={() => handleArchive(claim.id)}>
-                                                            <Archive className="mr-2 h-4 w-4" /> Archivar
+                                                            <Archive className="w-4 h-4 mr-2" /> Archivar
                                                         </DropdownMenuItem>
                                                     )}
                                                     {claim.isArchived && (
                                                         <>
                                                             <DropdownMenuItem onClick={() => handleRestore(claim.id)}>
-                                                                <RefreshCw className="mr-2 h-4 w-4" /> Restaurar
+                                                                <RefreshCw className="w-4 h-4 mr-2" /> Restaurar
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem
                                                                 className="text-destructive"
                                                                 onClick={() => handleDelete(claim.id)}
                                                             >
-                                                                <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                                                                <Trash2 className="w-4 h-4 mr-2" /> Eliminar
                                                             </DropdownMenuItem>
                                                         </>
                                                     )}
