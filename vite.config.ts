@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import autoprefixer from 'autoprefixer'
 
 export default defineConfig({
   plugins: [react()],
@@ -14,7 +15,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // Separar las dependencias principales
           if (id.includes('node_modules')) {
             if (id.includes('react')) {
               return 'vendor-react'
@@ -27,7 +27,6 @@ export default defineConfig({
             }
             return 'vendor-deps'
           }
-          // Separar los componentes por funcionalidad
           if (id.includes('/src/components/')) {
             return 'components'
           }
@@ -35,26 +34,39 @@ export default defineConfig({
             return 'pages'
           }
         },
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
+        assetFileNames: ({name}) => {
+          if (/\.(gif|jpe?g|png|svg)$/.test(name ?? '')) {
+            return 'assets/images/[name]-[hash][extname]'
+          }
+          if (/\.css$/.test(name ?? '')) {
+            return 'assets/css/[name]-[hash][extname]'
+          }
+          return 'assets/[name]-[hash][extname]'
+        }
       },
       input: {
         main: path.resolve(__dirname, 'index.html'),
       }
     },
-    cssCodeSplit: true,
+    target: ['es2020', 'edge88', 'firefox78', 'chrome87', 'safari14'],
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true,
-        drop_debugger: true
+        drop_console: process.env.NODE_ENV === 'production',
+        drop_debugger: process.env.NODE_ENV === 'production'
       }
     }
   },
   css: {
-    modules: {
-      generateScopedName: '[local]_[hash:base64:5]'
-    },
     postcss: {
-      plugins: [require('autoprefixer')]
+      plugins: [
+        autoprefixer()
+      ]
     }
+  },
+  server: {
+    port: Number(process.env.PORT) || 3000 // Convertimos explícitamente a número
   }
 })
