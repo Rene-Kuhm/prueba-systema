@@ -8,10 +8,11 @@ import { VitePWA } from 'vite-plugin-pwa';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     react({
       jsxRuntime: 'automatic',
+      jsxImportSource: 'react',
       babel: {
         plugins: [
           ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }]
@@ -19,11 +20,14 @@ export default defineConfig({
       }
     }),
     VitePWA({
-      strategies: 'injectManifest',
-      srcDir: 'src',
-      filename: 'sw.ts',
-      registerType: 'prompt',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      strategies: 'generateSW',
+      registerType: 'autoUpdate',
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true
+      },
       manifest: {
         name: 'Telecom Complaints',
         short_name: 'Complaints',
@@ -48,20 +52,14 @@ export default defineConfig({
             purpose: 'any maskable'
           }
         ]
-      },
-      devOptions: {
-        enabled: true,
-        type: 'module',
-        navigateFallback: 'index.html'
       }
     })
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-      'react': 'react',
-      'react-dom': 'react-dom'
+      '@': path.resolve(__dirname, './src')
     },
+    extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
   },
   server: {
     open: true,
@@ -87,65 +85,38 @@ export default defineConfig({
     }
   },
   build: {
+    target: 'es2015',
     outDir: 'dist',
-    sourcemap: true,
-    assetsDir: 'assets',
-    emptyOutDir: true,
+    sourcemap: mode === 'development',
+    minify: mode === 'production' ? 'terser' : false,
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          // Dynamic chunks for node_modules
-          if (id.includes('node_modules')) {
-            if (id.includes('xlsx')) {
-              return 'xlsx-vendor';
-            }
-            if (id.includes('lodash')) {
-              return 'lodash-vendor';
-            }
-            if (id.includes('@firebase')) {
-              if (id.includes('firestore')) {
-                return 'firebase-firestore';
-              }
-              if (id.includes('auth')) {
-                return 'firebase-auth';
-              }
-              if (id.includes('storage')) {
-                return 'firebase-storage';
-              }
-              return 'firebase-core';
-            }
-            if (id.includes('react')) {
-              return 'react-vendor';
-            }
-            if (id.includes('@radix-ui')) {
-              return 'ui-vendor';
-            }
-            return 'vendor';
-          }
-        },
-        assetFileNames: 'assets/[hash][extname]',
-        chunkFileNames: 'assets/[hash].js',
-        entryFileNames: 'assets/[hash].js'
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'firebase-core': ['@firebase/app'],
+          'firebase-auth': ['@firebase/auth'],
+          'firebase-firestore': ['@firebase/firestore'],
+          'firebase-storage': ['@firebase/storage'],
+          'utils': ['lodash', 'xlsx']
+        }
       }
     },
-    target: 'esnext',
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true
-      }
-    },
-    chunkSizeWarningLimit: 1000,
     commonjsOptions: {
-      transformMixedEsModules: true
+      transformMixedEsModules: true,
+      include: [/node_modules/]
     }
   },
   define: {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
-    'global': 'globalThis'
+    'process.env.NODE_ENV': JSON.stringify(mode),
+    __VITE_PWA_ENABLED__: true
   },
   optimizeDeps: {
-    include: ['react', 'react-dom']
+    include: ['react', 'react-dom', 'react-router-dom'],
+    esbuildOptions: {
+      target: 'es2020'
+    }
+  },
+  esbuild: {
+    logOverride: { 'this-is-undefined-in-esm': 'silent' }
   }
-});
+}));

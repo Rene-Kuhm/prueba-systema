@@ -1,38 +1,27 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { createRoot } from 'react-dom/client';
 import App from './App';
-import './styles/globals.css';
+import './index.css';
+import { registerSW } from 'virtual:pwa-register';
 
-const registerServiceWorker = async () => {
-  if ('serviceWorker' in navigator) {
-    try {
-      const registration = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/',
-        type: 'module'
-      });
-      console.log('SW registered:', registration);
-    } catch (error) {
-      console.error('SW registration failed:', error);
+// Register service worker
+if ('serviceWorker' in navigator) {
+  registerSW({
+    immediate: true,
+    onNeedRefresh() {
+      if (confirm('New content available. Reload?')) {
+        window.location.reload();
+      }
     }
-  }
-};
-
-if (import.meta.env.PROD) {
-  registerServiceWorker();
+  });
 }
 
-const rootElement = document.getElementById('root');
+const container = document.getElementById('root');
+if (!container) throw new Error('Root element not found');
 
-if (!rootElement) {
-  throw new Error('Failed to find the root element');
-}
-
-try {
-  ReactDOM.createRoot(rootElement).render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>
-  );
-} catch (error) {
-  console.error('Error rendering the application:', error);
-}
+const root = createRoot(container);
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);

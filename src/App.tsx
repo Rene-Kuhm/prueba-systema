@@ -3,7 +3,6 @@ import {
   BrowserRouter as Router,
   Route,
   Routes,
-  useSearchParams,
   Navigate,
 } from 'react-router-dom'
 import { getToken, onMessage } from 'firebase/messaging'
@@ -19,8 +18,6 @@ import 'react-toastify/dist/ReactToastify.css'
 const Login = lazy(() => import('@/pages/Login'))
 const Signup = lazy(() => import('@/pages/Signup'))
 const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'))
-const ResetPassword = lazy(() => import('@/pages/ResetPassword'))
-const Dashboard = lazy(() => import('@/pages/Dashboard'))
 const AdminRoutes = lazy(() => import('@/routes/AdminRoutes'))
 const TechnicianRoutes = lazy(() => import('@/routes/TechnicianRoutes'))
 
@@ -35,18 +32,6 @@ const LoadingSpinner = () => (
     <div className='animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500'></div>
   </div>
 )
-
-const AuthAction: React.FC = () => {
-  const [searchParams] = useSearchParams()
-  const mode = searchParams.get('mode')
-
-  switch (mode) {
-    case 'resetPassword':
-      return <ResetPassword />
-    default:
-      return <Navigate to='/' replace />
-  }
-}
 
 const NotFound: React.FC = () => (
   <div className='min-h-screen flex items-center justify-center'>
@@ -71,7 +56,6 @@ const NotificationButton: React.FC<NotificationButtonProps> = React.memo(
 
 const AppContent: React.FC = () => {
   const { isLoading, currentUser } = useAuth()
-  const serviceWorkerRegistered = useRef(false)
   const authLogged = useRef(false)
 
   const registerSW = async () => {

@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
-    "module": "ES2022",
-    "target": "ES2022",
+    "module": "ESNext",
+    "target": "ES2020",
     "useDefineForClassFields": true,
-    "lib": ["DOM", "DOM.Iterable", "ESNext", "WebWorker"],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "allowJs": false,
     "skipLibCheck": true,
-    "esModuleInterop": false,
+    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
@@ -17,10 +17,19 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["src/*"]
     },
-    "types": ["vite/client", "node"]
+    "types": [
+      "vite/client",
+      "vite-plugin-pwa/client",
+      "node"
+    ],
+    "allowImportingTsExtensions": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"],
+  "exclude": ["node_modules", "dist", "public"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
