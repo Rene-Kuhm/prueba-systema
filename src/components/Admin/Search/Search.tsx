@@ -37,13 +37,13 @@ export const AdminSearch: React.FC<AdminSearchProps> = ({
     setActiveSection: setActiveSectionProp
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
-    const [results, setResults] = useState<SearchResult[]>([]);
+    const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSearch = useCallback(async (term: string) => {
         if (!term || term.length < 2) {
-            setResults([]);
+            setSearchResults([]);
             return;
         }
 
@@ -108,7 +108,7 @@ export const AdminSearch: React.FC<AdminSearchProps> = ({
                 });
             });
 
-            setResults(searchResults);
+            setSearchResults(searchResults);
         } catch (error) {
             console.error('Error searching:', error);
         } finally {
@@ -128,7 +128,7 @@ export const AdminSearch: React.FC<AdminSearchProps> = ({
         onResultClick(result);
         setActiveSectionProp(result.section);
         setSearchTerm('');
-        setResults([]);
+        setSearchResults([]);
         setIsSearchOpen(false);
     };
 
@@ -158,7 +158,7 @@ export const AdminSearch: React.FC<AdminSearchProps> = ({
                     <button 
                         onClick={() => {
                             setSearchTerm('');
-                            setResults([]);
+                            setSearchResults([]);
                         }}
                         className="absolute right-3 top-1/2 -translate-y-1/2 hover:bg-secondary rounded-full p-1"
                     >
@@ -211,9 +211,9 @@ export const AdminSearch: React.FC<AdminSearchProps> = ({
                 </div>
             )}
 
-            {!isLoading && results.length > 0 && searchTerm && (
+            {!isLoading && searchResults.length > 0 && searchTerm && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-background border rounded-md shadow-lg max-h-[60vh] overflow-y-auto z-50">
-                    {results.map((result) => (
+                    {searchResults.map((result) => (
                         <button
                             key={`${result.type}-${result.id}`}
                             className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary transition-colors"
@@ -237,7 +237,7 @@ export const AdminSearch: React.FC<AdminSearchProps> = ({
                 </div>
             )}
 
-            {!isLoading && searchTerm && results.length === 0 && (
+            {!isLoading && searchTerm && searchResults.length === 0 && (
                 <div className="absolute top-full left-0 right-0 mt-1 p-4 bg-background border rounded-md shadow-lg text-center text-muted-foreground z-50">
                     No se encontraron resultados para "{searchTerm}"
                 </div>
