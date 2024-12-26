@@ -16,21 +16,47 @@ export default defineConfig({
         main: path.resolve(__dirname, 'index.html'),
       },
       output: {
-        manualChunks: {
-          // React core
-          'vendor-react': ['react', 'react-dom'],
-          
-          // Firebase - modificado para evitar el error de webchannel-wrapper
-          'vendor-firebase': ['firebase/app', 'firebase/firestore', 'firebase/auth'],
-          
-          // XLSX
-          'vendor-xlsx': ['xlsx'],
-
-          // Utilidades
-          'vendor-utils': [
-            'react-router-dom',
-            'react-hook-form'
-          ]
+        manualChunks: (id) => {
+          // Chunks dinámicos basados en patrones
+          if (id.includes('node_modules')) {
+            if (id.includes('react')) {
+              return 'vendor-react'
+            }
+            if (id.includes('firebase')) {
+              // Separar Firebase en módulos más pequeños
+              if (id.includes('firestore')) {
+                return 'firebase-firestore'
+              }
+              if (id.includes('auth')) {
+                return 'firebase-auth'
+              }
+              if (id.includes('storage')) {
+                return 'firebase-storage'
+              }
+              return 'firebase-core'
+            }
+            if (id.includes('xlsx')) {
+              return 'vendor-xlsx'
+            }
+            if (id.includes('@radix-ui')) {
+              return 'vendor-radix'
+            }
+            if (id.includes('tailwind-merge')) {
+              return 'vendor-tailwind'
+            }
+            // Otros vendors comunes
+            return 'vendor-deps'
+          }
+          // Separar páginas y componentes grandes
+          if (id.includes('/src/pages/')) {
+            return 'pages'
+          }
+          if (id.includes('/src/components/Admin/')) {
+            return 'admin-components'
+          }
+          if (id.includes('/src/components/')) {
+            return 'components'
+          }
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
@@ -45,12 +71,12 @@ export default defineConfig({
         }
       }
     },
-    target: 'es2018',
     minify: 'terser',
     terserOptions: {
       compress: {
         drop_console: process.env.NODE_ENV === 'production',
-        drop_debugger: process.env.NODE_ENV === 'production'
+        drop_debugger: process.env.NODE_ENV === 'production',
+        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.trace'],
       }
     }
   },
@@ -60,8 +86,8 @@ export default defineConfig({
       'react-dom',
       'firebase/app',
       'firebase/firestore',
-      'firebase/auth'
-    ],
-    exclude: ['@firebase/webchannel-wrapper'] // Excluimos este paquete problemático
+      'firebase/auth',
+      'firebase/storage'
+    ]
   }
 })

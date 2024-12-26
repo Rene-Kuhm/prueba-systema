@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, Suspense } from 'react'
 import PropTypes from 'prop-types'
 import {
   BrowserRouter as Router,
@@ -27,8 +27,16 @@ interface NotificationButtonProps {
   onClick: () => void;
 }
 
+
+
 // Componentes
 const LoadingSpinner = () => (
+  <div className='flex items-center justify-center min-h-screen'>
+    <div className='w-12 h-12 border-t-2 border-b-2 border-blue-500 rounded-full animate-spin'></div>
+  </div>
+)
+
+const LoadingFallback = () => (
   <div className='flex items-center justify-center min-h-screen'>
     <div className='w-12 h-12 border-t-2 border-b-2 border-blue-500 rounded-full animate-spin'></div>
   </div>
@@ -82,8 +90,8 @@ const ErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         <div className="text-center">
           <h1 className="text-xl text-red-500">Error al cargar el contenido</h1>
           <p className="mt-2 text-gray-600">{error?.message || 'Error desconocido'}</p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="px-4 py-2 mt-4 text-white bg-blue-500 rounded"
           >
             Recargar página
@@ -110,19 +118,19 @@ const AppContent: React.FC = () => {
       console.log('Service Worker disabled in development');
       return;
     }
-  
+
     try {
       if ('serviceWorker' in navigator) {
         // Unregister any existing service workers first
         const registrations = await navigator.serviceWorker.getRegistrations();
         await Promise.all(registrations.map(registration => registration.unregister()));
-  
+
         // Register new service worker
         const registration = await navigator.serviceWorker.register('/service-worker.js', {
           scope: '/',
           type: 'classic'
         });
-  
+
         // Ensure the service worker is activated
         if (registration.active) {
           console.log('Service Worker already active');
@@ -194,7 +202,7 @@ const AppContent: React.FC = () => {
         toast.error('Error al activar las notificaciones')
       }
     }, 500);
-    
+
     debouncedRequest();
   };
 
@@ -238,50 +246,53 @@ const AppContent: React.FC = () => {
             theme='light'
             limit={3}
           />
+          <Suspense fallback={<LoadingFallback />}>
+            <Routes>
+              {/* Ruta raíz siempre redirige a login */}
+              <Route path="/" element={<Navigate to="/login" replace />} />
 
-          <Routes>
-            {/* Ruta raíz siempre redirige a login */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
+              {/* Rutas públicas */}
+              <Route path="/login" element={
+                <UnauthorizedRoute>
+                  <Login />
+                </UnauthorizedRoute>
+              } />
+              <Route path="/signup" element={
+                <UnauthorizedRoute>
+                  <Signup />
+                </UnauthorizedRoute>
+              } />
+              <Route path="/forgot-password" element={
+                <UnauthorizedRoute>
+                  <ForgotPassword />
+                </UnauthorizedRoute>
+              } />
 
-            {/* Rutas públicas */}
-            <Route path="/login" element={
-              <UnauthorizedRoute>
-                <Login />
-              </UnauthorizedRoute>
-            } />
-            <Route path="/signup" element={
-              <UnauthorizedRoute>
-                <Signup />
-              </UnauthorizedRoute>
-            } />
-            <Route path="/forgot-password" element={
-              <UnauthorizedRoute>
-                <ForgotPassword />
-              </UnauthorizedRoute>
-            } />
+              {/* Rutas protegidas */}
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Navigate to={currentUser?.role ? `/${currentUser.role}` : '/login'} replace />
+                </ProtectedRoute>
+              } />
 
-            {/* Rutas protegidas */}
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Navigate to={currentUser?.role ? `/${currentUser.role}` : '/login'} replace />
-              </ProtectedRoute>
-            } />
-
-            {/* Rutas específicas por rol */}
-            <Route path="/admin/*" element={
-              <ProtectedRoute role="admin">
-                <AdminRoutes />
-              </ProtectedRoute>
-            } />
-            <Route path="/technician/*" element={
+              {/* Rutas específicas por rol */}
+              <Route path="/admin/*" element={
+                <ProtectedRoute role="admin">
+                  <AdminRoutes />
+                </ProtectedRoute>
+              } />
+             <Route path="/technician/*" element={
               <ProtectedRoute role="technician">
-                <TechnicianRoutes />
+                <Suspense fallback={<LoadingFallback />}>
+                  <TechnicianRoutes />
+                </Suspense>
               </ProtectedRoute>
             } />
 
-            {/* Ruta 404 */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              {/* Ruta 404 */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
 
           {/* Modificar la condición del botón de notificaciones */}
           {Notification.permission !== 'granted' && currentUser && !isLoading && (
