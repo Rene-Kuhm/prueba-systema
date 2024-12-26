@@ -14,6 +14,8 @@ import { messaging } from '@/config/firebase'
 import { ToastContainer, toast } from 'react-toastify'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import 'react-toastify/dist/ReactToastify.css'
+import Login from '@/pages/Login'
+import Signup from '@/pages/Signup'
 import { lazyLoad } from '@/utils/lazyLoad';
 
 // Modificar los lazy imports con error handling
@@ -21,16 +23,6 @@ const DefaultErrorComponent = () => (
   <div className="p-4 text-center">
     <h2 className="text-xl text-red-500">Error al cargar el componente</h2>
   </div>
-);
-
-const Login = lazyLoad<Record<string, never>>(
-  () => import('@/pages/Login'),
-  DefaultErrorComponent
-);
-
-const Signup = lazyLoad<Record<string, never>>(
-  () => import('@/pages/Signup'),
-  DefaultErrorComponent
 );
 
 const ForgotPassword = lazyLoad<Record<string, never>>(
@@ -125,8 +117,6 @@ const ErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 // Agregar precarga de componentes
 const preloadComponents = () => {
   const routes = [
-    import('@/pages/Login'),
-    import('@/pages/Signup'),
     import('@/pages/ForgotPassword')
   ];
   
@@ -284,7 +274,7 @@ const AppContent: React.FC = () => {
                 {/* Ruta raíz siempre redirige a login */}
                 <Route path="/" element={<Navigate to="/login" replace />} />
 
-                {/* Rutas públicas */}
+                {/* Rutas públicas - now without Suspense wrapper */}
                 <Route path="/login" element={
                   <UnauthorizedRoute>
                     <Login />
