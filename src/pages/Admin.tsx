@@ -8,8 +8,6 @@ import { Header } from '@/components/Admin/Header'
 import {
   collection,
   getDocs,
-  deleteDoc,
-  doc,
   onSnapshot,
 } from 'firebase/firestore'
 import { db } from '@/config/firebase'
@@ -19,7 +17,7 @@ import ClaimForm from '@/components/Admin/ClaimForm/ClaimForm'
 import ClaimTable from '@/components/Admin/ClaimTable/ClaimTable'
 import ClaimDetailsModal from '@/components/Admin/ClaimDetailsModal'
 import { Notification } from '@/lib/types/notifications'
-import { Claim, AdminState } from '@/lib/types/admin'
+import { Claim } from '@/lib/types/admin'
 import { useAdmin } from '@/hooks/useAdmin'
 
 interface ExtendedClaim extends Claim {
@@ -60,7 +58,6 @@ const Admin = () => {
     selectedClaim,
     showModal,
     handleSignOut,
-    approveUser,
     addNewClaim,
     deleteClaim,
     setNewClaim,
@@ -290,10 +287,10 @@ const Admin = () => {
       onClearAllNotifications={handleClearAllNotifications}
     >
       <Header
-        onSignOut={handleSignOut}
+        title="Panel de Administración"
+        description="Gestión de reclamos y técnicos"
         onExport={handleExport}
-        title='Panel de Administración'
-        description='Gestión de Reclamos'
+        onSignOut={handleSignOut}
       />
       <main className='main-content'>{renderContent()}</main>
       <ClaimDetailsModal

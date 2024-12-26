@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { AdminState, Claim, PendingUser, Technician } from '../lib/types/admin';
-import { adminService } from '../config/services/adminService';
+import { Claim, PendingUser, Technician } from '../lib/types/admin';
+import { AdminService } from '../config/services/adminService';
 
 export interface UseAdminReturn {
     loading: boolean;
@@ -22,6 +22,7 @@ export interface UseAdminReturn {
 }
 
 export const useAdmin = (): UseAdminReturn => {
+    const adminService = new AdminService();
     const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
     const [claims, setClaims] = useState<Claim[]>([]);
     const [technicians, setTechnicians] = useState<Technician[]>([]);

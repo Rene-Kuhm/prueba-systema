@@ -1,14 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
-import { ClaimFormProps, Claim, ClaimFormTechnician, NewClaim } from '@/lib/types/admin';
-import { collection, getDocs, addDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { ClaimFormProps, ClaimFormTechnician, NewClaim } from '@/lib/types/admin';
+import { collection, getDocs, addDoc, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 import { toast } from 'react-toastify';
 import { sendWhatsAppMessage } from '@/config/services/whatsappService';
 import { useCurrentTime } from '@/hooks/useCurrentTime';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import config from '../../../../config';
 
 // Importaciones de componentes UI
 import {
@@ -19,13 +16,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Form,
   FormControl,
   FormDescription,
-  FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form";
 import {
   Select,
@@ -37,19 +31,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, AlertCircle, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// WhatsApp Service Interface
-interface WhatsAppMessage {
-  to: string;
-  body: string;
+// Modify hook return type to include isUsingLocalTime
+interface CurrentTimeHook {
+  currentTime: Date;
+  formattedTime: string;
+  isUsingLocalTime: boolean;
 }
 
 const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
-  const { currentTime, formattedTime, isUsingLocalTime } = useCurrentTime();
+  const { currentTime, formattedTime, isUsingLocalTime } = useCurrentTime() as CurrentTimeHook;
   const [technicians, setTechnicians] = useState<ClaimFormTechnician[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -236,7 +230,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         notificationSent: false
       };
 
-      const claimId = await createClaim(updatedClaim);
+      await createClaim(updatedClaim);
       await onSubmit();
       setAlertMessage('Reclamo registrado exitosamente');
       resetForm();
@@ -257,8 +251,8 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -266,7 +260,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
   if (error) {
     return (
       <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
+        <AlertCircle className="w-4 h-4" />
         <AlertTitle>Error</AlertTitle>
         <AlertDescription>{error}</AlertDescription>
       </Alert>
@@ -274,7 +268,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
   }
 
   return (
-    <Card className="bg-slate-700 rounded-xl mb-8">
+    <Card className="mb-8 bg-slate-700 rounded-xl">
       <CardHeader>
         <CardTitle className='text-green-400'>Cargar Nuevo Reclamo</CardTitle>
         <CardDescription className='text-white'>
@@ -288,9 +282,9 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
             className="mb-6"
           >
             {alertMessage.includes('éxito') ? (
-              <CheckCircle className="h-4 w-4" />
+              <CheckCircle className="w-4 h-4" />
             ) : (
-              <AlertCircle className="h-4 w-4" />
+              <AlertCircle className="w-4 h-4" />
             )}
             <AlertTitle>
               {alertMessage.includes('éxito') ? 'Éxito' : 'Error'}
@@ -300,9 +294,9 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
         )}
         <FormProvider {...methods}>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FormItem>
-                <FormLabel className="required-field text-green-400">Teléfono</FormLabel>
+                <FormLabel className="text-green-400 required-field">Teléfono</FormLabel>
                 <FormControl>
                   <Input
                     className='bg-slate-400'
@@ -315,7 +309,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
               </FormItem>
 
               <FormItem>
-                <FormLabel className="required-field text-green-400">Nombre</FormLabel>
+                <FormLabel className="text-green-400 required-field">Nombre</FormLabel>
                 <FormControl>
                   <Input
                     className='bg-slate-400'
@@ -328,7 +322,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
               </FormItem>
 
               <FormItem>
-                <FormLabel className="required-field text-green-400">Dirección</FormLabel>
+                <FormLabel className="text-green-400 required-field">Dirección</FormLabel>
                 <FormControl>
                   <Input
                     className='bg-slate-400'
@@ -341,7 +335,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
               </FormItem>
 
               <FormItem>
-                <FormLabel className="required-field text-green-400">Técnico Asignado</FormLabel>
+                <FormLabel className="text-green-400 required-field">Técnico Asignado</FormLabel>
                 <Select
                   value={selectedTechnicianId}
                   onValueChange={(value) => {
@@ -350,7 +344,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
                   }}
                 >
                   <FormControl>
-                    <SelectTrigger className='bg-slate-400 text-black'>
+                    <SelectTrigger className='text-black bg-slate-400'>
                       <SelectValue placeholder="Seleccionar Técnico" />
                     </SelectTrigger>
                   </FormControl>
@@ -369,7 +363,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
             </div>
 
             <FormItem>
-              <FormLabel className="required-field text-green-400">Motivo del Reclamo</FormLabel>
+              <FormLabel className="text-green-400 required-field">Motivo del Reclamo</FormLabel>
               <FormControl>
                 <Textarea 
                   placeholder="Descripción detallada del reclamo"
@@ -381,9 +375,9 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
               </FormControl>
             </FormItem>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FormItem>
-                <FormLabel className="required-field text-green-400">Recibido por</FormLabel>
+                <FormLabel className="text-green-400 required-field">Recibido por</FormLabel>
                 <FormControl>
                   <Input
                     className='bg-slate-400'
@@ -419,7 +413,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({ claim, onSubmit, onChange }) => {
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Guardando...
                   </>
                 ) : (

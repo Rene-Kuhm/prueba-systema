@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, LayoutDashboard, Users, FileText, X, LogOut, Settings } from 'lucide-react';
+import { Menu, LayoutDashboard, Users, FileText, LogOut, Settings } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
@@ -16,7 +16,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 
 interface SidebarProps {
@@ -58,7 +57,7 @@ const SidebarItem = ({
                 active 
                     ? "bg-primary text-primary-foreground shadow-lg" 
                     : "hover:bg-secondary text-muted-foreground hover:text-foreground"
-            )}
+            )} 
         >
             <span className="flex items-center gap-3">
                 {icon}

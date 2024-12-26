@@ -2,8 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { auth, db } from '@/config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import type { UserProfile } from '@/stores/authStore';
-import { toast } from 'react-toastify';
 
 export const useAuthInitialization = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -20,7 +18,7 @@ export const useAuthInitialization = () => {
 
       try {
         if (user && !authCheckCompleted.current) {
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          await getDoc(doc(db, 'users', user.uid));
           if (process.env.NODE_ENV === 'development') {
             console.log('Auth state changed:', user.email);
           }

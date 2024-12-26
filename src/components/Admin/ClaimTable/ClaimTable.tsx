@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, Trash2, CheckCircle, Clock, AlertCircle, Edit2, MoreHorizontal, Phone, MapPin, User, Archive, RefreshCw } from 'lucide-react';
-import { format, parseISO, isValid } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { Claim, NewClaim } from '@/lib/types/admin';
+import type { NewClaim } from '@/lib/types/admin';
 import { toast } from 'react-toastify';
-import { collection, doc, updateDoc, addDoc, deleteDoc, getDocs, onSnapshot } from 'firebase/firestore';
+import { collection, doc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/config/firebase';
-import { formatDateTime, getCurrentFormattedDateTime, isValidDate } from '@/lib/utils/date';
+import { getCurrentFormattedDateTime } from '@/lib/utils/date';
 import { useCurrentTime } from '@/hooks/useCurrentTime';
 import {
     Table,
@@ -49,7 +49,7 @@ interface ClaimsTableProps {
     claims?: ExtendedClaim[];
     onShowDetails: (claim: ExtendedClaim) => void;
     onEdit?: (claim: ExtendedClaim) => void;
-    onDelete: (id: string) => Promise<void>;
+    onDelete?: (id: string) => Promise<void>; // Made optional
     onArchive?: (id: string) => Promise<void>;
     onRestore?: (id: string) => Promise<void>;
 }
@@ -220,7 +220,7 @@ export function ClaimsTable({
     claims: initialClaims = [],
     onShowDetails,
     onEdit,
-    onDelete,
+    onDelete: externalOnDelete, // Renamed to avoid conflict
     onArchive: externalOnArchive,
     onRestore: externalOnRestore
 }: ClaimsTableProps) {
@@ -229,7 +229,9 @@ export function ClaimsTable({
     const [claimToDelete, setClaimToDelete] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
-    const { formattedTime, isUsingLocalTime, error: timeError } = useCurrentTime();
+    const { formattedTime } = useCurrentTime();
+    const isUsingLocalTime = true; // Or implement your own logic
+    const timeError = null; // Or implement your own error handling
 
     useEffect(() => {
         const unsubscribe = onSnapshot(collection(db, 'claims'), (snapshot) => {
@@ -313,6 +315,10 @@ export function ClaimsTable({
     };
 
     const handleDelete = async (claimId: string) => {
+        if (!externalOnDelete) {
+            toast.warning('Delete operation not supported');
+            return;
+        }
         const claim = claims.find(c => c.id === claimId);
         if (!claim?.isArchived) {
             toast.warning('Debe archivar el reclamo antes de eliminarlo');
@@ -323,10 +329,10 @@ export function ClaimsTable({
     };
 
     const handleDeleteConfirm = async () => {
-        if (claimToDelete) {
+        if (claimToDelete && externalOnDelete) {
             try {
                 setIsDeleting(true);
-                await deleteDoc(doc(db, 'claims', claimToDelete));
+                await externalOnDelete(claimToDelete);
                 setClaims(prevClaims => prevClaims.filter(claim => claim.id !== claimToDelete));
                 setShowDeleteDialog(false);
                 setClaimToDelete(null);

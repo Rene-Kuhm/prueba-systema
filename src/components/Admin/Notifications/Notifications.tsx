@@ -1,5 +1,6 @@
+/* eslint-disable react/prop-types */
 import React from 'react';
-import { Bell, Check, User, FileText, X, Loader2 } from 'lucide-react';
+import { Bell, Check, User, FileText } from 'lucide-react';
 import type { Notification } from '@/lib/types/notifications';
 import {
   Popover,
@@ -24,6 +25,10 @@ interface NotificationsProps {
     onMarkAsRead: (id: string) => void;
     onClearAll: () => void;
     onNotificationClick: (notification: Notification) => void;
+}
+
+interface NotificationItemProps {
+    notification: Notification;
 }
 
 export const Notifications: React.FC<NotificationsProps> = ({
@@ -53,7 +58,7 @@ export const Notifications: React.FC<NotificationsProps> = ({
         }
     };
 
-    const NotificationItem = ({ notification }: { notification: Notification }) => (
+    const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => (
         <button
             className={cn(
                 "w-full px-4 py-3 text-left transition-colors",

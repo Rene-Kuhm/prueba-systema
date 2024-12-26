@@ -1,10 +1,28 @@
 // src/lib/types/notifications.ts
 export interface Notification {
     id: string;
-    type: 'registration' | 'claim_resolved' | 'claim_updated';
+    type: string;
     title: string;
     message: string;
     timestamp: Date;
     read: boolean;
-    data?: any;
+    data?: {
+        registration?: {
+            userId: string;
+            email: string;
+        };
+        claim_resolved?: {
+            claimId: string;
+            resolution: string;
+        };
+        claim_updated?: {
+            claimId: string;
+            status: string;
+            changes: Record<string, unknown>;
+        };
+    }[keyof {
+        registration: unknown;
+        claim_resolved: unknown;
+        claim_updated: unknown;
+    }];
 }

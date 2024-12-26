@@ -1,3 +1,5 @@
+import PropTypes from 'prop-types';
+
 // src/components/Admin/Header.tsx (Ejemplo)
 export interface HeaderProps {
     onSignOut: () => Promise<void>;
@@ -13,5 +15,10 @@ export const Header: React.FC<HeaderProps> = ({ onSignOut, onExport }) => {
         </div>
     );
 }
+
+Header.propTypes = {
+    onSignOut: PropTypes.func.isRequired,
+    onExport: PropTypes.func.isRequired
+};
 
 export default Header;

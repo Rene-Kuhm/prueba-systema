@@ -1,12 +1,14 @@
 import { type Claim } from '@/lib/types/technician';
 import { ClaimItem } from './ClaimItem';
+import type { FC } from 'react';
+
 interface ClaimsListProps {
     claims: Claim[];
     loading: boolean;
     error: string | null;
 }
 
-export const ClaimsList: React.FC<ClaimsListProps> = ({ claims, loading, error }) => (
+export const ClaimsList: FC<ClaimsListProps> = ({ claims, loading, error }) => (
     <div className="claims-container">
         <h2 className="claims-title">Reclamos Asignados</h2>
         {loading ? (

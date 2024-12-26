@@ -1,4 +1,5 @@
 import React, { Suspense, useEffect, useRef, lazy } from 'react'
+import PropTypes from 'prop-types'
 import {
   BrowserRouter as Router,
   Route,
@@ -28,15 +29,15 @@ interface NotificationButtonProps {
 
 // Componentes
 const LoadingSpinner = () => (
-  <div className='min-h-screen flex items-center justify-center'>
-    <div className='animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500'></div>
+  <div className='flex items-center justify-center min-h-screen'>
+    <div className='w-12 h-12 border-t-2 border-b-2 border-blue-500 rounded-full animate-spin'></div>
   </div>
 )
 
 const NotFound: React.FC = () => (
-  <div className='min-h-screen flex items-center justify-center'>
+  <div className='flex items-center justify-center min-h-screen'>
     <div className='text-center'>
-      <h1 className='text-4xl font-bold text-red-500 mb-4'>404</h1>
+      <h1 className='mb-4 text-4xl font-bold text-red-500'>404</h1>
       <p className='text-xl text-gray-600'>Página no encontrada</p>
     </div>
   </div>
@@ -46,13 +47,18 @@ const NotificationButton: React.FC<NotificationButtonProps> = React.memo(
   ({ onClick }) => (
     <button
       onClick={onClick}
-      className='fixed bottom-4 right-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-colors'
+      className='fixed z-50 px-4 py-2 text-white transition-colors bg-blue-500 rounded-lg shadow-lg bottom-4 right-4 hover:bg-blue-600'
       type='button'
     >
       Activar Notificaciones
     </button>
   ),
 )
+
+NotificationButton.displayName = 'NotificationButton'
+NotificationButton.propTypes = {
+  onClick: PropTypes.func.isRequired,
+}
 
 const AppContent: React.FC = () => {
   const { isLoading, currentUser } = useAuth()

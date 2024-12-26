@@ -4,7 +4,7 @@ export interface PendingUser {
     fullName: string;
     displayName: string;
     role: string;
-    createdAt: any;
+    createdAt: string;  // Changed from 'any' to 'string'
 }
 
 export interface Claim {

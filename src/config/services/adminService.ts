@@ -4,7 +4,7 @@ import { collection, query, where, getDocs, doc, updateDoc, addDoc, deleteDoc } 
 import type { PendingUser, Claim, Technician } from '../../lib/types/admin'
 import * as XLSX from 'xlsx'
 
-class AdminService {
+export class AdminService {
     async fetchPendingUsers(): Promise<PendingUser[]> {
         const usersRef = collection(db, 'users')
         const q = query(usersRef, where('approved', '==', false))
@@ -47,16 +47,19 @@ class AdminService {
     }
 
     async approveUser(userId: string): Promise<void> {
+        if (!userId) throw new Error('User ID is required');
         const userRef = doc(db, 'users', userId)
         await updateDoc(userRef, { approved: true })
     }
 
     async addClaim(claim: Omit<Claim, 'id'>): Promise<void> {
+        if (!claim) throw new Error('Claim data is required');
         const claimsRef = collection(db, 'claims')
         await addDoc(claimsRef, claim)
     }
 
     async deleteClaim(claimId: string): Promise<void> {
+        if (!claimId) throw new Error('Claim ID is required');
         const claimRef = doc(db, 'claims', claimId)
         await deleteDoc(claimRef)
     }
@@ -80,33 +83,3 @@ class AdminService {
         XLSX.writeFile(workbook, 'reclamos.xlsx')
     }
 }
-
-
-export const adminService = {
-    fetchPendingUsers: async (): Promise<PendingUser[]> => {
-        // Implement API call
-        return [];
-    },
-    
-    fetchClaims: async (): Promise<Claim[]> => {
-        // Implement API call
-        return [];
-    },
-    
-    fetchTechnicians: async (): Promise<Technician[]> => {
-        // Implement API call
-        return [];
-    },
-    
-    approveUser: async (userId: string): Promise<void> => {
-        // Implement API call
-    },
-    
-    addClaim: async (claim: Omit<Claim, "id">): Promise<void> => {
-        // Implement API call
-    },
-    
-    deleteClaim: async (claimId: string): Promise<void> => {
-        // Implement API call
-    }
-};

@@ -1,15 +1,20 @@
-const sharp = require('sharp');
-const fs = require('fs');
-const path = require('path');
+import sharp from 'sharp';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const inputPath = join(__dirname, 'source-icon.png');
 const sizes = [192, 512];
-const source = path.join(__dirname, 'icon.png'); // Your source icon
 
 async function generateIcons() {
+  const outputDir = join(__dirname, '../');
+  
   for (const size of sizes) {
-    await sharp(source)
+    await sharp(inputPath)
       .resize(size, size)
-      .toFile(path.join(__dirname, `icon-${size}x${size}.png`));
+      .toFile(join(outputDir, `icon-${size}x${size}.png`));
   }
 }
 

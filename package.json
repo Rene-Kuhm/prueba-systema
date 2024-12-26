@@ -9,9 +9,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "generate-icons": "node scripts/generate-icons.js",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings=0",
     "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix",
-    "unused:fix": "eslint \"src/**/*.{ts,tsx}\" --fix --rule \"@typescript-eslint/no-unused-vars:off\" --rule \"unused-imports/no-unused-imports:error\"",
-    "fix:all": "npm run unused:fix && npm run lint:fix"
+    "fix:all": "npm run lint:fix"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
@@ -87,6 +87,7 @@
     "ts-prune": "^0.10.3",
     "typescript": "^5.7.2",
     "vite": "^6.0.6",
+    "vite-plugin-checker": "^0.8.0",
     "vite-plugin-pwa": "^0.21.1",
     "workbox-window": "^7.3.0"
   }

@@ -16,7 +16,7 @@ interface WhatsAppMessage {
       }
   
       // Limpia el número de teléfono
-      const cleanPhone = to.replace(/[\s+\-]/g, '');
+      const cleanPhone = to.replace(/[\s+-]/g, '');
       // Asegúrate que tenga el código de país
       const formattedPhone = cleanPhone.startsWith('54') ? cleanPhone : `54${cleanPhone}`;
       

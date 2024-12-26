@@ -4,8 +4,6 @@ import { es } from 'date-fns/locale';
 
 export const useCurrentTime = () => {
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
-  const [isUsingLocalTime, setIsUsingLocalTime] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Update time every second
@@ -20,9 +18,7 @@ export const useCurrentTime = () => {
 
   return {
     currentTime,
-    formattedTime,
-    isUsingLocalTime,
-    error
+    formattedTime
   };
 };
 

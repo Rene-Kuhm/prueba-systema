@@ -31,7 +31,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Trash2, UserPlus, Upload, AlertCircle } from "lucide-react";
+import { Loader2, Trash2, UserPlus, AlertCircle } from "lucide-react";
 import { toast } from "react-toastify";
 
 interface User {
@@ -55,13 +55,19 @@ const initialUserData: UserData = {
   avatar: null,
 };
 
+interface UpdateData {
+  name?: string;
+  email?: string;
+  password?: string;
+  avatar?: File | null;
+}
+
 const UserCard: React.FC<{
   user: User;
-  role: 'admin' | 'technician';
-  onUpdate: (data: any) => void;
+  onUpdate: (data: UpdateData) => void;
   onDelete: () => void;
   isDeleting: boolean;
-}> = ({ user, role, onUpdate, onDelete, isDeleting }) => (
+}> = ({ user, onUpdate, onDelete, isDeleting }) => (
   <Card className="mb-4 bg-slate-600 rounded-xl">
     <CardContent className="pt-6">
       <div className="flex items-start space-x-4">
@@ -291,11 +297,11 @@ export const Settings: React.FC = () => {
 
   const handleUpdateUser = async (
     id: string,
-    newData: { name?: string; email?: string; password?: string; avatar?: File | null },
+    newData: UpdateData,
     role: 'admin' | 'technician'
   ) => {
     try {
-      const updates: any = {};
+      const updates: Record<string, string> = {};
 
       if (newData.name) updates.fullName = newData.name;
       if (newData.email) updates.email = newData.email;
@@ -397,7 +403,6 @@ export const Settings: React.FC = () => {
                   <UserCard
                     key={admin.id}
                     user={admin}
-                    role="admin"
                     onUpdate={(data) => handleUpdateUser(admin.id, data, 'admin')}
                     onDelete={() => handleDeleteUser(admin.id, 'admin')}
                     isDeleting={deleting === admin.id}
@@ -418,7 +423,6 @@ export const Settings: React.FC = () => {
                   <UserCard
                     key={technician.id}
                     user={technician}
-                    role="technician"
                     onUpdate={(data) => handleUpdateUser(technician.id, data, 'technician')}
                     onDelete={() => handleDeleteUser(technician.id, 'technician')}
                     isDeleting={deleting === technician.id}

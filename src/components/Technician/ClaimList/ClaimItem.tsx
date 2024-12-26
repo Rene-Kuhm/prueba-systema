@@ -1,4 +1,6 @@
+/* eslint-disable react/prop-types */
 import { type Claim } from '@/lib/types/technician'
+
 interface ClaimItemProps {
     claim: Claim;
 }
@@ -23,3 +25,5 @@ export const ClaimItem: React.FC<ClaimItemProps> = ({ claim }) => (
         </div>
     </li>
 );
+
+export default ClaimItem;

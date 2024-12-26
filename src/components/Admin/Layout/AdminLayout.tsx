@@ -9,8 +9,8 @@ import {
     X
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { AdminSearch } from '@/components/Admin/Search/Search';
-import type { PendingUser, Claim, UpdateProfileData, SearchResult } from '@/lib/types/admin';
+import { AdminSearch, type SearchResult } from '@/components/Admin/Search/Search'; // Update import
+import type { PendingUser, Claim, UpdateProfileData } from '@/lib/types/admin';
 import { Notifications } from '@/components/Admin/Notifications/Notifications';
 import { Notification } from '@/lib/types/notifications';
 import AdminProfile from '@/components/Admin/Profile/AdminProfile';
@@ -69,16 +69,6 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             console.log('Updating profile:', data);
         } catch (error) {
             console.error('Error updating profile:', error);
-        }
-    };
-
-    const scrollToElement = (elementId: string) => {
-        const element = document.getElementById(elementId);
-        if (element) {
-            element.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'start' 
-            });
         }
     };
 
@@ -191,7 +181,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                                         technicians={technicians}
                                         onResultClick={(result: SearchResult) => {
                                             if (result.type === 'claim' && onSelectClaim) {
-                                                onSelectClaim(result.data as Claim);
+                                                const claimData = result.data as Claim;
+                                                onSelectClaim(claimData);
                                             }
                                             handleSectionChange(result.section);
                                         }}

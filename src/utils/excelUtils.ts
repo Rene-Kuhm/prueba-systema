@@ -3,7 +3,7 @@ export const loadXLSX = async () => {
   return xlsx;
 };
 
-export const exportToExcel = async (data: any[], filename: string) => {
+export const exportToExcel = async <T extends Record<string, unknown>>(data: T[], filename: string) => {
   const xlsx = await loadXLSX();
   const ws = xlsx.utils.json_to_sheet(data);
   const wb = xlsx.utils.book_new();

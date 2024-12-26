@@ -1,6 +1,7 @@
 // componentes para los campos de entrada de formulario
 
 import { Link } from "react-router-dom";
+import PropTypes from 'prop-types';
 
 interface FormInputProps {
     id: string;
@@ -31,6 +32,14 @@ export const FormInput: React.FC<FormInputProps> = ({
     </div>
 );
 
+FormInput.propTypes = {
+    id: PropTypes.string.isRequired,
+    type: PropTypes.string.isRequired,
+    value: PropTypes.string.isRequired,
+    onChange: PropTypes.func.isRequired,
+    label: PropTypes.string.isRequired,
+};
+
 interface RoleSelectProps {
     value: string;
     onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
@@ -53,6 +62,11 @@ export const RoleSelect: React.FC<RoleSelectProps> = ({ value, onChange }) => (
     </div>
 );
 
+RoleSelect.propTypes = {
+    value: PropTypes.string.isRequired,
+    onChange: PropTypes.func.isRequired,
+};
+
 interface SubmitButtonProps {
     isSubmitting: boolean;
 }
@@ -66,6 +80,10 @@ export const SubmitButton: React.FC<SubmitButtonProps> = ({ isSubmitting }) => (
         {isSubmitting ? 'Registrando...' : 'Registrarse'}
     </button>
 );
+
+SubmitButton.propTypes = {
+    isSubmitting: PropTypes.bool.isRequired,
+};
 
 // src/components/Signup/SuccessMessage.tsx
 interface SuccessMessageProps {
@@ -89,3 +107,7 @@ export const SuccessMessage: React.FC<SuccessMessageProps> = () => (
         </Link>
     </div>
 );
+
+SuccessMessage.propTypes = {
+    onBackToLogin: PropTypes.func.isRequired,
+};

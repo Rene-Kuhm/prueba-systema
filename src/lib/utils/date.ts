@@ -41,7 +41,7 @@ export const getCurrentFormattedDateTime = (): string => {
   return new Date().toISOString();
 };
 
-export const isValidDate = (date: any): boolean => {
+export const isValidDate = (date: string | Date | undefined | null): boolean => {
   if (!date) return false;
   try {
     const dateObj = typeof date === 'string' ? parseISO(date) : date;

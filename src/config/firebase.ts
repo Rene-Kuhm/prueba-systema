@@ -37,6 +37,18 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
+// Update type declaration for window object extension
+interface WindowWithFirebaseConfig extends Window {
+  FIREBASE_CONFIG?: {
+    apiKey: string;
+    authDomain: string;
+    projectId: string;
+    storageBucket: string;
+    messagingSenderId: string;
+    appId: string;
+  };
+}
+
 // Initialize Firebase only once
 const initializeFirebase = () => {
   if (!getApps().length) {
@@ -44,8 +56,8 @@ const initializeFirebase = () => {
     
     // Set Firebase config for service worker
     if (typeof window !== 'undefined') {
-      // Type assertion to avoid readonly properties error
-      (window as any).FIREBASE_CONFIG = {
+      // Use proper type assertion chain
+      ((window as unknown) as WindowWithFirebaseConfig).FIREBASE_CONFIG = {
         apiKey: firebaseConfig.apiKey,
         authDomain: firebaseConfig.authDomain,
         projectId: firebaseConfig.projectId,

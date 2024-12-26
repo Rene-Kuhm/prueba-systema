@@ -1,38 +1,38 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Search as SearchIcon, X, Users, FileText, Wrench } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { PendingUser, Claim, Technician } from '@/lib/types/admin';
 import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
 import { getApp } from 'firebase/app';
+import { PendingUser, Claim } from '@/lib/types/admin';
+
+interface Technician {
+    id: string;
+    name: string;
+    phone: string;
+}
+
+export interface SearchResult {
+    type: 'user' | 'claim' | 'technician';
+    data: PendingUser | Claim | { id: string; name: string };
+    section: string;
+    id: string;
+    title: string;
+    subtitle?: string;
+}
+
+export interface AdminSearchProps {
+    pendingUsers: PendingUser[];
+    claims: Claim[];
+    technicians: { id: string; name: string }[];
+    onResultClick: (result: SearchResult) => void;
+    setActiveSection: (section: string) => void;
+}
 
 // Obtener la instancia de Firebase existente
 const app = getApp();
 const db = getFirestore(app);
 
-interface AdminSearchProps {
-    pendingUsers: PendingUser[];
-    claims: Claim[];
-    technicians: { 
-        id: string; 
-        name: string; 
-    }[];
-    onResultClick: (result: SearchResult) => void;
-    setActiveSection: (section: string) => void;
-}
-
-export interface SearchResult {
-    id: string;
-    type: 'user' | 'claim' | 'technician';
-    title: string;
-    subtitle?: string;
-    section: 'users' | 'claims' | 'dashboard';
-    data: PendingUser | Claim | Technician;
-}
-
 export const AdminSearch: React.FC<AdminSearchProps> = ({
-    pendingUsers,
-    claims,
-    technicians,
     onResultClick,
     setActiveSection: setActiveSectionProp
 }) => {
@@ -61,12 +61,12 @@ export const AdminSearch: React.FC<AdminSearchProps> = ({
             usersSnapshot.forEach(doc => {
                 const userData = doc.data() as PendingUser;
                 searchResults.push({
-                    id: doc.id,
                     type: 'user',
-                    title: userData.fullName || userData.displayName || 'Usuario sin nombre',
-                    subtitle: userData.email,
+                    data: userData,
                     section: 'users',
-                    data: userData
+                    id: doc.id,
+                    title: userData.fullName || userData.displayName || 'Usuario sin nombre',
+                    subtitle: userData.email
                 });
             });
 
@@ -80,12 +80,12 @@ export const AdminSearch: React.FC<AdminSearchProps> = ({
             claimsSnapshot.forEach(doc => {
                 const claimData = doc.data() as Claim;
                 searchResults.push({
-                    id: doc.id,
                     type: 'claim',
-                    title: `${claimData.name || 'Sin nombre'} - ${claimData.phone || 'Sin teléfono'}`,
-                    subtitle: claimData.address || 'Sin dirección',
+                    data: claimData,
                     section: 'claims',
-                    data: claimData
+                    id: doc.id,
+                    title: `${claimData.name || 'Sin nombre'} - ${claimData.phone || 'Sin teléfono'}`,
+                    subtitle: claimData.address || 'Sin dirección'
                 });
             });
 
@@ -99,12 +99,12 @@ export const AdminSearch: React.FC<AdminSearchProps> = ({
             techniciansSnapshot.forEach(doc => {
                 const techData = doc.data() as Technician;
                 searchResults.push({
-                    id: doc.id,
                     type: 'technician',
-                    title: techData.name || 'Técnico sin nombre',
-                    subtitle: `Teléfono: ${techData.phone}`,
+                    data: { id: doc.id, name: techData.name },
                     section: 'dashboard',
-                    data: techData
+                    id: doc.id,
+                    title: techData.name || 'Técnico sin nombre',
+                    subtitle: `Teléfono: ${techData.phone}`
                 });
             });
 
@@ -239,7 +239,7 @@ export const AdminSearch: React.FC<AdminSearchProps> = ({
 
             {!isLoading && searchTerm && searchResults.length === 0 && (
                 <div className="absolute top-full left-0 right-0 mt-1 p-4 bg-background border rounded-md shadow-lg text-center text-muted-foreground z-50">
-                    No se encontraron resultados para "{searchTerm}"
+                    No se encontraron resultados para &quot;{searchTerm}&quot;
                 </div>
             )}
         </div>

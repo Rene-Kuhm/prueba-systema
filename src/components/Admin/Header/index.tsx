@@ -16,22 +16,59 @@ import { es } from 'date-fns/locale';
 
 interface HeaderProps {
     onSignOut: () => void;
-    onExport: () => Promise<any[]>;
+    onExport: () => Promise<ComplaintData[]>;
     title?: string;
     description?: string;
 }
 
+interface ComplaintData {
+    id?: string;
+    receivedAt?: Date | string;
+    date?: Date | string;
+    status?: string;
+    name?: string;
+    phone?: string;
+    address?: string;
+    technicianName?: string;
+    technicianId?: string;
+    reason?: string;
+}
+
+interface CellStyle {
+    font?: {
+        sz?: number;
+        bold?: boolean;
+        color?: { rgb: string };
+    };
+    fill?: {
+        fgColor: { rgb: string };
+    };
+    alignment?: {
+        horizontal?: string;
+        vertical?: string;
+        wrapText?: boolean;
+    };
+    border?: {
+        left?: { style: string; color?: { rgb: string } };
+        right?: { style: string; color?: { rgb: string } };
+        top?: { style: string; color?: { rgb: string } };
+        bottom?: { style: string; color?: { rgb: string } };
+    };
+}
+
 // Funciones auxiliares
-const isValidDate = (date: any): boolean => {
+const isValidDate = (date: Date | string | undefined): boolean => {
     if (!date) return false;
     const d = new Date(date);
     return d instanceof Date && !isNaN(d.getTime());
 };
 
-const formatDate = (date: any): string => {
-    if (!isValidDate(date)) return 'N/A';
+const formatDate = (date: Date | string | undefined): string => {
+    if (!date) return 'N/A';
     try {
-        return format(new Date(date), 'dd/MM/yyyy HH:mm', { locale: es });
+        const dateValue = typeof date === 'string' ? new Date(date) : date;
+        if (!isValidDate(dateValue)) return 'N/A';
+        return format(dateValue, 'dd/MM/yyyy HH:mm', { locale: es });
     } catch (error) {
         return 'N/A';
     }
@@ -48,11 +85,11 @@ const formatStatus = (status: string = 'pending'): string => {
 };
 
 // Función principal para crear la hoja de cálculo con estilos
-const createStyledWorksheet = (data: any[]) => {
+const createStyledWorksheet = (data: ComplaintData[]) => {
     const ws = XLSX.utils.json_to_sheet([]);
     
     // Estilos base
-    const titleStyle = {
+    const titleStyle: CellStyle = {
         font: { sz: 16, bold: true, color: { rgb: "FFFFFF" } },
         fill: { fgColor: { rgb: "9BBB59" } },
         alignment: { horizontal: "center", vertical: "center" },
@@ -64,13 +101,13 @@ const createStyledWorksheet = (data: any[]) => {
         }
     };
 
-    const subtitleStyle = {
+    const subtitleStyle: CellStyle = {
         font: { sz: 12, bold: true },
         fill: { fgColor: { rgb: "FFEB9C" } },
         alignment: { horizontal: "center", vertical: "center" }
     };
 
-    const headerStyle = {
+    const headerStyle: CellStyle = {
         font: { sz: 11, bold: true, color: { rgb: "FFFFFF" } },
         fill: { fgColor: { rgb: "4472C4" } },
         alignment: { horizontal: "center", vertical: "center", wrapText: true },
@@ -141,7 +178,7 @@ const createStyledWorksheet = (data: any[]) => {
             } else if (R === 4) {
                 ws[cellRef].s = headerStyle;
             } else if (R > 4) {
-                const cellStyle: any = {
+                const cellStyle: CellStyle = {
                     font: { sz: 10 },
                     alignment: { vertical: "center", wrapText: true },
                     border: {
@@ -161,8 +198,8 @@ const createStyledWorksheet = (data: any[]) => {
                         'en proceso': '4472C4',
                         'cancelado': 'FF0000'
                     };
-                    cellStyle.font.color = { rgb: statusColors[status] || '000000' };
-                    cellStyle.font.bold = true;
+                    cellStyle.font!.color = { rgb: statusColors[status] || '000000' };
+                    cellStyle.font!.bold = true;
                 }
 
                 // Filas alternadas
@@ -179,10 +216,10 @@ const createStyledWorksheet = (data: any[]) => {
 };
 
 export const Header = ({ 
-    onSignOut, 
-    onExport,
     title = "Dashboard",
-    description = "Vista general del sistema"
+    description = "Vista general del sistema",
+    onExport,
+    onSignOut
 }: HeaderProps): JSX.Element => {
     const handleExport = async () => {
         try {
@@ -261,6 +298,13 @@ export const Header = ({
                                 >
                                     <FileDown className="h-4 w-4" />
                                     Exportar Reporte
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={onSignOut}
+                                    className="flex items-center gap-2"
+                                >
+                                    <Settings className="h-4 w-4" />
+                                    Cerrar Sesión
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
