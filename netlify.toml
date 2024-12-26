@@ -41,3 +41,15 @@
     Cache-Control = "no-cache, no-store, must-revalidate"
     Pragma = "no-cache"
     Expires = "0"
+
+[[plugins]]
+  pachage= "@netlify/plugin-lighthouse"  
+  [plugins.inputs]
+    output_path = "reports/lighthouse.html"
+    audits = [
+      "accessibility",
+      "best-practices",
+      "performance",
+      "pwa",
+      "seo"
+    ]
