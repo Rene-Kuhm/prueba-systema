@@ -15,12 +15,46 @@ import { ToastContainer, toast } from 'react-toastify'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import 'react-toastify/dist/ReactToastify.css'
 
-// Lazy imports
-const Login = lazy(() => import('@/pages/Login'))
-const Signup = lazy(() => import('@/pages/Signup'))
-const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'))
-const AdminRoutes = lazy(() => import('@/routes/AdminRoutes'))
-const TechnicianRoutes = lazy(() => import('@/routes/TechnicianRoutes'))
+// Modificar los lazy imports con error handling
+const Login = lazy(() => 
+  import('@/pages/Login')
+    .catch(err => {
+      console.error('Error loading Login:', err);
+      return { default: () => <div>Error al cargar el componente Login</div> };
+    })
+);
+
+const Signup = lazy(() => 
+  import('@/pages/Signup')
+    .catch(err => {
+      console.error('Error loading Signup:', err);
+      return { default: () => <div>Error al cargar el componente Signup</div> };
+    })
+);
+
+const ForgotPassword = lazy(() => 
+  import('@/pages/ForgotPassword')
+    .catch(err => {
+      console.error('Error loading ForgotPassword:', err);
+      return { default: () => <div>Error al cargar el componente ForgotPassword</div> };
+    })
+);
+
+const AdminRoutes = lazy(() => 
+  import('@/routes/AdminRoutes')
+    .catch(err => {
+      console.error('Error loading AdminRoutes:', err);
+      return { default: () => <div>Error al cargar rutas de administrador</div> };
+    })
+);
+
+const TechnicianRoutes = lazy(() => 
+  import('@/routes/TechnicianRoutes')
+    .catch(err => {
+      console.error('Error loading TechnicianRoutes:', err);
+      return { default: () => <div>Error al cargar rutas de técnico</div> };
+    })
+);
 
 // Types
 interface NotificationButtonProps {
@@ -60,13 +94,15 @@ NotificationButton.propTypes = {
   onClick: PropTypes.func.isRequired,
 }
 
-// Agregar componente de error boundary
+// Modificar ErrorBoundary para incluir mejor manejo de errores
 const ErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [hasError, setHasError] = React.useState(false);
+  const [hasError, setHasError] = React.useState<boolean>(false);
+  const [error, setError] = React.useState<Error | null>(null);
 
   React.useEffect(() => {
-    const handleError = (error: ErrorEvent) => {
-      console.error('Error capturado:', error);
+    const handleError = (event: ErrorEvent) => {
+      console.error('Error capturado:', event.error);
+      setError(event.error);
       setHasError(true);
     };
 
@@ -78,7 +114,8 @@ const ErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <h1 className="text-xl text-red-500">Algo salió mal</h1>
+          <h1 className="text-xl text-red-500">Error al cargar el contenido</h1>
+          <p className="mt-2 text-gray-600">{error?.message || 'Error desconocido'}</p>
           <button 
             onClick={() => window.location.reload()} 
             className="px-4 py-2 mt-4 text-white bg-blue-500 rounded"
@@ -93,9 +130,26 @@ const ErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   return <>{children}</>;
 };
 
+// Agregar precarga de componentes
+const preloadComponents = () => {
+  const routes = [
+    import('@/pages/Login'),
+    import('@/pages/Signup'),
+    import('@/pages/ForgotPassword')
+  ];
+  
+  Promise.all(routes).catch(err => 
+    console.error('Error preloading components:', err)
+  );
+};
+
 const AppContent: React.FC = () => {
   const { isLoading, currentUser } = useAuth()
   const authLogged = useRef(false)
+
+  useEffect(() => {
+    preloadComponents();
+  }, []);
 
   const registerSW = async () => {
     // Only register SW in production or if explicitly enabled in development
@@ -232,51 +286,53 @@ const AppContent: React.FC = () => {
             limit={3}
           />
 
-          <Suspense fallback={<LoadingSpinner />}>
-            <Routes>
-              {/* Ruta raíz siempre redirige a login */}
-              <Route path="/" element={<Navigate to="/login" replace />} />
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              <Routes>
+                {/* Ruta raíz siempre redirige a login */}
+                <Route path="/" element={<Navigate to="/login" replace />} />
 
-              {/* Rutas públicas */}
-              <Route path="/login" element={
-                <UnauthorizedRoute>
-                  <Login />
-                </UnauthorizedRoute>
-              } />
-              <Route path="/signup" element={
-                <UnauthorizedRoute>
-                  <Signup />
-                </UnauthorizedRoute>
-              } />
-              <Route path="/forgot-password" element={
-                <UnauthorizedRoute>
-                  <ForgotPassword />
-                </UnauthorizedRoute>
-              } />
+                {/* Rutas públicas */}
+                <Route path="/login" element={
+                  <UnauthorizedRoute>
+                    <Login />
+                  </UnauthorizedRoute>
+                } />
+                <Route path="/signup" element={
+                  <UnauthorizedRoute>
+                    <Signup />
+                  </UnauthorizedRoute>
+                } />
+                <Route path="/forgot-password" element={
+                  <UnauthorizedRoute>
+                    <ForgotPassword />
+                  </UnauthorizedRoute>
+                } />
 
-              {/* Rutas protegidas */}
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <Navigate to={currentUser?.role ? `/${currentUser.role}` : '/login'} replace />
-                </ProtectedRoute>
-              } />
+                {/* Rutas protegidas */}
+                <Route path="/dashboard" element={
+                  <ProtectedRoute>
+                    <Navigate to={currentUser?.role ? `/${currentUser.role}` : '/login'} replace />
+                  </ProtectedRoute>
+                } />
 
-              {/* Rutas específicas por rol */}
-              <Route path="/admin/*" element={
-                <ProtectedRoute role="admin">
-                  <AdminRoutes />
-                </ProtectedRoute>
-              } />
-              <Route path="/technician/*" element={
-                <ProtectedRoute role="technician">
-                  <TechnicianRoutes />
-                </ProtectedRoute>
-              } />
+                {/* Rutas específicas por rol */}
+                <Route path="/admin/*" element={
+                  <ProtectedRoute role="admin">
+                    <AdminRoutes />
+                  </ProtectedRoute>
+                } />
+                <Route path="/technician/*" element={
+                  <ProtectedRoute role="technician">
+                    <TechnicianRoutes />
+                  </ProtectedRoute>
+                } />
 
-              {/* Ruta 404 */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
+                {/* Ruta 404 */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </ErrorBoundary>
 
           {/* Modificar la condición del botón de notificaciones */}
           {Notification.permission !== 'granted' && currentUser && !isLoading && (
