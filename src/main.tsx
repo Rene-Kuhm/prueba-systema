@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import App1 from './app1';
+import App1 from './App';
 import './index.css';
 
 const container = document.getElementById('root');
