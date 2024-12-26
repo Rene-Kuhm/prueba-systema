@@ -60,6 +60,39 @@ NotificationButton.propTypes = {
   onClick: PropTypes.func.isRequired,
 }
 
+// Agregar componente de error boundary
+const ErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [hasError, setHasError] = React.useState(false);
+
+  React.useEffect(() => {
+    const handleError = (error: ErrorEvent) => {
+      console.error('Error capturado:', error);
+      setHasError(true);
+    };
+
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
+
+  if (hasError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-xl text-red-500">Algo salió mal</h1>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 mt-4 text-white bg-blue-500 rounded"
+          >
+            Recargar página
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+};
+
 const AppContent: React.FC = () => {
   const { isLoading, currentUser } = useAuth()
   const authLogged = useRef(false)
@@ -171,88 +204,98 @@ const AppContent: React.FC = () => {
     return () => unsubscribe()
   }, [])
 
-  // Renderizar el LoadingSpinner mientras se carga la autenticación
+  // Agregar verificación adicional para el estado de carga
   if (isLoading) {
+    return <LoadingSpinner />
+  }
+
+  // Verificar si el usuario está indefinido
+  if (currentUser === undefined) {
     return <LoadingSpinner />
   }
 
   return (
     <Router>
-      <div className='min-h-screen bg-gray-50'>
-        <ToastContainer
-          position='top-right'
-          autoClose={5000}
-          hideProgressBar={false}
-          newestOnTop
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme='light'
-          limit={3}
-        />
+      <ErrorBoundary>
+        <div className='min-h-screen bg-gray-50'>
+          <ToastContainer
+            position='top-right'
+            autoClose={5000}
+            hideProgressBar={false}
+            newestOnTop
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme='light'
+            limit={3}
+          />
 
-        <Suspense fallback={<LoadingSpinner />}>
-          <Routes>
-            {/* Ruta raíz siempre redirige a login */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
+          <Suspense fallback={<LoadingSpinner />}>
+            <Routes>
+              {/* Ruta raíz siempre redirige a login */}
+              <Route path="/" element={<Navigate to="/login" replace />} />
 
-            {/* Rutas públicas */}
-            <Route path="/login" element={
-              <UnauthorizedRoute>
-                <Login />
-              </UnauthorizedRoute>
-            } />
-            <Route path="/signup" element={
-              <UnauthorizedRoute>
-                <Signup />
-              </UnauthorizedRoute>
-            } />
-            <Route path="/forgot-password" element={
-              <UnauthorizedRoute>
-                <ForgotPassword />
-              </UnauthorizedRoute>
-            } />
+              {/* Rutas públicas */}
+              <Route path="/login" element={
+                <UnauthorizedRoute>
+                  <Login />
+                </UnauthorizedRoute>
+              } />
+              <Route path="/signup" element={
+                <UnauthorizedRoute>
+                  <Signup />
+                </UnauthorizedRoute>
+              } />
+              <Route path="/forgot-password" element={
+                <UnauthorizedRoute>
+                  <ForgotPassword />
+                </UnauthorizedRoute>
+              } />
 
-            {/* Rutas protegidas */}
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Navigate to={currentUser?.role ? `/${currentUser.role}` : '/login'} replace />
-              </ProtectedRoute>
-            } />
+              {/* Rutas protegidas */}
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Navigate to={currentUser?.role ? `/${currentUser.role}` : '/login'} replace />
+                </ProtectedRoute>
+              } />
 
-            {/* Rutas específicas por rol */}
-            <Route path="/admin/*" element={
-              <ProtectedRoute role="admin">
-                <AdminRoutes />
-              </ProtectedRoute>
-            } />
-            <Route path="/technician/*" element={
-              <ProtectedRoute role="technician">
-                <TechnicianRoutes />
-              </ProtectedRoute>
-            } />
+              {/* Rutas específicas por rol */}
+              <Route path="/admin/*" element={
+                <ProtectedRoute role="admin">
+                  <AdminRoutes />
+                </ProtectedRoute>
+              } />
+              <Route path="/technician/*" element={
+                <ProtectedRoute role="technician">
+                  <TechnicianRoutes />
+                </ProtectedRoute>
+              } />
 
-            {/* Ruta 404 */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
+              {/* Ruta 404 */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
 
-        {Notification.permission !== 'granted' && currentUser && (
-          <NotificationButton onClick={requestNotificationPermission} />
-        )}
-      </div>
+          {/* Modificar la condición del botón de notificaciones */}
+          {Notification.permission !== 'granted' && currentUser && !isLoading && (
+            <NotificationButton onClick={requestNotificationPermission} />
+          )}
+        </div>
+      </ErrorBoundary>
     </Router>
   )
 }
 
 const App: React.FC = () => (
-  <Suspense fallback={<LoadingSpinner />}>
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
-  </Suspense>
+  <ErrorBoundary>
+    <Suspense fallback={<LoadingSpinner />}>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </Suspense>
+  </ErrorBoundary>
 )
 
 export default App
