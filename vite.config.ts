@@ -108,6 +108,7 @@ export default defineConfig(({ mode }) => ({
   build: {
     target: 'es2015',
     outDir: 'dist',
+    emptyOutDir: true,
     sourcemap: mode === 'development',
     minify: mode === 'production' ? 'terser' : false,
     rollupOptions: {
@@ -125,7 +126,10 @@ export default defineConfig(({ mode }) => ({
     commonjsOptions: {
       transformMixedEsModules: true,
       include: [/node_modules/]
-    }
+    },
+    assetsInlineLimit: 4096,
+    chunkSizeWarningLimit: 1000,
+    reportCompressedSize: true
   },
   define: {
     global: 'globalThis',
@@ -136,7 +140,8 @@ export default defineConfig(({ mode }) => ({
     include: ['react', 'react-dom', 'react-router-dom'],
     esbuildOptions: {
       target: 'es2020'
-    }
+    },
+    exclude: ['sharp']
   },
   esbuild: {
     logOverride: { 
