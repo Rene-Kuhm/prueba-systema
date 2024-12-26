@@ -1,27 +1,28 @@
-import React from 'react';
+import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
-import { registerSW } from 'virtual:pwa-register';
-
-// Register service worker
-if ('serviceWorker' in navigator) {
-  registerSW({
-    immediate: true,
-    onNeedRefresh() {
-      if (confirm('New content available. Reload?')) {
-        window.location.reload();
-      }
-    }
-  });
-}
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Root element not found');
 
 const root = createRoot(container);
 root.render(
-  <React.StrictMode>
+  <StrictMode>
     <App />
-  </React.StrictMode>
+  </StrictMode>
 );
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { 
+      scope: '/',
+      type: 'module'
+    }).then(registration => {
+      console.log('SW registered:', registration);
+    }).catch(error => {
+      console.log('SW registration failed:', error);
+    });
+  });
+}

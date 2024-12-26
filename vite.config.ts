@@ -11,23 +11,20 @@ const __dirname = dirname(__filename);
 export default defineConfig(({ mode }) => ({
   plugins: [
     react({
-      jsxRuntime: 'automatic',
       jsxImportSource: 'react',
       babel: {
-        plugins: [
-          ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }]
-        ]
+        parserOpts: {
+          plugins: ['jsx']
+        }
       }
     }),
     VitePWA({
-      strategies: 'generateSW',
       registerType: 'autoUpdate',
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
-        cleanupOutdatedCaches: true,
-        skipWaiting: true,
-        clientsClaim: true
-      },
+      includeAssets: [
+        'favicon.ico',
+        'icons/icon-192x192.png',
+        'icons/icon-512x512.png'
+      ],
       manifest: {
         name: 'Telecom Complaints',
         short_name: 'Complaints',
@@ -52,12 +49,36 @@ export default defineConfig(({ mode }) => ({
             purpose: 'any maskable'
           }
         ]
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          }
+        ]
       }
     })
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
+      '@': path.resolve(__dirname, './src'),
+      'react': path.resolve(__dirname, './node_modules/react'),
+      'react-dom': path.resolve(__dirname, './node_modules/react-dom')
     },
     extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
   },
@@ -107,6 +128,7 @@ export default defineConfig(({ mode }) => ({
     }
   },
   define: {
+    global: 'globalThis',
     'process.env.NODE_ENV': JSON.stringify(mode),
     __VITE_PWA_ENABLED__: true
   },
