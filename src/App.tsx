@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, useRef, lazy } from 'react'
+import React, { Suspense, useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
 import {
   BrowserRouter as Router,
@@ -14,46 +14,38 @@ import { messaging } from '@/config/firebase'
 import { ToastContainer, toast } from 'react-toastify'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import 'react-toastify/dist/ReactToastify.css'
+import { lazyLoad } from '@/utils/lazyLoad';
 
 // Modificar los lazy imports con error handling
-const Login = lazy(() => 
-  import('@/pages/Login')
-    .catch(err => {
-      console.error('Error loading Login:', err);
-      return { default: () => <div>Error al cargar el componente Login</div> };
-    })
+const DefaultErrorComponent = () => (
+  <div className="p-4 text-center">
+    <h2 className="text-xl text-red-500">Error al cargar el componente</h2>
+  </div>
 );
 
-const Signup = lazy(() => 
-  import('@/pages/Signup')
-    .catch(err => {
-      console.error('Error loading Signup:', err);
-      return { default: () => <div>Error al cargar el componente Signup</div> };
-    })
+const Login = lazyLoad<Record<string, never>>(
+  () => import('@/pages/Login'),
+  DefaultErrorComponent
 );
 
-const ForgotPassword = lazy(() => 
-  import('@/pages/ForgotPassword')
-    .catch(err => {
-      console.error('Error loading ForgotPassword:', err);
-      return { default: () => <div>Error al cargar el componente ForgotPassword</div> };
-    })
+const Signup = lazyLoad<Record<string, never>>(
+  () => import('@/pages/Signup'),
+  DefaultErrorComponent
 );
 
-const AdminRoutes = lazy(() => 
-  import('@/routes/AdminRoutes')
-    .catch(err => {
-      console.error('Error loading AdminRoutes:', err);
-      return { default: () => <div>Error al cargar rutas de administrador</div> };
-    })
+const ForgotPassword = lazyLoad<Record<string, never>>(
+  () => import('@/pages/ForgotPassword'),
+  DefaultErrorComponent
 );
 
-const TechnicianRoutes = lazy(() => 
-  import('@/routes/TechnicianRoutes')
-    .catch(err => {
-      console.error('Error loading TechnicianRoutes:', err);
-      return { default: () => <div>Error al cargar rutas de técnico</div> };
-    })
+const AdminRoutes = lazyLoad<Record<string, never>>(
+  () => import('@/routes/AdminRoutes'),
+  DefaultErrorComponent
+);
+
+const TechnicianRoutes = lazyLoad<Record<string, never>>(
+  () => import('@/routes/TechnicianRoutes'),
+  DefaultErrorComponent
 );
 
 // Types
@@ -286,8 +278,8 @@ const AppContent: React.FC = () => {
             limit={3}
           />
 
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingSpinner />}>
+          <Suspense fallback={<LoadingSpinner />}>
+            <ErrorBoundary>
               <Routes>
                 {/* Ruta raíz siempre redirige a login */}
                 <Route path="/" element={<Navigate to="/login" replace />} />
@@ -331,8 +323,8 @@ const AppContent: React.FC = () => {
                 {/* Ruta 404 */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </Suspense>
-          </ErrorBoundary>
+            </ErrorBoundary>
+          </Suspense>
 
           {/* Modificar la condición del botón de notificaciones */}
           {Notification.permission !== 'granted' && currentUser && !isLoading && (
