@@ -1,5 +1,6 @@
 /* eslint-env node */
-/* eslint-disable @typescript-eslint/no-var-requires */
+
+import animate from "tailwindcss-animate"
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -7,7 +8,7 @@ export default {
     content: [
         "./index.html",
         "./src/**/*.{js,ts,jsx,tsx}",
-        "./src/styles/**/*.css",
+        "./src/styles/*.css",  // Asegurarse de incluir los estilos globales
         "./src/components/**/*.{js,ts,jsx,tsx}",
         "./src/app/**/*.{js,ts,jsx,tsx}",
         "./node_modules/react-toastify/**/*.{js,jsx,ts,tsx}"
@@ -78,5 +79,5 @@ export default {
             },
         },
     },
-    plugins: [require("tailwindcss-animate")]
+    plugins: [animate]
 }
