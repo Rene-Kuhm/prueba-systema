@@ -19,6 +19,7 @@ import Signup from '@/pages/Signup'
 import ForgotPassword from '@/pages/ForgotPassword'
 import AdminRoutes from '@/routes/AdminRoutes'
 import TechnicianRoutes from '@/routes/TechnicianRoutes'
+import './styles/globals.css'
 
 // Types
 interface NotificationButtonProps {
