@@ -5,6 +5,7 @@
 [build.environment]
   NODE_VERSION = "18"
   NPM_VERSION = "10"
+  # NODE_ENV = "production"
 
 [[redirects]]
   from = "/*"
@@ -26,6 +27,12 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "geolocation=(), microphone=(), camera=()"
     Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:"
+    
+    # Comentado por defecto - descomenta con precaución
+    # Access-Control-Allow-Origin = "*"
+    # Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    # Access-Control-Allow-Headers = "Origin, X-Requested-With, Content-Type, Accept"
+    
     Cache-Control = "public, max-age=0, must-revalidate"
 
 [[headers]]
@@ -34,19 +41,3 @@
     Cache-Control = "no-cache, no-store, must-revalidate"
     Pragma = "no-cache"
     Expires = "0"
-
-[[plugins]]
-  package = "@netlify/plugin-lighthouse"
-
-  [plugins.inputs]
-    output_path = "reports/lighthouse.html"
-    fail_deploy_on_score_thresholds = false
-    thresholds = """
-    {
-      "performance": 0.5,
-      "accessibility": 0.7,
-      "best-practices": 0.7,
-      "seo": 0.7,
-      "pwa": 0.3
-    }
-    """
