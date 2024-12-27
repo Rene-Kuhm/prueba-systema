@@ -4,16 +4,12 @@
 module.exports = {
   darkMode: ["class"],
   content: [
-    "index.html",
-    "src/**/*.{js,ts,jsx,tsx}",
-    "src/pages/**/*.{js,ts,jsx,tsx}",
-    "src/components/**/*.{js,ts,jsx,tsx}",
-    "src/app/**/*.{js,ts,jsx,tsx}",
-    "./node_modules/react-toastify/**/*.{js,jsx,ts,tsx}",
-    './pages/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-    './app/**/*.{ts,tsx}',
-    './src/**/*.{ts,tsx}',
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+    "./src/styles/**/*.css",  // Added to ensure global styles are processed
+    "./src/components/**/*.{js,ts,jsx,tsx}",
+    "./src/app/**/*.{js,ts,jsx,tsx}",
+    "./node_modules/react-toastify/**/*.{js,jsx,ts,tsx}"
   ],
   theme: {
     container: {
