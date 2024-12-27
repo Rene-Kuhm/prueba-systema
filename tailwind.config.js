@@ -1,7 +1,8 @@
 /* eslint-env node */
+/* eslint-disable @typescript-eslint/no-var-requires */
 
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
     darkMode: ["class"],
     content: [
         "./index.html",
@@ -77,6 +78,5 @@ module.exports = {
             },
         },
     },
-    plugins: [require("tailwindcss-animate")], // C
-    // ...existing code...
+    plugins: [require("tailwindcss-animate")]
 }
