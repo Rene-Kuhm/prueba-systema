@@ -67,6 +67,13 @@ export default defineConfig({
     }
   },
   server: {
-    port: Number(process.env.PORT) || 3000 // Convertimos explícitamente a número
+    port: Number(process.env.PORT) || 3000,
+    headers: {
+      'Cache-Control': 'public, max-age=31536000, immutable',
+      'X-Content-Type-Options': 'nosniff',
+      'X-XSS-Protection': '1; mode=block',
+      'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+      'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
+    }
   }
 })
