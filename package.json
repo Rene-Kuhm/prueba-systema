@@ -2,7 +2,7 @@
   "name": "telecom-complaints",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
+  "type": "commonjs",
   "proxy": "https://us-central1-cospecreclamos.cloudfunctions.net",
   "scripts": {
     "dev": "vite",
