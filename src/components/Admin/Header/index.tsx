@@ -1,4 +1,3 @@
-import React from 'react';
 import { Button } from "@/components/ui/button";
 import { FileDown, Settings, BarChart3 } from "lucide-react";
 import * as XLSX from 'xlsx';

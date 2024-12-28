@@ -50,11 +50,16 @@ export interface UserPreferences {
     // ... otras preferencias
 }
 
-// Función para actualizar preferencias (ejemplo de uso)
+/**
+ * Updates user preferences - Currently a placeholder for future implementation
+ * @param userId - The user ID to update preferences for
+ * @param prefs - The preferences to update
+ */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 export async function updateUserPreferences(
-    userId: string, /* eslint-disable-line @typescript-eslint/no-unused-vars */
-    prefs: Partial<UserPreferences> /* eslint-disable-line @typescript-eslint/no-unused-vars */
+    _userId: string,
+    _prefs: Partial<UserPreferences>
 ): Promise<void> {
-    // Implementa aquí la lógica para actualizar las preferencias en Firestore
     console.log('Actualización de preferencias no implementada');
 }
+/* eslint-enable @typescript-eslint/no-unused-vars */

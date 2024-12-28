@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { ErrorState } from '@/components/Admin/States/ErrorState'
 import { LoadingState } from '@/components/Admin/States/LoadingState'
 import { Users, FileText, Wrench, Calendar } from 'lucide-react'
@@ -205,8 +205,8 @@ const Admin = () => {
 
   const renderDashboard = () => {
     return (
-      <div className='space-y-8 p-6'>
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+      <div className='p-6 space-y-8'>
+        <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
           <DashboardCard
             title='Total Técnicos'
             value={dashboardStats.totalTechnicians}

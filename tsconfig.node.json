@@ -4,7 +4,12 @@
     "skipLibCheck": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "types": ["node", "lodash", "history"],
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "target": "ESNext"
   },
   "include": ["vite.config.ts"]
 }

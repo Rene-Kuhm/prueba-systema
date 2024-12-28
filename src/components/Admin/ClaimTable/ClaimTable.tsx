@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Eye, Trash2, CheckCircle, Clock, AlertCircle, Edit2, MoreHorizontal, Phone, MapPin, User, Archive, RefreshCw } from 'lucide-react';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
