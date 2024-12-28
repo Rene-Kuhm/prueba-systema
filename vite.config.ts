@@ -72,7 +72,7 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       outDir: 'dist',
-      sourcemap: false,
+      sourcemap: true,
       minify: 'terser',
       terserOptions: {
         compress: {
