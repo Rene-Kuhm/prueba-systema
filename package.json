@@ -6,9 +6,9 @@
   "proxy": "https://us-central1-cospecreclamos.cloudfunctions.net",
   "scripts": {
     "dev": "vite",
-    "build": "npm run tsc && npm run vite-build",
-    "vite-build": "./node_modules/.bin/vite build",
-    "tsc": "./node_modules/.bin/tsc",
+    "build": "tsc && vite build",
+    "vite-build": "npx vite build",
+    "tsc": "npx tsc",
     "preview": "vite preview",
     "generate-icons": "node scripts/generate-icons.js",
     "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings=0",
