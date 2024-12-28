@@ -72,7 +72,7 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       outDir: 'dist',
-      sourcemap: true,
+      sourcemap: mode !== 'production',
       minify: 'terser',
       terserOptions: {
         compress: {
@@ -80,38 +80,52 @@ export default defineConfig(({ mode }) => {
           drop_debugger: mode === 'production'
         }
       },
+      target: ['es2020', 'edge88', 'firefox78', 'chrome87', 'safari14'],
+      reportCompressedSize: true,
+      cssCodeSplit: true,
+      assetsInlineLimit: 4096,
+      chunkSizeWarningLimit: 1000,
+      emptyOutDir: true,
       rollupOptions: {
         input: {
           main: path.resolve(__dirname, 'index.html')
         },
         output: {
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-            'vendor-firebase': ['firebase', 'firebase-admin'],
-            'vendor-ui': [
-              '@radix-ui/react-dialog',
-              '@radix-ui/react-dropdown-menu',
-              '@radix-ui/react-tabs'
-            ]
+          manualChunks: (id: string) => {
+            // Manejo más dinámico de chunks
+            if (id.includes('node_modules')) {
+              if (id.includes('react')) {
+                return 'vendor-react';
+              }
+              if (id.includes('firebase')) {
+                return 'vendor-firebase';
+              }
+              if (id.includes('@radix-ui')) {
+                return 'vendor-ui';
+              }
+              // Chunk por defecto para otros módulos de node_modules
+              return 'vendor';
+            }
           },
           assetFileNames: (assetInfo) => {
-            // Añadimos verificación de null/undefined
             if (!assetInfo?.name) return 'assets/[ext]/[name]-[hash][extname]';
             
-            const extType = assetInfo.name.split('.')[1] || '';
-            if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(extType)) {
-              return `assets/images/[name]-[hash][extname]`;
+            const extType = assetInfo.name.split('.').pop()?.toLowerCase() || '';
+            if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'ico'].includes(extType)) {
+              return 'assets/images/[name]-[hash][extname]';
             }
-            return `assets/[ext]/[name]-[hash][extname]`;
+            if (extType === 'css') {
+              return 'assets/css/[name]-[hash][extname]';
+            }
+            return 'assets/[ext]/[name]-[hash][extname]';
           },
-          chunkFileNames: 'assets/js/[name]-[hash].js',
+          chunkFileNames: (chunkInfo) => {
+            const name = chunkInfo.name || '[name]';
+            return `assets/js/${name}-[hash].js`;
+          },
           entryFileNames: 'assets/js/[name]-[hash].js'
         }
-      },
-      target: ['es2020', 'edge88', 'firefox78', 'chrome87', 'safari14'],
-      reportCompressedSize: true,
-      cssCodeSplit: true,
-      assetsInlineLimit: 4096
+      }
     },
     server: {
       port: 3000,
@@ -123,7 +137,7 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_API_URL,
           changeOrigin: true,
           secure: false,
-          rewrite: (path) => path.replace(/^\/api/, '')
+          rewrite: (path: string) => path.replace(/^\/api/, '')
         }
       }
     },
