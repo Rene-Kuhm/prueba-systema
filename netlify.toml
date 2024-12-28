@@ -1,5 +1,5 @@
 [build]
-  command = "node build.ts"
+  command = "npm install -g ts-node typescript && npm ci && npx vite builds"
   publish = "dist"
 
 [build.environment]
