@@ -6,7 +6,9 @@
   "proxy": "https://us-central1-cospecreclamos.cloudfunctions.net",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "npm run tsc && npm run vite-build",
+    "vite-build": "./node_modules/.bin/vite build",
+    "tsc": "./node_modules/.bin/tsc",
     "preview": "vite preview",
     "generate-icons": "node scripts/generate-icons.js",
     "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings=0",
@@ -99,7 +101,7 @@
     "workbox-window": "^7.3.0"
   },
   "engines": {
-    "node": ">=20.18.0",
-    "npm": ">=10.0.0"
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }
