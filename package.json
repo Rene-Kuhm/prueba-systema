@@ -79,6 +79,7 @@
     "@types/sharp": "^0.31.1",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
+    "@vitejs/plugin-react": "^4.2.1",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "eslint": "^8.56.0",
@@ -91,7 +92,9 @@
     "ts-node": "^10.9.2",
     "ts-prune": "^0.10.3",
     "typescript": "^5.7.2",
+    "vite": "^5.0.0",
     "vite-plugin-checker": "^0.8.0",
+    "vite-plugin-pwa": "^0.17.0",
     "vite-plugin-pwa": "^0.21.1",
     "workbox-window": "^7.3.0"
   },

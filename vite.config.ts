@@ -73,13 +73,18 @@ export default defineConfig({
         entryFileNames: 'assets/js/[name]-[hash].js',
       }
     },
-    target: 'esnext',
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-      },
-    },
+    target: ['esnext'],
+    emptyOutDir: true,
+    reportCompressedSize: true
   },
+  server: {
+    port: 3000,
+    strictPort: true,
+    host: true
+  },
+  preview: {
+    port: 8080,
+    strictPort: true,
+    host: true
+  }
 })
