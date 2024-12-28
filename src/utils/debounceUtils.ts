@@ -1,6 +1,9 @@
 import type { DebouncedFunc } from 'lodash';
 
-export const createDebounce = async <T extends (...args: unknown[]) => unknown>(
+type AnyFunction = (...args: unknown[]) => unknown;
+type AsyncFunction = (...args: unknown[]) => Promise<unknown>;
+
+export const createDebounce = async <T extends AnyFunction>(
   func: T,
   wait: number
 ): Promise<DebouncedFunc<T>> => {
@@ -8,7 +11,7 @@ export const createDebounce = async <T extends (...args: unknown[]) => unknown>(
   return debounce(func, wait);
 };
 
-export const createThrottle = async <T extends (...args: unknown[]) => unknown>(
+export const createThrottle = async <T extends AsyncFunction>(
   func: T,
   wait: number
 ): Promise<DebouncedFunc<T>> => {

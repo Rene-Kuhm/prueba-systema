@@ -1,35 +1,26 @@
 {
   "compilerOptions": {
-    "module": "ESNext",
     "target": "ES2020",
     "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "allowJs": false,
+    "module": "ESNext",
     "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
     "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "types": ["node", "react", "react-dom"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
-    },
-    "types": [
-      "vite/client",
-      "vite-plugin-pwa/client",
-      "node"
-    ],
-    "allowImportingTsExtensions": true,
-    "noUnusedLocals": false, // Temporarily disable until all unused variables are fixed
-    "noUnusedParameters": false, // Temporarily disable until all unused parameters are fixed
-    "noFallthroughCasesInSwitch": true
+    }
   },
   "include": ["src"],
-  "exclude": ["node_modules", "dist", "public"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

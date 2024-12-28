@@ -296,12 +296,16 @@ const AppContent: React.FC = () => {
   )
 }
 
-const App: React.FC = () => (
-  <ErrorBoundary>
+function App() {
+  return (
     <AuthProvider>
-      <AppContent />
+      <Router>
+        <ErrorBoundary>
+          <AppContent />
+        </ErrorBoundary>
+      </Router>
     </AuthProvider>
-  </ErrorBoundary>
-)
+  )
+}
 
 export default App
