@@ -1,10 +1,14 @@
 [build]
-  command = "npm ci && npx vite build"
+    command = """
+    npm install -g vite@latest && \
+    npm install && \
+    npm run build
+  """
   publish = "dist"
 
 [build.environment]
-  NODE_VERSION = "20"
-  NPM_VERSION = "10"
+  NODE_VERSION = "20.18.0"
+  NPM_VERSION = "10.0.0"
   NODE_ENV = "production"
   CI = "true"
   VITE_BASE_URL = "/"
