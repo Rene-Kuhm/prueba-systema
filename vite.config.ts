@@ -4,6 +4,7 @@ import path from 'path'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  base: '/',
   plugins: [
     react(),
     VitePWA({
@@ -27,8 +28,9 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    sourcemap: process.env.NODE_ENV === 'development',
     assetsDir: 'assets',
+    minify: 'terser',
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'index.html'),
