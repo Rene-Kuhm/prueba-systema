@@ -1,9 +1,5 @@
 [build]
-    command = """
-    npm install -g vite@latest && \
-    npm install && \
-    npm run build
-  """
+  command = "npm ci && npx vite@5.4.11 build"
   publish = "dist"
 
 [build.environment]
