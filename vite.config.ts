@@ -95,7 +95,10 @@ export default defineConfig(({ mode }) => {
             ]
           },
           assetFileNames: (assetInfo) => {
-            const extType = assetInfo.name.split('.').at(1);
+            // Añadimos verificación de null/undefined
+            if (!assetInfo?.name) return 'assets/[ext]/[name]-[hash][extname]';
+            
+            const extType = assetInfo.name.split('.')[1] || '';
             if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(extType)) {
               return `assets/images/[name]-[hash][extname]`;
             }
