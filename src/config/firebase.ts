@@ -117,7 +117,7 @@ export const requestNotificationPermission = async (): Promise<string | null> =>
     }
 
     const token = await getToken(messaging, { 
-      vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY 
+      vapidKey: import.meta.env.VITE_FIREBASE_PUSH_PUBLIC_KEY 
     });
 
     if (token) {
