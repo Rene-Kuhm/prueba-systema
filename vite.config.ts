@@ -28,9 +28,13 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          ...splitVendorChunkPlugin(),
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react')) {
+              return 'react-vendor';
+            }
+            return 'vendor';
+          }
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
@@ -43,17 +47,9 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
-    exclude: ['your-local-package'],
   },
   server: {
     cors: true,
     proxy: {},
   }
 });
-
-function splitVendorChunkPlugin() {
-  return {
-    utils: ['lodash', 'moment'],
-    ui: ['@mui/material', '@emotion/react'],
-  };
-}
