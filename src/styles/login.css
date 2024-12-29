@@ -28,7 +28,7 @@
 
 .login-header {
   @apply mb-8 text-center;
-  contain: layout style paint;
+ /* contain: layout style paint;*/
 }
 
 .login-title {
@@ -42,7 +42,7 @@
 }
 
 .login-card {
-  @apply w-full bg-gray-800 border border-gray-700 shadow-xl rounded-xl;
+  @apply w-full bg-gray-800 border border-gray-700 shadow-md rounded-xl;
 }
 
 .login-form {

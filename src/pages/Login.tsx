@@ -58,9 +58,9 @@ export default function Login() {
             <span 
               className="font-bold leading-none text-white"
               style={{
-                transform: 'translate3d(0,0,0)',
-                backfaceVisibility: 'hidden',
-                perspective: '1000px',
+               /* transform: 'translate3d(0,0,0)',*/
+               /* backfaceVisibility: 'hidden',*/
+               /* perspective: '1000px',*/
                 WebkitFontSmoothing: 'antialiased'
               }}
             >
