@@ -6,7 +6,8 @@
   "proxy": "https://us-central1-cospecreclamos.cloudfunctions.net",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "prepare": "npm install -g vite",
+    "build": "npx vite build",
     "preview": "vite preview",
     "generate-icons": "node scripts/generate-icons.js",
     "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings=0",
