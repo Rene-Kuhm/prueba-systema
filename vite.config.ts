@@ -91,22 +91,6 @@ export default defineConfig(({ mode }) => {
           main: path.resolve(__dirname, 'index.html')
         },
         output: {
-          manualChunks: (id: string) => {
-            // Manejo más dinámico de chunks
-            if (id.includes('node_modules')) {
-              if (id.includes('react')) {
-                return 'vendor-react';
-              }
-              if (id.includes('firebase')) {
-                return 'vendor-firebase';
-              }
-              if (id.includes('@radix-ui')) {
-                return 'vendor-ui';
-              }
-              // Chunk por defecto para otros módulos de node_modules
-              return 'vendor';
-            }
-          },
           assetFileNames: (assetInfo) => {
             if (!assetInfo?.name) return 'assets/[ext]/[name]-[hash][extname]';
             
@@ -119,10 +103,7 @@ export default defineConfig(({ mode }) => {
             }
             return 'assets/[ext]/[name]-[hash][extname]';
           },
-          chunkFileNames: (chunkInfo) => {
-            const name = chunkInfo.name || '[name]';
-            return `assets/js/${name}-[hash].js`;
-          },
+          chunkFileNames: 'assets/js/[name]-[hash].js',
           entryFileNames: 'assets/js/[name]-[hash].js'
         }
       }
