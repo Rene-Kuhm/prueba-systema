@@ -6,7 +6,7 @@
   "proxy": "https://us-central1-cospecreclamos.cloudfunctions.net",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm ci && npm run build",
     "vite-build": "npx vite build",
     "tsc": "npx tsc",
     "preview": "vite preview",
