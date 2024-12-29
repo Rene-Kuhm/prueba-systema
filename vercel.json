@@ -1,41 +1,67 @@
 {
+    "version": 2,
     "routes": [
         {
             "src": "/sw.js",
             "headers": {
-                "cache-control": "public,max-age=0,must-revalidate"
+                "cache-control": "public, max-age=0, must-revalidate"
             },
             "dest": "/sw.js"
         },
         {
-            "src": "/(.*).js",
+            "src": "^/assets/js/(.*)\\.js$",
             "headers": {
-                "Content-Type": "application/javascript"
+                "Content-Type": "application/javascript",
+                "Cache-Control": "public, max-age=31536000, immutable"
             },
-            "dest": "/$1.js"
+            "dest": "/assets/js/$1.js"
         },
         {
-            "src": "/(.*).css",
+            "src": "^/assets/css/(.*)\\.css$",
             "headers": {
-                "Content-Type": "text/css"
+                "Content-Type": "text/css",
+                "Cache-Control": "public, max-age=31536000, immutable"
             },
-            "dest": "/$1.css"
-        },
-        {
-            "src": "/(.*)",
-            "dest": "/"
+            "dest": "/assets/css/$1.css"
         },
         {
             "src": "/manifest.webmanifest",
-            "dest": "/manifest.webmanifest",
             "headers": {
-                "Content-Type": "application/manifest+json"
-            }
+                "Content-Type": "application/manifest+json",
+                "Cache-Control": "no-cache"
+            },
+            "dest": "/manifest.webmanifest"
         },
         {
             "src": "/favicon.ico",
-            "headers": { "cache-control": "no-cache" },
+            "headers": { 
+                "cache-control": "no-cache, no-store, must-revalidate"
+            },
             "dest": "/favicon.ico"
+        },
+        {
+            "src": "/(.*)",
+            "headers": {
+                "Cache-Control": "no-cache, no-store, must-revalidate"
+            },
+            "dest": "/"
         }
-    ]
+    ],
+    "rewrites": [
+        { "source": "/(.*)", "destination": "/" }
+    ],
+    "builds": [
+        { 
+            "src": "package.json", 
+            "use": "@vercel/node",
+            "config": { 
+                "nodeVersion": "20.x",
+                "maxLambdaSize": "50mb"
+            }
+        }
+    ],
+    "engines": {
+        "node": ">=20.18.0 <21.0.0",
+        "npm": ">=10.0.0"
+    }
 }
