@@ -6,7 +6,7 @@
   "proxy": "https://us-central1-cospecreclamos.cloudfunctions.net",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc && vite build",
     "preview": "vite preview",
     "generate-icons": "node scripts/generate-icons.js",
     "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings=0",
@@ -63,7 +63,6 @@
   },
   "devDependencies": {
     "@babel/plugin-transform-react-jsx": "^7.25.9",
-    "@netlify/plugin-lighthouse": "^3.0.0",
     "@rushstack/eslint-patch": "^1.10.4",
     "@types/body-parser": "^1.19.5",
     "@types/connect": "^3.4.38",
