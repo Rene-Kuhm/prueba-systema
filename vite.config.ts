@@ -1,52 +1,40 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import path from 'path';
-import { VitePWA } from 'vite-plugin-pwa';
+import { resolve } from 'path';
 
 export default defineConfig({
-  plugins: [
-    react(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      manifest: {
-        name: 'Cospec Comunicasiones',
-        short_name: 'Cospec',
-        theme_color: '#ffffff',
-        background_color: '#ffffff',
-        display: 'standalone',
-        icons: [
-          {
-            src: '/icons/icon-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: '/icons/icon-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
-      }
-    })
-  ],
+  plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@components': path.resolve(__dirname, './src/components'),
-    }
+      '@': resolve(__dirname, './src'),
+    },
   },
   build: {
-    target: 'es2015',
-    minify: 'esbuild',
     rollupOptions: {
       output: {
-        chunkFileNames: 'assets/js/[name]-[hash].js',
-        entryFileNames: 'assets/js/[name]-[hash].js',
-        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
-      }
-    }
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-firebase': [
+            '@firebase/app',
+            '@firebase/auth',
+            '@firebase/firestore',
+            '@firebase/storage',
+            '@firebase/messaging'
+          ],
+          'vendor-ui': ['react-toastify'],
+          'routes-admin': ['/src/routes/AdminRoutes'],
+          'routes-technician': ['/src/routes/TechnicianRoutes'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 800,
+    sourcemap: false,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
   },
-  optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom']
-  }
 });
