@@ -6,7 +6,15 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   plugins: [
-    react(),
+    react({
+      jsxRuntime: 'automatic',
+      jsxImportSource: 'react',
+      babel: {
+        plugins: [
+          ['@babel/plugin-transform-react-jsx']
+        ]
+      }
+    }),
     compression({
       algorithm: 'gzip',
       ext: '.gz',
@@ -38,37 +46,37 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@components': path.resolve(__dirname, './src/components'),
-    },
+    }
   },
   build: {
-    target: 'es2020',
+    target: 'es2015',
     minify: 'esbuild',
     rollupOptions: {
+      external: ['react/jsx-runtime'],
       output: {
-        manualChunks: {
-          'react-core': ['react', 'react-dom'],
-          'react-router': ['react-router-dom'],
-        },
+        manualChunks: undefined,
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
         assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
       }
     },
-    sourcemap: true,
+    sourcemap: false,
     cssCodeSplit: true,
+    commonjsOptions: {
+      include: [/node_modules/],
+      extensions: ['.js', '.cjs']
+    }
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom'],
-    disabled: false
-  },
-  esbuild: {
-    logOverride: { 'this-is-undefined-in-esm': 'silent' }
-  },
-  server: {
-    cors: true,
-    proxy: {},
-  },
-  preview: {
-    port: 3000
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      'react/jsx-runtime',
+      'react/jsx-dev-runtime'
+    ],
+    esbuildOptions: {
+      target: 'es2015'
+    }
   }
 });
