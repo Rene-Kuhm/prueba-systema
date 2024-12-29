@@ -49,31 +49,28 @@ export default function Login() {
     <div className="login-container">
       <div className="background-effects" />
       
-      <div className="flex flex-col items-center w-full max-w-md">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-white mb-4 tracking-tight flex items-center justify-center gap-3">
-            <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" className="stroke-blue-500" strokeWidth="2"/>
-              <path d="M8 12 C8 8, 16 8, 16 12" className="stroke-blue-400" strokeWidth="2"/>
-              <path d="M6 12 C6 6, 18 6, 18 12" className="stroke-blue-300 opacity-60" strokeWidth="2"/>
-              <circle cx="12" cy="12" r="2" className="fill-blue-500"/>
+      <div className="login-content">
+        <div className="login-header">
+          <h1 className="login-title">
+            <svg className="login-logo" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" className="logo-circle-primary"/>
+              <path d="M8 12 C8 8, 16 8, 16 12" className="logo-path-secondary"/>
+              <path d="M6 12 C6 6, 18 6, 18 12" className="logo-path-tertiary"/>
+              <circle cx="12" cy="12" r="2" className="logo-center"/>
             </svg>
             Cospec
           </h1>
-          <div className="h-1 w-20 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full" />
+          <div className="header-underline" />
         </div>
 
-        <div className="login-card w-full">
+        <div className="login-card">
           <div className="login-form">
-            <div className="login-header">
-              <p className="login-subtitle text-lg">Ingresa para continuar</p>
-            </div>
+            <p className="login-subtitle">Ingresa para continuar</p>
 
             <form onSubmit={handleSubmit} className="form-container">
-              <div className="space-y-4">
-                {/* Email field */}
+              <div className="form-fields">
                 <div className="form-group">
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
+                  <label htmlFor="email" className="form-label">
                     Correo electrónico
                   </label>
                   <input
@@ -88,9 +85,8 @@ export default function Login() {
                   />
                 </div>
 
-                {/* Password field */}
                 <div className="form-group">
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
+                  <label htmlFor="password" className="form-label">
                     Contraseña
                   </label>
                   <input
@@ -105,9 +101,8 @@ export default function Login() {
                   />
                 </div>
 
-                {/* Role selector */}
                 <div className="form-group">
-                  <label htmlFor="role" className="block text-sm font-medium text-gray-300 mb-1">
+                  <label htmlFor="role" className="form-label">
                     Rol
                   </label>
                   <select
@@ -123,15 +118,15 @@ export default function Login() {
                 </div>
               </div>
 
-              <div className="mt-8 flex justify-center">
+              <div className="submit-container">
                 <button
                   type="submit"
                   disabled={isSubmitting || loading}
-                  className="submit-button group"
+                  className="submit-button"
                 >
                   {(isSubmitting || loading) ? (
-                    <div className="flex items-center justify-center">
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    <div className="loading-state">
+                      <div className="spinner" />
                       Ingresando...
                     </div>
                   ) : (
@@ -140,39 +135,31 @@ export default function Login() {
                 </button>
               </div>
 
-              <div className="mt-6 text-center">
-                <Link 
-                  to="/forgot-password"
-                  className="text-sm text-gray-400 hover:text-blue-400 transition-colors"
-                >
+              <div className="forgot-password">
+                <Link to="/forgot-password" className="forgot-password-link">
                   ¿Olvidaste tu contraseña?
                 </Link>
               </div>
             </form>
 
-            <div className="mt-8 pt-6 border-t border-gray-700">
-              <div className="text-center text-sm">
-                <span className="text-gray-400">¿No tienes una cuenta? </span>
-                <Link 
-                  to="/signup"
-                  className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
-                >
+            <div className="signup-section">
+              <div className="signup-text">
+                <span>¿No tienes una cuenta? </span>
+                <Link to="/signup" className="signup-link">
                   Regístrate aquí
                 </Link>
               </div>
             </div>
 
             {resetSuccess && (
-              <div className="mt-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                <p className="text-sm text-green-400 text-center">
-                  Tu contraseña ha sido actualizada exitosamente
-                </p>
+              <div className="success-message">
+                <p>Tu contraseña ha sido actualizada exitosamente</p>
               </div>
             )}
 
             {localError && (
-              <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                <p className="text-sm text-red-400 text-center">{localError}</p>
+              <div className="error-message">
+                <p>{localError}</p>
               </div>
             )}
           </div>
