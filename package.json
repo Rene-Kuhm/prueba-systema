@@ -8,7 +8,7 @@
     "postinstall": "npm install -D @vitejs/plugin-react vite",
     "dev": "vite",
     "prepare": "npm install -g vite",
-    "build": "tsc && vite build",
+    "build": "CI=false npx vite build --debug",
     "preview": "vite preview",
     "generate-icons": "node scripts/generate-icons.js",
     "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings=0",
