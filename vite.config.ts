@@ -10,10 +10,10 @@ export default defineConfig({
       '@components': path.resolve(__dirname, './src/components'),
     },
   },
-  base: '/', // Ensure proper base path for assets
+  base: '/', 
   build: {
-    outDir: 'dist', // Explicit output directory
-    assetsDir: 'assets', // Specify assets subdirectory
+    outDir: 'dist', 
+    assetsDir: 'assets', 
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -26,9 +26,9 @@ export default defineConfig({
         assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
       }
     },
-    chunkSizeWarningLimit: 2000, // Existing chunk size limit
+    chunkSizeWarningLimit: 2000, 
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom'], // Explicitly pre-bundle these dependencies
+    include: ['react', 'react-dom', 'react-router-dom'], 
   },
 });
