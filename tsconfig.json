@@ -19,7 +19,6 @@
       "node",
       "react",
       "react-dom",
-      "express",
       "cors"
     ],
     "baseUrl": ".",
