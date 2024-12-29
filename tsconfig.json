@@ -19,7 +19,6 @@
       "node",
       "react",
       "react-dom",
-      "prop-types"
     ],
     "baseUrl": ".",
     "paths": {
