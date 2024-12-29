@@ -41,12 +41,27 @@ const AppContent: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    // Add debug logging for notification permission
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Notification Permission:', Notification.permission);
+      console.log('Current User:', currentUser);
+    }
+  }, [currentUser]);
+
   if (isLoading || currentUser === undefined) {
     return <LoadingSpinner />;
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Notification button with improved visibility */}
+      <div className="fixed z-50 top-4 right-4">
+        {currentUser && (
+          <NotificationButton onClick={requestNotificationPermission} />
+        )}
+      </div>
+
       <ToastContainer
         position="top-right"
         autoClose={5000}
@@ -62,10 +77,6 @@ const AppContent: React.FC = () => {
       />
       
       <AppRoutes />
-
-      {Notification.permission !== 'granted' && currentUser && !isLoading && (
-        <NotificationButton onClick={requestNotificationPermission} />
-      )}
     </div>
   );
 };
