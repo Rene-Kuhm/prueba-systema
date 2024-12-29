@@ -1,3 +1,8 @@
+/* global importScripts */
+/* global firebase */
+/* global clients */
+/* eslint-disable no-undef */
+
 // public/firebase-messaging-sw.js
 importScripts("https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/11.1.0/firebase-messaging-compat.js");
@@ -45,6 +50,6 @@ messaging.onBackgroundMessage(payload => {
     self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', () => {
     self.skipWaiting();
 });
