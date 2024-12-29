@@ -1,139 +1,117 @@
-.login-container {
-  @apply min-h-screen flex items-center justify-center p-4 bg-gray-900;
-}
+@layer components {
+  .login-container {
+    @apply min-h-screen flex items-center justify-center p-4 bg-gray-900;
+  }
 
-.background-effects {
-  @apply fixed inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900;
-}
+  .background-effects {
+    @apply fixed inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900;
+  }
 
-.login-content {
-  @apply flex flex-col items-center w-full max-w-md relative z-10;
-}
+  .login-content {
+    @apply flex flex-col items-center w-full max-w-md relative z-10;
+  }
 
-.login-header {
-  @apply mb-8 text-center;
-}
+  .login-header {
+    @apply mb-8 text-center;
+    contain: layout style paint;
+  }
 
-.login-title {
-  @apply text-4xl font-bold text-white mb-4 tracking-tight flex items-center justify-center gap-3;
-}
+  .login-title {
+    @apply text-4xl font-bold text-white mb-4 tracking-tight flex items-center justify-center gap-3;
+    content-visibility: auto;
+    contain-intrinsic-size: 4rem;
+  }
 
-.login-logo {
-  @apply w-12 h-12;
-}
+  .header-underline {
+    @apply h-1 w-20 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full;
+  }
 
-.logo-circle-primary {
-  @apply stroke-blue-500;
-  stroke-width: 2;
-}
+  .login-card {
+    @apply w-full bg-gray-800 rounded-xl shadow-xl border border-gray-700;
+  }
 
-.logo-path-secondary {
-  @apply stroke-blue-400;
-  stroke-width: 2;
-}
+  .login-form {
+    @apply p-6;
+  }
 
-.logo-path-tertiary {
-  @apply stroke-blue-300 opacity-60;
-  stroke-width: 2;
-}
+  .login-subtitle {
+    @apply text-lg text-gray-300 text-center mb-6;
+  }
 
-.logo-center {
-  @apply fill-blue-500;
-}
+  .form-container {
+    @apply space-y-6;
+  }
 
-.header-underline {
-  @apply h-1 w-20 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full;
-}
+  .form-fields {
+    @apply space-y-4;
+  }
 
-.login-card {
-  @apply w-full bg-gray-800 rounded-xl shadow-xl border border-gray-700;
-}
+  .form-group {
+    @apply space-y-1;
+  }
 
-.login-form {
-  @apply p-6;
-}
+  .form-label {
+    @apply block text-sm font-medium text-gray-300;
+  }
 
-.login-subtitle {
-  @apply text-lg text-gray-300 text-center mb-6;
-}
+  .input-field {
+    @apply w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white 
+           placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
+           focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
 
-.form-container {
-  @apply space-y-6;
-}
+  .submit-container {
+    @apply mt-8 flex justify-center;
+  }
 
-.form-fields {
-  @apply space-y-4;
-}
+  .submit-button {
+    @apply w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-lg
+           hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 
+           focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
 
-.form-group {
-  @apply space-y-1;
-}
+  .loading-state {
+    @apply flex items-center justify-center;
+  }
 
-.form-label {
-  @apply block text-sm font-medium text-gray-300;
-}
+  .spinner {
+    @apply w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2;
+  }
 
-.input-field {
-  @apply w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white 
-         placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
-         focus:border-transparent transition-colors;
-}
+  .forgot-password {
+    @apply mt-6 text-center;
+  }
 
-.input-field:disabled {
-  @apply opacity-50 cursor-not-allowed;
-}
+  .forgot-password-link {
+    @apply text-sm text-gray-400 hover:text-blue-400 transition-colors;
+  }
 
-.submit-container {
-  @apply mt-8 flex justify-center;
-}
+  .signup-section {
+    @apply mt-8 pt-6 border-t border-gray-700;
+  }
 
-.submit-button {
-  @apply w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-lg
-         hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 
-         focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors
-         disabled:opacity-50 disabled:cursor-not-allowed;
-}
+  .signup-text {
+    @apply text-center text-sm text-gray-400;
+  }
 
-.loading-state {
-  @apply flex items-center justify-center;
-}
+  .signup-link {
+    @apply text-blue-400 hover:text-blue-300 font-medium transition-colors;
+  }
 
-.spinner {
-  @apply w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2;
-}
+  .success-message {
+    @apply mt-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20;
+  }
 
-.forgot-password {
-  @apply mt-6 text-center;
-}
+  .success-message p {
+    @apply text-sm text-green-400 text-center;
+  }
 
-.forgot-password-link {
-  @apply text-sm text-gray-400 hover:text-blue-400 transition-colors;
-}
+  .error-message {
+    @apply mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20;
+  }
 
-.signup-section {
-  @apply mt-8 pt-6 border-t border-gray-700;
-}
-
-.signup-text {
-  @apply text-center text-sm text-gray-400;
-}
-
-.signup-link {
-  @apply text-blue-400 hover:text-blue-300 font-medium transition-colors;
-}
-
-.success-message {
-  @apply mt-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20;
-}
-
-.success-message p {
-  @apply text-sm text-green-400 text-center;
-}
-
-.error-message {
-  @apply mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20;
-}
-
-.error-message p {
-  @apply text-sm text-red-400 text-center;
+  .error-message p {
+    @apply text-sm text-red-400 text-center;
+  }
 }

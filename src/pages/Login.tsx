@@ -1,8 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'react-toastify';
 import '../styles/login.css';
+
+const CospecLogo = lazy(() => import('../components/Logo/CospecLogo'));
+
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center w-12 h-12">
+    <div className="w-8 h-8 border-4 border-blue-500 rounded-full border-t-transparent animate-spin" />
+  </div>
+);
 
 export default function Login() {
   const navigate = useNavigate();
@@ -51,14 +59,24 @@ export default function Login() {
       
       <div className="login-content">
         <div className="login-header">
-          <h1 className="login-title">
-            <svg className="login-logo" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" className="logo-circle-primary"/>
-              <path d="M8 12 C8 8, 16 8, 16 12" className="logo-path-secondary"/>
-              <path d="M6 12 C6 6, 18 6, 18 12" className="logo-path-tertiary"/>
-              <circle cx="12" cy="12" r="2" className="logo-center"/>
-            </svg>
-            Cospec
+          <h1 
+            className="login-title"
+            style={{
+              contentVisibility: 'auto',
+              containIntrinsicSize: '4rem'
+            }}
+          >
+            <Suspense fallback={<LoadingSpinner />}>
+              <CospecLogo />
+            </Suspense>
+            <span 
+              style={{
+                transform: 'translateZ(0)',
+                willChange: 'transform'
+              }}
+            >
+              Cospec
+            </span>
           </h1>
           <div className="header-underline" />
         </div>
@@ -82,6 +100,7 @@ export default function Login() {
                     className="input-field"
                     required
                     disabled={isSubmitting}
+                    autoComplete="email"
                   />
                 </div>
 
@@ -98,6 +117,7 @@ export default function Login() {
                     className="input-field"
                     required
                     disabled={isSubmitting}
+                    autoComplete="current-password"
                   />
                 </div>
 
