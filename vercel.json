@@ -49,15 +49,5 @@
     ],
     "rewrites": [
         { "source": "/(.*)", "destination": "/" }
-    ],
-    "builds": [
-        { 
-            "src": "package.json", 
-            "use": "@vercel/node",
-            "config": { 
-                "nodeVersion": "20.x",
-                "maxLambdaSize": "50mb"
-            }
-        }
     ]
 }
