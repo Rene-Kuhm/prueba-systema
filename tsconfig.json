@@ -19,7 +19,7 @@
       "node",
       "react",
       "react-dom",
-      "cors"
+      "prop-types"
     ],
     "baseUrl": ".",
     "paths": {
