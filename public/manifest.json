@@ -1,6 +1,7 @@
 {
   "name": "Cospec Comunicaciones",
   "short_name": "Cospec",
+  "description": "Descripción de tu aplicación",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -9,6 +10,12 @@
     {
       "src": "./icons/icon-192x192.png",
       "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
