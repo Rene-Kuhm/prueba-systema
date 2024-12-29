@@ -1,16 +1,9 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'react-toastify';
+import CospecLogo from '../components/Logo/CospecLogo';
 import '../styles/login.css';
-
-const CospecLogo = lazy(() => import('../components/Logo/CospecLogo'));
-
-const LoadingSpinner = () => (
-  <div className="flex items-center justify-center w-12 h-12">
-    <div className="w-8 h-8 border-4 border-blue-500 rounded-full border-t-transparent animate-spin" />
-  </div>
-);
 
 export default function Login() {
   const navigate = useNavigate();
@@ -54,135 +47,147 @@ export default function Login() {
   };
 
   return (
-    <div className="login-container">
-      <div className="background-effects" />
+    <div className="flex items-center justify-center min-h-screen p-4 bg-gray-900">
+      <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900" />
       
-      <div className="login-content">
-        <div className="login-header">
-          <h1 
-            className="login-title"
-            style={{
-              contentVisibility: 'auto',
-              containIntrinsicSize: '4rem'
-            }}
-          >
-            <Suspense fallback={<LoadingSpinner />}>
-              <CospecLogo />
-            </Suspense>
+      <div className="relative z-10 flex flex-col items-center w-full max-w-md">
+        {/* Header optimizado */}
+        <div className="mb-8 text-center">
+          <h1 className="flex items-center justify-center gap-3 mb-4 text-4xl font-bold tracking-tight text-white">
+            <CospecLogo />
             <span 
+              className="font-bold leading-none text-white"
               style={{
-                transform: 'translateZ(0)',
-                willChange: 'transform'
+                transform: 'translate3d(0,0,0)',
+                backfaceVisibility: 'hidden',
+                perspective: '1000px',
+                WebkitFontSmoothing: 'antialiased'
               }}
             >
               Cospec
             </span>
           </h1>
-          <div className="header-underline" />
+          <div className="w-20 h-1 mx-auto rounded-full bg-gradient-to-r from-blue-500 to-purple-500" />
         </div>
 
-        <div className="login-card">
-          <div className="login-form">
-            <p className="login-subtitle">Ingresa para continuar</p>
+        {/* Card de login */}
+        <div className="w-full p-6 bg-gray-800 border border-gray-700 shadow-xl rounded-xl">
+          <p className="mb-6 text-lg text-center text-gray-300">
+            Ingresa para continuar
+          </p>
 
-            <form onSubmit={handleSubmit} className="form-container">
-              <div className="form-fields">
-                <div className="form-group">
-                  <label htmlFor="email" className="form-label">
-                    Correo electrónico
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    placeholder="ejemplo@correo.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="input-field"
-                    required
-                    disabled={isSubmitting}
-                    autoComplete="email"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="password" className="form-label">
-                    Contraseña
-                  </label>
-                  <input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="input-field"
-                    required
-                    disabled={isSubmitting}
-                    autoComplete="current-password"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="role" className="form-label">
-                    Rol
-                  </label>
-                  <select
-                    id="role"
-                    value={selectedRole}
-                    onChange={(e) => setSelectedRole(e.target.value as 'admin' | 'technician')}
-                    className="input-field"
-                    disabled={isSubmitting}
-                  >
-                    <option value="technician">Técnico</option>
-                    <option value="admin">Administrador</option>
-                  </select>
-                </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-4">
+              {/* Email field */}
+              <div className="space-y-1">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-300">
+                  Correo electrónico
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="ejemplo@correo.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-2 text-white placeholder-gray-400 transition-colors bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                  required
+                  disabled={isSubmitting}
+                  autoComplete="email"
+                />
               </div>
 
-              <div className="submit-container">
-                <button
-                  type="submit"
-                  disabled={isSubmitting || loading}
-                  className="submit-button"
+              {/* Password field */}
+              <div className="space-y-1">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-300">
+                  Contraseña
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-2 text-white placeholder-gray-400 transition-colors bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                  required
+                  disabled={isSubmitting}
+                  autoComplete="current-password"
+                />
+              </div>
+
+              {/* Role selector */}
+              <div className="space-y-1">
+                <label htmlFor="role" className="block text-sm font-medium text-gray-300">
+                  Rol
+                </label>
+                <select
+                  id="role"
+                  value={selectedRole}
+                  onChange={(e) => setSelectedRole(e.target.value as 'admin' | 'technician')}
+                  className="w-full px-4 py-2 text-white transition-colors bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isSubmitting}
                 >
-                  {(isSubmitting || loading) ? (
-                    <div className="loading-state">
-                      <div className="spinner" />
-                      Ingresando...
-                    </div>
-                  ) : (
-                    'Ingresar'
-                  )}
-                </button>
-              </div>
-
-              <div className="forgot-password">
-                <Link to="/forgot-password" className="forgot-password-link">
-                  ¿Olvidaste tu contraseña?
-                </Link>
-              </div>
-            </form>
-
-            <div className="signup-section">
-              <div className="signup-text">
-                <span>¿No tienes una cuenta? </span>
-                <Link to="/signup" className="signup-link">
-                  Regístrate aquí
-                </Link>
+                  <option value="technician">Técnico</option>
+                  <option value="admin">Administrador</option>
+                </select>
               </div>
             </div>
 
-            {resetSuccess && (
-              <div className="success-message">
-                <p>Tu contraseña ha sido actualizada exitosamente</p>
-              </div>
-            )}
+            {/* Submit button */}
+            <div className="mt-8">
+              <button
+                type="submit"
+                disabled={isSubmitting || loading}
+                className="w-full px-6 py-3 font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {(isSubmitting || loading) ? (
+                  <div className="flex items-center justify-center">
+                    <div className="w-5 h-5 mr-2 border-2 border-white rounded-full border-t-transparent animate-spin" />
+                    Ingresando...
+                  </div>
+                ) : (
+                  'Ingresar'
+                )}
+              </button>
+            </div>
 
-            {localError && (
-              <div className="error-message">
-                <p>{localError}</p>
-              </div>
-            )}
+            {/* Links */}
+            <div className="mt-6 text-center">
+              <Link 
+                to="/forgot-password"
+                className="text-sm text-gray-400 transition-colors hover:text-blue-400"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
+          </form>
+
+          {/* Sign up section */}
+          <div className="pt-6 mt-8 border-t border-gray-700">
+            <div className="text-sm text-center">
+              <span className="text-gray-400">¿No tienes una cuenta? </span>
+              <Link 
+                to="/signup"
+                className="font-medium text-blue-400 transition-colors hover:text-blue-300"
+              >
+                Regístrate aquí
+              </Link>
+            </div>
           </div>
+
+          {/* Messages */}
+          {resetSuccess && (
+            <div className="p-3 mt-4 border rounded-lg bg-green-500/10 border-green-500/20">
+              <p className="text-sm text-center text-green-400">
+                Tu contraseña ha sido actualizada exitosamente
+              </p>
+            </div>
+          )}
+
+          {localError && (
+            <div className="p-3 mt-4 border rounded-lg bg-red-500/10 border-red-500/20">
+              <p className="text-sm text-center text-red-400">{localError}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
