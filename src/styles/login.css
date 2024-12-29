@@ -1,117 +1,131 @@
-@layer components {
-  .login-container {
-    @apply min-h-screen flex items-center justify-center p-4 bg-gray-900;
-  }
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  .background-effects {
-    @apply fixed inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900;
-  }
+/* Configuración de fuentes */
+@font-face {
+  font-family: 'YourFont';
+  src: url('/fonts/your-font.woff2') format('woff2');
+  font-display: optional;
+}
 
-  .login-content {
-    @apply flex flex-col items-center w-full max-w-md relative z-10;
-  }
+.font-display {
+  font-family: 'YourFont', system-ui, -apple-system, sans-serif;
+}
 
-  .login-header {
-    @apply mb-8 text-center;
-    contain: layout style paint;
-  }
+/* Estilos personalizados */
+.login-container {
+  @apply min-h-screen flex items-center justify-center p-4 bg-gray-900;
+}
 
-  .login-title {
-    @apply text-4xl font-bold text-white mb-4 tracking-tight flex items-center justify-center gap-3;
-    content-visibility: auto;
-    contain-intrinsic-size: 4rem;
-  }
+.background-effects {
+  @apply fixed inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900;
+}
 
-  .header-underline {
-    @apply h-1 w-20 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full;
-  }
+.login-content {
+  @apply flex flex-col items-center w-full max-w-md relative z-10;
+}
 
-  .login-card {
-    @apply w-full bg-gray-800 rounded-xl shadow-xl border border-gray-700;
-  }
+.login-header {
+  @apply mb-8 text-center;
+  contain: layout style paint;
+}
 
-  .login-form {
-    @apply p-6;
-  }
+.login-title {
+  @apply text-4xl font-bold text-white mb-4 tracking-tight flex items-center justify-center gap-3;
+  content-visibility: auto;
+  contain-intrinsic-size: 4rem;
+}
 
-  .login-subtitle {
-    @apply text-lg text-gray-300 text-center mb-6;
-  }
+.header-underline {
+  @apply h-1 w-20 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full;
+}
 
-  .form-container {
-    @apply space-y-6;
-  }
+.login-card {
+  @apply w-full bg-gray-800 rounded-xl shadow-xl border border-gray-700;
+}
 
-  .form-fields {
-    @apply space-y-4;
-  }
+.login-form {
+  @apply p-6;
+}
 
-  .form-group {
-    @apply space-y-1;
-  }
+.login-subtitle {
+  @apply text-lg text-gray-300 text-center mb-6;
+}
 
-  .form-label {
-    @apply block text-sm font-medium text-gray-300;
-  }
+.form-container {
+  @apply space-y-6;
+}
 
-  .input-field {
-    @apply w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white 
-           placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
-           focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
-  }
+.form-fields {
+  @apply space-y-4;
+}
 
-  .submit-container {
-    @apply mt-8 flex justify-center;
-  }
+.form-group {
+  @apply space-y-1;
+}
 
-  .submit-button {
-    @apply w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-lg
-           hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 
-           focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors
-           disabled:opacity-50 disabled:cursor-not-allowed;
-  }
+.form-label {
+  @apply block text-sm font-medium text-gray-300;
+}
 
-  .loading-state {
-    @apply flex items-center justify-center;
-  }
+.input-field {
+  @apply w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white 
+         placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
+         focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+}
 
-  .spinner {
-    @apply w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2;
-  }
+.submit-container {
+  @apply mt-8 flex justify-center;
+}
 
-  .forgot-password {
-    @apply mt-6 text-center;
-  }
+.submit-button {
+  @apply w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-lg
+         hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 
+         focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors
+         disabled:opacity-50 disabled:cursor-not-allowed;
+}
 
-  .forgot-password-link {
-    @apply text-sm text-gray-400 hover:text-blue-400 transition-colors;
-  }
+.loading-state {
+  @apply flex items-center justify-center;
+}
 
-  .signup-section {
-    @apply mt-8 pt-6 border-t border-gray-700;
-  }
+.spinner {
+  @apply w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2;
+}
 
-  .signup-text {
-    @apply text-center text-sm text-gray-400;
-  }
+.forgot-password {
+  @apply mt-6 text-center;
+}
 
-  .signup-link {
-    @apply text-blue-400 hover:text-blue-300 font-medium transition-colors;
-  }
+.forgot-password-link {
+  @apply text-sm text-gray-400 hover:text-blue-400 transition-colors;
+}
 
-  .success-message {
-    @apply mt-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20;
-  }
+.signup-section {
+  @apply mt-8 pt-6 border-t border-gray-700;
+}
 
-  .success-message p {
-    @apply text-sm text-green-400 text-center;
-  }
+.signup-text {
+  @apply text-center text-sm text-gray-400;
+}
 
-  .error-message {
-    @apply mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20;
-  }
+.signup-link {
+  @apply text-blue-400 hover:text-blue-300 font-medium transition-colors;
+}
 
-  .error-message p {
-    @apply text-sm text-red-400 text-center;
-  }
+.success-message {
+  @apply mt-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20;
+}
+
+.success-message p {
+  @apply text-sm text-green-400 text-center;
+}
+
+.error-message {
+  @apply mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20;
+}
+
+.error-message p {
+  @apply text-sm text-red-400 text-center;
 }
