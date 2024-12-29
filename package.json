@@ -5,9 +5,10 @@
   "type": "module",
   "proxy": "https://us-central1-cospecreclamos.cloudfunctions.net",
   "scripts": {
+    "postinstall": "npm install -D @vitejs/plugin-react vite",
     "dev": "vite",
     "prepare": "npm install -g vite",
-    "build": "npx vite build",
+    "build": "tsc && vite build",
     "preview": "vite preview",
     "generate-icons": "node scripts/generate-icons.js",
     "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings=0",
