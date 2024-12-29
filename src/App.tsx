@@ -42,9 +42,13 @@ const AppContent: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Add debug logging for notification permission
+    // Add debug logging for notification permission with proper checks
     if (process.env.NODE_ENV === 'development') {
-      console.log('Notification Permission:', Notification.permission);
+      const notificationSupported = 'Notification' in window;
+      console.log('Notification API Supported:', notificationSupported);
+      if (notificationSupported) {
+        console.log('Notification Permission:', Notification.permission);
+      }
       console.log('Current User:', currentUser);
     }
   }, [currentUser]);
