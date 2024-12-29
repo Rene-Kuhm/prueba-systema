@@ -232,79 +232,75 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <Router>
-      <ErrorBoundary>
-        <div className='min-h-screen bg-gray-50'>
-          <ToastContainer
-            position='top-right'
-            autoClose={5000}
-            hideProgressBar={false}
-            newestOnTop
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-            theme='light'
-            limit={3}
-          />
-          <Routes>
-            <Route path="/" element={<Navigate to="/login" replace />} />
+    <div className='min-h-screen bg-gray-50'>
+      <ToastContainer
+        position='top-right'
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme='light'
+        limit={3}
+      />
+      <Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />
 
-            <Route path="/login" element={
-              <UnauthorizedRoute>
-                <Login />
-              </UnauthorizedRoute>
-            } />
-            <Route path="/signup" element={
-              <UnauthorizedRoute>
-                <Signup />
-              </UnauthorizedRoute>
-            } />
-            <Route path="/forgot-password" element={
-              <UnauthorizedRoute>
-                <ForgotPassword />
-              </UnauthorizedRoute>
-            } />
+        <Route path="/login" element={
+          <UnauthorizedRoute>
+            <Login />
+          </UnauthorizedRoute>
+        } />
+        <Route path="/signup" element={
+          <UnauthorizedRoute>
+            <Signup />
+          </UnauthorizedRoute>
+        } />
+        <Route path="/forgot-password" element={
+          <UnauthorizedRoute>
+            <ForgotPassword />
+          </UnauthorizedRoute>
+        } />
 
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Navigate to={currentUser?.role ? `/${currentUser.role}` : '/login'} replace />
-              </ProtectedRoute>
-            } />
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Navigate to={currentUser?.role ? `/${currentUser.role}` : '/login'} replace />
+          </ProtectedRoute>
+        } />
 
-            <Route path="/admin/*" element={
-              <ProtectedRoute role="admin">
-                <AdminRoutes />
-              </ProtectedRoute>
-            } />
-            <Route path="/technician/*" element={
-              <ProtectedRoute role="technician">
-                <TechnicianRoutes />
-              </ProtectedRoute>
-            } />
+        <Route path="/admin/*" element={
+          <ProtectedRoute role="admin">
+            <AdminRoutes />
+          </ProtectedRoute>
+        } />
+        <Route path="/technician/*" element={
+          <ProtectedRoute role="technician">
+            <TechnicianRoutes />
+          </ProtectedRoute>
+        } />
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
 
-          {Notification.permission !== 'granted' && currentUser && !isLoading && (
-            <NotificationButton onClick={requestNotificationPermission} />
-          )}
-        </div>
-      </ErrorBoundary>
-    </Router>
+      {Notification.permission !== 'granted' && currentUser && !isLoading && (
+        <NotificationButton onClick={requestNotificationPermission} />
+      )}
+    </div>
   )
 }
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <Router>
+      <AuthProvider>
         <ErrorBoundary>
           <AppContent />
         </ErrorBoundary>
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   )
 }
 
