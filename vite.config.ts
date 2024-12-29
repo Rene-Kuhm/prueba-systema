@@ -1,29 +1,16 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import compression from 'vite-plugin-compression';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   plugins: [
-    react({
-      jsxRuntime: 'automatic',
-      jsxImportSource: 'react',
-      babel: {
-        plugins: [
-          ['@babel/plugin-transform-react-jsx']
-        ]
-      }
-    }),
-    compression({
-      algorithm: 'gzip',
-      ext: '.gz',
-    }),
+    react(),
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'Your App Name',
-        short_name: 'App',
+        name: 'Cospec Comunicasiones',
+        short_name: 'Cospec',
         theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',
@@ -52,31 +39,14 @@ export default defineConfig({
     target: 'es2015',
     minify: 'esbuild',
     rollupOptions: {
-      external: ['react/jsx-runtime'],
       output: {
-        manualChunks: undefined,
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
         assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
       }
-    },
-    sourcemap: false,
-    cssCodeSplit: true,
-    commonjsOptions: {
-      include: [/node_modules/],
-      extensions: ['.js', '.cjs']
     }
   },
   optimizeDeps: {
-    include: [
-      'react',
-      'react-dom',
-      'react-router-dom',
-      'react/jsx-runtime',
-      'react/jsx-dev-runtime'
-    ],
-    esbuildOptions: {
-      target: 'es2015'
-    }
+    include: ['react', 'react-dom', 'react-router-dom']
   }
 });
