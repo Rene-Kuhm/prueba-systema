@@ -6,7 +6,7 @@
 @font-face {
   font-family: 'YourFont';
   src: url('/fonts/your-font.woff2') format('woff2');
-  font-display: optional;
+  font-display: swap; /*tenia optional*/
 }
 
 .font-display {
@@ -15,7 +15,7 @@
 
 /* Estilos personalizados */
 .login-container {
-  @apply min-h-screen flex items-center justify-center p-4 bg-gray-900;
+  @apply flex items-center justify-center min-h-screen p-4 bg-gray-900;
 }
 
 .background-effects {
@@ -23,7 +23,7 @@
 }
 
 .login-content {
-  @apply flex flex-col items-center w-full max-w-md relative z-10;
+  @apply relative z-10 flex flex-col items-center w-full max-w-md;
 }
 
 .login-header {
@@ -32,17 +32,17 @@
 }
 
 .login-title {
-  @apply text-4xl font-bold text-white mb-4 tracking-tight flex items-center justify-center gap-3;
+  @apply flex items-center justify-center gap-3 mb-4 text-4xl font-bold tracking-tight text-white;
   content-visibility: auto;
   contain-intrinsic-size: 4rem;
 }
 
 .header-underline {
-  @apply h-1 w-20 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full;
+  @apply w-20 h-1 mx-auto rounded-full bg-gradient-to-r from-blue-500 to-purple-500;
 }
 
 .login-card {
-  @apply w-full bg-gray-800 rounded-xl shadow-xl border border-gray-700;
+  @apply w-full bg-gray-800 border border-gray-700 shadow-xl rounded-xl;
 }
 
 .login-form {
@@ -50,7 +50,7 @@
 }
 
 .login-subtitle {
-  @apply text-lg text-gray-300 text-center mb-6;
+  @apply mb-6 text-lg text-center text-gray-300;
 }
 
 .form-container {
@@ -70,20 +70,15 @@
 }
 
 .input-field {
-  @apply w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white 
-         placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 
-         focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply w-full px-4 py-2 text-white placeholder-gray-400 transition-colors bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
 .submit-container {
-  @apply mt-8 flex justify-center;
+  @apply flex justify-center mt-8;
 }
 
 .submit-button {
-  @apply w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-lg
-         hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 
-         focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors
-         disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply w-full px-6 py-3 font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
 .loading-state {
@@ -91,7 +86,7 @@
 }
 
 .spinner {
-  @apply w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2;
+  @apply w-5 h-5 mr-2 border-2 border-white rounded-full border-t-transparent animate-spin;
 }
 
 .forgot-password {
@@ -99,33 +94,33 @@
 }
 
 .forgot-password-link {
-  @apply text-sm text-gray-400 hover:text-blue-400 transition-colors;
+  @apply text-sm text-gray-400 transition-colors hover:text-blue-400;
 }
 
 .signup-section {
-  @apply mt-8 pt-6 border-t border-gray-700;
+  @apply pt-6 mt-8 border-t border-gray-700;
 }
 
 .signup-text {
-  @apply text-center text-sm text-gray-400;
+  @apply text-sm text-center text-gray-400;
 }
 
 .signup-link {
-  @apply text-blue-400 hover:text-blue-300 font-medium transition-colors;
+  @apply font-medium text-blue-400 transition-colors hover:text-blue-300;
 }
 
 .success-message {
-  @apply mt-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20;
+  @apply p-3 mt-4 border rounded-lg bg-green-500/10 border-green-500/20;
 }
 
 .success-message p {
-  @apply text-sm text-green-400 text-center;
+  @apply text-sm text-center text-green-400;
 }
 
 .error-message {
-  @apply mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20;
+  @apply p-3 mt-4 border rounded-lg bg-red-500/10 border-red-500/20;
 }
 
 .error-message p {
-  @apply text-sm text-red-400 text-center;
+  @apply text-sm text-center text-red-400;
 }
