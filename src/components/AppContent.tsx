@@ -1,7 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from '@/contexts/AuthContext';
-import { setupMessageListener, checkNotificationStatus, requestNotificationPermission } from '@/services/notificationService';
+import { 
+  setupMessageListener, 
+  getNotificationStatus, 
+  requestNotificationPermission 
+} from '@/services/notificationService';
 import NotificationButton from '@/components/common/NotificationButton';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import AppRoutes from '@/routes/AppRoutes';
@@ -10,9 +14,9 @@ const AppContent: React.FC = () => {
   const { isLoading, currentUser } = useAuth();
 
   useEffect(() => {
-    const { isSupported, isGranted } = checkNotificationStatus();
+    const { isSupported, permissionStatus } = getNotificationStatus();
     
-    if (isSupported && isGranted) {
+    if (isSupported && permissionStatus === 'granted') {
       const unsubscribe = setupMessageListener((payload) => {
         if (payload.notification?.title) {
           toast(payload.notification.title);
@@ -23,19 +27,29 @@ const AppContent: React.FC = () => {
     }
   }, []);
 
+  const handleNotificationRequest = useCallback(async () => {
+    return await requestNotificationPermission();
+  }, []);
+
   if (isLoading || currentUser === undefined) {
     return <LoadingSpinner />;
   }
 
-  const { isSupported, isGranted, isDenied } = checkNotificationStatus();
-  const showNotificationButton = isSupported && !isGranted && !isDenied && currentUser;
+  const { isSupported, permissionStatus } = getNotificationStatus();
+  const showNotificationButton = 
+    isSupported && 
+    permissionStatus !== 'granted' && 
+    permissionStatus !== 'denied' && 
+    currentUser;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <AppRoutes />
       
       {showNotificationButton && (
-        <NotificationButton onClick={requestNotificationPermission} />
+        <NotificationButton 
+          onClick={handleNotificationRequest}
+        />
       )}
     </div>
   );
