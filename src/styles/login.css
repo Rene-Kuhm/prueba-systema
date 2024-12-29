@@ -31,6 +31,11 @@
  /* contain: layout style paint;*/
 }
 
+.cospec {
+  @apply font-bold leading-none text-white;
+  -webkit-font-smoothing: antialiased;
+}
+
 .login-title {
   @apply flex items-center justify-center gap-3 mb-4 text-4xl font-bold tracking-tight text-white;
   content-visibility: auto;

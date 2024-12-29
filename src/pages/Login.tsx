@@ -56,13 +56,7 @@ export default function Login() {
           <h1 className="flex items-center justify-center gap-3 mb-4 text-4xl font-bold tracking-tight text-white">
             <CospecLogo />
             <span 
-              className="font-bold leading-none text-white"
-              style={{
-               /* transform: 'translate3d(0,0,0)',*/
-               /* backfaceVisibility: 'hidden',*/
-               /* perspective: '1000px',*/
-                WebkitFontSmoothing: 'antialiased'
-              }}
+              className="cospec"
             >
               Cospec
             </span>
