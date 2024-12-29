@@ -8,7 +8,7 @@ import {
 } from 'react-router-dom'
 import { getToken, onMessage } from 'firebase/messaging'
 import type { MessagePayload } from 'firebase/messaging'
-import { ProtectedRoute } from '@/components/common/auth/ProtectedRoute'
+import { ProtectedRoute } from '../src/components/common/auth/ProtectedRoute'
 import UnauthorizedRoute from '@/components/common/auth/UnauthorizedRoute'
 import { messaging } from '@/config/firebase'
 import { ToastContainer, toast } from 'react-toastify'
