@@ -1,3 +1,4 @@
+import React from 'react';
 import { Button } from "@/components/ui/button";
 import { FileDown, Settings, BarChart3 } from "lucide-react";
 import * as XLSX from 'xlsx';
@@ -219,7 +220,7 @@ export const Header = ({
     description = "Vista general del sistema",
     onExport,
     onSignOut
-}: HeaderProps): JSX.Element => {
+}: HeaderProps): React.ReactElement => {
     const handleExport = async () => {
         try {
             toast.info('Preparando exportación...');
@@ -245,17 +246,17 @@ export const Header = ({
     };
 
     return (
-        <div className="border-b mb-6">
-            <div className="flex h-16 items-center px-4">
+        <div className="mb-6 border-b">
+            <div className="flex items-center h-16 px-4">
                 <div className="flex items-center space-x-4">
-                    <BarChart3 className="h-6 w-6" />
+                    <BarChart3 className="w-6 h-6" />
                     <div>
                         <h2 className="text-2xl font-bold tracking-tight text-green-400">{title}</h2>
-                        <p className="text-muted-foreground text-white">{description}</p>
+                        <p className="text-white text-muted-foreground">{description}</p>
                     </div>
                 </div>
                 
-                <div className="ml-auto flex items-center space-x-4">
+                <div className="flex items-center ml-auto space-x-4">
                     <Breadcrumb className="hidden md:flex">
                         <BreadcrumbList>
                             <BreadcrumbItem>
@@ -274,7 +275,7 @@ export const Header = ({
                             className="flex items-center gap-2"
                             variant="outline"
                         >
-                            <FileDown className="h-4 w-4" />
+                            <FileDown className="w-4 h-4" />
                             <span className="hidden sm:inline">Exportar Reporte</span>
                         </Button>
 
@@ -285,7 +286,7 @@ export const Header = ({
                                     size="icon"
                                     className="h-9 w-9"
                                 >
-                                    <Settings className="h-4 w-4" />
+                                    <Settings className="w-4 h-4" />
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
@@ -295,14 +296,14 @@ export const Header = ({
                                     onClick={handleExport}
                                     className="flex items-center gap-2"
                                 >
-                                    <FileDown className="h-4 w-4" />
+                                    <FileDown className="w-4 h-4" />
                                     Exportar Reporte
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                     onClick={onSignOut}
                                     className="flex items-center gap-2"
                                 >
-                                    <Settings className="h-4 w-4" />
+                                    <Settings className="w-4 h-4" />
                                     Cerrar Sesión
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
