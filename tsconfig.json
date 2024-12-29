@@ -15,11 +15,22 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
-    "typeRoots": ["./node_modules/@types", "./src/lib/types"],
+    "types": [
+      "node",
+      "react",
+      "react-dom",
+      "express",
+      "cors"
+    ],
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts", "build.ts"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.d.ts"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
