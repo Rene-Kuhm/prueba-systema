@@ -1,0 +1,48 @@
+/* Signup Page */
+.login-container {
+    @apply flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-br from-slate-900 to-slate-800;
+ }
+ 
+ .background-effects {
+    @apply fixed inset-0 z-0;
+    background: radial-gradient(circle at center, #1e40af 0%, transparent 70%);
+    opacity: 0.15;
+ }
+ 
+ .login-card {
+    @apply relative z-10 w-full max-w-md p-8 border shadow-2xl bg-slate-800/90 backdrop-blur-xl rounded-2xl border-slate-700/50;
+    animation: fadeIn 0.5s ease-out;
+ }
+ 
+ .login-form {
+    @apply space-y-6;
+ }
+ 
+ .login-header {
+    @apply mb-8 text-center;
+ }
+ 
+ .login-subtitle {
+    @apply text-xl font-medium text-slate-200;
+ }
+ 
+ .form-group {
+    @apply space-y-2;
+ }
+ 
+ .input-field {
+    @apply w-full px-4 py-3 text-white transition-all duration-200 border rounded-lg bg-slate-700/50 border-slate-600 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500;
+ }
+ 
+ .submit-button {
+    @apply w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium 
+    rounded-lg shadow-lg hover:from-blue-500 hover:to-blue-600 focus:outline-none focus:ring-2 
+    focus:ring-blue-500/50 focus:ring-offset-2 focus:ring-offset-slate-800 disabled:opacity-50 
+    disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] 
+    active:scale-[0.98];
+ }
+ 
+ @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+ }

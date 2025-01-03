@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /login
+Allow: /signup
+Allow: /forgot-password
+Disallow: /admin/
+Disallow: /technician/
+Disallow: /dashboard/
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://tdpblog.com.ar/sitemap.xml

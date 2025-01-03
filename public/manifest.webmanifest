@@ -1,0 +1,17 @@
+{
+  "name": "Cospec Comunicaciones",
+  "short_name": "Cospec",
+  "description": "Sistema de gestión de reclamos",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/icons/favicon192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
