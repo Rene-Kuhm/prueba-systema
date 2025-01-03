@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from 'react';
-import {  Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { ProtectedRoute } from '@/components/common/auth/ProtectedRoute';
@@ -17,48 +17,48 @@ const AppRoutes: React.FC = () => {
     const { currentUser } = useAuth();
 
     return (
-      
-            <Suspense fallback={<LoadingSpinner />}>
-                <Routes>
-                    <Route path="/" element={<Navigate to="/login" replace />} />
+        <Suspense fallback={<LoadingSpinner />}>
+            <Routes>
+                <Route path="/" element={<Navigate to="/login" replace />} />
 
-                    <Route path="/login" element={
-                        <UnauthorizedRoute>
-                            <Login />
-                        </UnauthorizedRoute>
-                    } />
-                    <Route path="/signup" element={
-                        <UnauthorizedRoute>
-                            <Signup />
-                        </UnauthorizedRoute>
-                    } />
-                    <Route path="/forgot-password" element={
-                        <UnauthorizedRoute>
-                            <ForgotPassword />
-                        </UnauthorizedRoute>
-                    } />
+                <Route path="/login" element={
+                    <UnauthorizedRoute>
+                        <Login />
+                    </UnauthorizedRoute>
+                } />
+                <Route path="/signup" element={
+                    <UnauthorizedRoute>
+                        <Signup />
+                    </UnauthorizedRoute>
+                } />
+                <Route path="/forgot-password" element={
+                    <UnauthorizedRoute>
+                        <ForgotPassword />
+                    </UnauthorizedRoute>
+                } />
 
-                    <Route path="/dashboard" element={
-                        <ProtectedRoute>
-                            <Navigate to={currentUser?.role ? `/${currentUser.role}` : '/login'} replace />
-                        </ProtectedRoute>
-                    } />
+                <Route path="/dashboard" element={
+                    <ProtectedRoute>
+                        <Navigate to={currentUser?.role ? `/${currentUser.role}` : '/login'} replace />
+                    </ProtectedRoute>
+                } />
 
-                    <Route path="/admin/*" element={
-                        <ProtectedRoute role="admin">
-                            <AdminRoutes />
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/technician/*" element={
-                        <ProtectedRoute role="technician">
-                            <TechnicianRoutes />
-                        </ProtectedRoute>
-                    } />
+                <Route path="/admin/*" element={
+                    <ProtectedRoute role="admin">
+                        <AdminRoutes />
+                    </ProtectedRoute>
+                } />
+                <Route path="/technician/*" element={
+                    <ProtectedRoute role="technician">
+                        <TechnicianRoutes />
+                    </ProtectedRoute>
+                } />
 
-                    <Route path="*" element={<NotFound />} />
-                </Routes>
-            </Suspense>
+                <Route path="*" element={<NotFound />} />
+            </Routes>
+        </Suspense>
     );
 };
 
 export default AppRoutes;
+

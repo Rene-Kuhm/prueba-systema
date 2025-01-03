@@ -188,7 +188,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       {/* Main Content */}
       <div className='min-h-screen md:ml-64 custom-scrollbar'>
         {activeSection === 'settings' ? (
-          <Settings />
+          <Settings technicians={technicians} />
         ) : (
           <>
             <header className='sticky top-0 z-30 w-full p-4 border-b bg-slate-700 border-slate-600'>

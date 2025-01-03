@@ -92,8 +92,8 @@ export default function Signup() {
         });
       }
 
-      toast.success('Registro exitoso. Por favor espera la aprobación de un administrador.');
-      navigate('/');
+      toast.success('Tu registro fue exitoso. Un administrador revisará tu solicitud y aprobará tu cuenta. Recibirás una notificación cuando esto suceda.');
+      navigate('/login');
     } catch (err) {
       console.error('Error en el proceso de registro:', err);
       const errorMessage = err instanceof Error ? err.message : 'Error en el registro';

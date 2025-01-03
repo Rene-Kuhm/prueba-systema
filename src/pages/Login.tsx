@@ -2,12 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'react-toastify';
+import { auth, db } from '@/config/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import CospecLogo from '../components/Logo/CospecLogo';
 import '../styles/login.css';
-
-// interface SignInResult {
-//   role: 'admin' | 'technician';
-// }
 
 export default function Login() {
   const navigate = useNavigate();
@@ -48,10 +46,30 @@ export default function Login() {
     setLocalError(null);
 
     try {
-      await signIn(formData.email, formData.password, formData.selectedRole);
+      const result = await signIn(formData.email, formData.password, formData.selectedRole);
+      
+      if (!result?.user?.uid) {
+        throw new Error('Error al iniciar sesión');
+      }
+
+      // Verificar si el usuario está aprobado
+      const userDoc = await getDoc(doc(db, 'users', result.user.uid));
+      const userData = userDoc.data();
+
+      if (!userData?.approved) {
+        await auth.signOut();
+        throw new Error('Tu cuenta está pendiente de aprobación por un administrador.');
+      }
+
+      // Si está aprobado, actualizar último login
+      await setDoc(doc(db, 'users', result.user.uid), {
+        lastLogin: new Date().toISOString()
+      }, { merge: true });
+
       handleLoginSuccess(formData.selectedRole);
     } catch (err) {
       setLocalError(err instanceof Error ? err.message : 'Error al iniciar sesión');
+      toast.error(err instanceof Error ? err.message : 'Error al iniciar sesión');
     } finally {
       setIsSubmitting(false);
     }
@@ -115,13 +133,22 @@ export default function Login() {
 
             <SubmitButton isSubmitting={isSubmitting || loading} />
 
-            <div className="mt-6 text-center">
+            <div className="mt-6 space-y-2 text-center">
               <Link 
                 to="/forgot-password"
-                className="text-sm text-gray-400 transition-colors hover:text-blue-400"
+                className="block text-sm text-gray-400 transition-colors hover:text-blue-400"
               >
                 ¿Olvidaste tu contraseña?
               </Link>
+              <p className="text-sm text-gray-400">
+                ¿No tienes una cuenta?{' '}
+                <Link 
+                  to="/signup"
+                  className="text-blue-400 hover:text-blue-300"
+                >
+                  Regístrate aquí
+                </Link>
+              </p>
             </div>
           </form>
 
@@ -231,4 +258,3 @@ const ErrorMessage = React.memo(({ message }: { message: string }) => (
   </div>
 ));
 ErrorMessage.displayName = 'ErrorMessage';
-

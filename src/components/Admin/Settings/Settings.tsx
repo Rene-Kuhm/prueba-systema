@@ -111,7 +111,7 @@ const UserCard: React.FC<{
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="icon" className="mt-8">
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="w-4 h-4" />
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -125,7 +125,7 @@ const UserCard: React.FC<{
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
                   <AlertDialogAction onClick={onDelete} className="bg-destructive">
                     {isDeleting ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       'Eliminar'
                     )}
@@ -146,8 +146,8 @@ const NewUserForm: React.FC<{
   onSubmit: () => void;
   role: 'admin' | 'technician';
 }> = ({ userData, setUserData, onSubmit, role }) => (
-  <Card className='bg-slate-600 rounded-xl mb-8'>
-    <CardHeader className=' text-white'>
+  <Card className='mb-8 bg-slate-600 rounded-xl'>
+    <CardHeader className='text-white '>
       <CardTitle>Nuevo {role === 'admin' ? 'Administrador' : 'Técnico'}</CardTitle>
     </CardHeader>
     <CardContent className="space-y-4">
@@ -191,14 +191,18 @@ const NewUserForm: React.FC<{
         onClick={onSubmit}
         className="w-full"
       >
-        <UserPlus className="h-4 w-4 mr-2" />
+        <UserPlus className="w-4 h-4 mr-2" />
         Agregar {role === 'admin' ? 'Administrador' : 'Técnico'}
       </Button>
     </CardContent>
   </Card>
 );
 
-export const Settings: React.FC = () => {
+interface SettingsProps {
+  technicians: { id: string; name: string }[];
+}
+
+export const Settings: React.FC<SettingsProps> = () => {
   const [newAdminData, setNewAdminData] = useState<UserData>(initialUserData);
   const [newTechnicianData, setNewTechnicianData] = useState<UserData>(initialUserData);
   const [admins, setAdmins] = useState<User[]>([]);
@@ -222,9 +226,9 @@ export const Settings: React.FC = () => {
         if (user.role === 'admin' || user.role === 'technician') {
           usersData.push({
             id: doc.id,
-            name: user.fullName,
-            email: user.email,
-            avatar: user.avatar,
+            name: user.fullName || '',
+            email: user.email || '',
+            avatar: user.avatar || '',
             role: user.role,
           });
         }
@@ -360,8 +364,8 @@ export const Settings: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin" />
       </div>
     );
   }
@@ -369,15 +373,15 @@ export const Settings: React.FC = () => {
   if (error) {
     return (
       <Alert variant="destructive" className="m-4">
-        <AlertCircle className="h-4 w-4" />
+        <AlertCircle className="w-4 h-4" />
         <AlertDescription>{error}</AlertDescription>
       </Alert>
     );
   }
 
   return (
-    <div className="container mx-auto p-4 space-y-6 ">
-      <Card className='bg-slate-700 rounded-xl mb-8'>
+    <div className="container p-4 mx-auto space-y-6 ">
+      <Card className='mb-8 bg-slate-700 rounded-xl'>
         <CardHeader>
           <CardTitle className='text-green-400'>Configuración</CardTitle>
           <CardDescription className='text-white'>
@@ -386,7 +390,7 @@ export const Settings: React.FC = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="admins">
-            <TabsList className="grid w-full grid-cols-2 bg-slate-600 text-white">
+            <TabsList className="grid w-full grid-cols-2 text-white bg-slate-600">
               <TabsTrigger value="admins">Administradores</TabsTrigger>
               <TabsTrigger value="technicians">Técnicos</TabsTrigger>
             </TabsList>
@@ -419,7 +423,7 @@ export const Settings: React.FC = () => {
                 role="technician"
               />
               <div className="space-y-4">
-              {technicians.map((technician) => (
+              {technicians?.map((technician) => (
                   <UserCard
                     key={technician.id}
                     user={technician}
